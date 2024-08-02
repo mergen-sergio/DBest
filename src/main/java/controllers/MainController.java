@@ -47,6 +47,8 @@ import java.io.File;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MainController extends MainFrame {
 
@@ -78,9 +80,9 @@ public class MainController extends MainFrame {
 
     public MainController() {
         super(new HashSet<>());
-
+        System.out.println("teste");
         this.tablesComponent.getGraphControl().addMouseListener(new MouseAdapter() {
-
+ 
             @Override
             public void mousePressed(MouseEvent event) {
                 Object cell = MainController.this.tablesComponent.getCellAt(event.getX(), event.getY());
@@ -89,7 +91,7 @@ public class MainController extends MainFrame {
                     graph.setSelectionCell(new mxCell(((mxCell) cell).getValue()));
                     MainController.this.isTableCellSelected = true;
                 }
-            }
+            } 
         });
 
         graph.addListener(mxEvent.CELLS_ADDED, (sender, event) -> {
@@ -157,7 +159,14 @@ public class MainController extends MainFrame {
                 case CREATE_TABLE_CELL -> this.createNewTable(CurrentAction.ActionType.CREATE_TABLE_CELL);
                 case OPEN_CONSOLE -> this.openConsole();
                 case OPEN_TEXT_EDITOR -> this.changeScreen();
-                case OPEN_COMPARATOR -> this.openComparator();
+                case OPEN_COMPARATOR -> {
+                    try {
+                        this.openComparator();
+                    } catch (Exception ex) {
+                        Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+
             }
 
             if (clickedButton instanceof OperationButton clickedOperationButton) {
@@ -166,8 +175,13 @@ public class MainController extends MainFrame {
             }
         }
 
-        this.onBottomMenuItemClicked(event, clickedButton, style);
-        this.onTopMenuBarItemClicked(event);
+        try {
+            this.onBottomMenuItemClicked(event, clickedButton, style);
+            this.onTopMenuBarItemClicked(event);
+        } catch (Exception ex) {
+            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
 
         resetEdge();
     }
@@ -178,7 +192,7 @@ public class MainController extends MainFrame {
 
     }
 
-    private void onTopMenuBarItemClicked(ActionEvent event) {
+    private void onTopMenuBarItemClicked(ActionEvent event) throws Exception {
         Object source = event.getSource();
         String theme = null;
 
@@ -350,7 +364,7 @@ public class MainController extends MainFrame {
 
     }
 
-    public void onBottomMenuItemClicked(ActionEvent event, Button<?> clickedButton, String style) {
+    public void onBottomMenuItemClicked(ActionEvent event, Button<?> clickedButton, String style) throws Exception {
         CreateOperationCellAction createOperationAction = null;
 
         Object menuItem = event.getSource();
@@ -434,7 +448,7 @@ public class MainController extends MainFrame {
         }
     }
 
-    private void generateFyiTableCell(){
+    private void generateFyiTableCell() throws Exception{
 
         AtomicReference<Boolean> cancelService = new AtomicReference<>(false);
 
@@ -712,7 +726,10 @@ public class MainController extends MainFrame {
             default -> throw new RuntimeException();
         });
 
-        relation.getCell().getTable().open();
+        try {
+            relation.getCell().getTable().open();
+        } catch (Exception ex) {
+        }
 
         saveTable(relation.getCell());
 

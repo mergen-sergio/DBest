@@ -11,17 +11,19 @@ import entities.Tree;
 import entities.utils.RootFinder;
 import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
+import ibd.query.Operation;
 
 import org.apache.commons.lang3.tuple.Pair;
-import sgbd.query.Operator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public abstract sealed class Cell permits TableCell, OperationCell {
 
-    protected Operator operator;
+    protected Operation operator;
 
     protected List<Column> columns;
 
@@ -103,11 +105,11 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         return this.jCell;
     }
 
-    public void setOperator(Operator operator) {
+    public void setOperator(Operation operator) {
         this.operator = operator;
     }
 
-    public Operator getOperator() {
+    public Operation getOperator() {
         return this.operator;
     }
 
@@ -178,15 +180,23 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     }
 
     public void openOperator(){
-        operator.open();
+        try {
+            operator.open();
+        } catch (Exception ex) {
+            Logger.getLogger(Cell.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void closeOperator(){
-        operator.close();
+        try {
+            operator.close();
+        } catch (Exception ex) {
+            Logger.getLogger(Cell.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public void freeOperatorResources(){
-        operator.freeResources();
+        //operator.freeResources();
     }
 
     public Pair<Integer, CellStats> getCellStats(int amountOfTuples, CellStats initialCellStats){

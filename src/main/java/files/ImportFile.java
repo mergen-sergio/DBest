@@ -11,7 +11,6 @@ import dsl.DslController;
 import dsl.DslErrorListener;
 import dsl.antlr4.RelAlgebraLexer;
 import dsl.antlr4.RelAlgebraParser;
-import engine.exceptions.DataBaseException;
 import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.FYITableCell;
@@ -23,12 +22,12 @@ import files.csv.CSVInfo;
 import gui.frames.ErrorFrame;
 import gui.frames.forms.importexport.CSVRecognizerForm;
 import gui.frames.main.MainFrame;
+import ibd.table.Table;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.jetbrains.annotations.NotNull;
-import sgbd.source.table.Table;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -62,7 +61,7 @@ public class ImportFile {
 
     private TableCell tableCell = null;
 
-    public ImportFile(FileType fileType, AtomicReference<Boolean> exitReference) {
+    public ImportFile(FileType fileType, AtomicReference<Boolean> exitReference) throws Exception {
         this.exitReference = exitReference;
         this.fileType = fileType;
         this.fileUpload.setCurrentDirectory(MainController.getLastDirectory());
@@ -70,7 +69,7 @@ public class ImportFile {
         this.importFile();
     }
 
-    private void importFile() {
+    private void importFile() throws Exception {
 
         try
         {
@@ -92,7 +91,7 @@ public class ImportFile {
                                 this.tableCell = TableCreator.createCSVTable(
                                     this.tableName.toString(), this.columns, info, false
                                 );
-                            }catch (DataBaseException e){
+                            }catch (Exception e){
                                 this.exitReference.set(true);
                                 new ErrorFrame(e.getMessage());
                             }
@@ -166,7 +165,7 @@ public class ImportFile {
     }
 
     public static TableCell importHeaderFile(AtomicReference<Table> table,
-                                        AtomicReference<Boolean> exitReference, File file) throws FileNotFoundException{
+                                        AtomicReference<Boolean> exitReference, File file) throws FileNotFoundException, Exception{
 
         if (!exitReference.get()) {
             String selectedFileName = file.getName();
@@ -212,7 +211,7 @@ public class ImportFile {
         };
     }
 
-    private void header(AtomicReference<Table> table) {
+    private void header(AtomicReference<Table> table) throws Exception {
         if (!this.fileUpload.getSelectedFile().getName().toLowerCase().endsWith(FileType.HEADER.extension)) {
             JOptionPane.showMessageDialog(null, String.format("%s %s", ConstantController.getString("file.error.selectRightExtension"), FileType.HEADER.extension));
             this.exitReference.set(true);
@@ -220,7 +219,7 @@ public class ImportFile {
         }
 
         String file = this.fileUpload.getSelectedFile().getAbsolutePath();
-        table.set(Table.loadFromHeader(file));
+        table.set(TableCreator.loadFromHeader(file));
     }
 
     private void excel() {

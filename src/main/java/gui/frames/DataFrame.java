@@ -9,7 +9,7 @@ import entities.cells.OperationCell;
 import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
-import sgbd.info.Query;
+import ibd.query.QueryStats;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -22,6 +22,8 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DataFrame extends JDialog implements ActionListener {
 
@@ -51,15 +53,17 @@ public class DataFrame extends JDialog implements ActionListener {
 
     private FontIcon iconStats;
 
-    private final long INITIAL_PK_SEARCH = Query.PK_SEARCH;
+    private final long INITIAL_PK_SEARCH = QueryStats.PK_SEARCH;
 
-    private final long INITIAL_SORT_TUPLES = Query.SORT_TUPLES;
+    private final long INITIAL_SORT_TUPLES = QueryStats.SORT_TUPLES;
 
-    private final long INITIAL_COMPARE_FILTER = Query.COMPARE_FILTER;
+    private final long INITIAL_COMPARE_FILTER = QueryStats.COMPARE_FILTER;
 
-    private final long INITIAL_COMPARE_JOIN = Query.COMPARE_JOIN;
+    private final long INITIAL_RECORDS_READ = Parameters.RECORDS_READ;
+    
+    private final long INITIAL_NEXT_CALLS = QueryStats.NEXT_CALLS;
 
-    private final long INITIAL_DISTINCT_TUPLE = Query.COMPARE_DISTINCT_TUPLE;
+    private final long INITIAL_DISTINCT_TUPLE = QueryStats.COMPARE_DISTINCT_TUPLE;
 
     private final long INITIAL_IO_SEEK_WRITE_TIME = Parameters.IO_SEEK_WRITE_TIME;
 
@@ -73,9 +77,11 @@ public class DataFrame extends JDialog implements ActionListener {
 
     private final long INITIAL_IO_TOTAL_TIME = Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME;
 
-    private final long INITIAL_BLOCK_LOADED = Parameters.BLOCK_LOADED;
+    private final long INITIAL_BLOCKS_LOADED = Parameters.BLOCKS_LOADED;
+    
+    private final long INITIAL_BLOCKS_ACCESSED = Parameters.BLOCKS_ACCESSED;
 
-    private final long INITIAL_BLOCK_SAVED = Parameters.BLOCK_SAVED;
+    private final long INITIAL_BLOCKS_SAVED = Parameters.BLOCKS_SAVED;
 
     public final long INITIAL_MEMORY_ALLOCATED_BY_BLOCKS = Parameters.MEMORY_ALLOCATED_BY_BLOCKS;
 
@@ -101,7 +107,7 @@ public class DataFrame extends JDialog implements ActionListener {
 
     private int currentLastPage = -1;
 
-    public DataFrame(Cell cell) {
+    public DataFrame(Cell cell) throws Exception {
 
         super((Window) null, ConstantController.getString("dataframe"));
         this.setModal(true);
@@ -133,7 +139,7 @@ public class DataFrame extends JDialog implements ActionListener {
         this.initializeGUI();
     }
 
-    private void firstExecution(){
+    private void firstExecution() throws Exception{
 
         if(cell instanceof OperationCell operationCell && operationCell.getType().isSetBasedProcessing)
             while (lastPage == null)
@@ -169,7 +175,7 @@ public class DataFrame extends JDialog implements ActionListener {
         this.btnStats.setIcon(this.iconStats);
     }
 
-    private void updateTable(int page) {
+    private void updateTable(int page) throws Exception {
         int firstElement = page * 15;
         int lastElement = page * 15 + 14;
 
@@ -224,7 +230,7 @@ public class DataFrame extends JDialog implements ActionListener {
         this.table.repaint();
     }
 
-    private void getTuples(int currentElement, int page, int lastElement) {
+    private void getTuples(int currentElement, int page, int lastElement) throws Exception {
         if (page > this.currentLastPage) {
             Map<String, String> row = TuplesExtractor.getRow(this.cell.getOperator(), true);
 
@@ -327,7 +333,11 @@ public class DataFrame extends JDialog implements ActionListener {
         } else if (event.getSource() == this.btnAllRight) {
             if (this.lastPage == null) {
                 while (this.lastPage == null) {
-                    this.updateTable(++this.currentIndex);
+                    try {
+                        this.updateTable(++this.currentIndex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(DataFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             } else {
                 this.currentIndex = this.lastPage;
@@ -336,7 +346,11 @@ public class DataFrame extends JDialog implements ActionListener {
             this.alternateScreen();
         }
 
-        this.updateTable(this.currentIndex);
+        try {
+            this.updateTable(this.currentIndex);
+        } catch (Exception ex) {
+            Logger.getLogger(DataFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
         this.updateTuplesLoaded();
         this.updateStats();
         this.verifyButtons();
@@ -350,23 +364,27 @@ public class DataFrame extends JDialog implements ActionListener {
                 .append(":\n")
                 .append(ConstantController.getString("PK_SEARCH"))
                 .append(" = ")
-                .append(Query.PK_SEARCH - this.INITIAL_PK_SEARCH)
+                .append(QueryStats.PK_SEARCH - this.INITIAL_PK_SEARCH)
                 .append("\n")
                 .append(ConstantController.getString("SORT_TUPLES"))
                 .append(" = ")
-                .append(Query.SORT_TUPLES - this.INITIAL_SORT_TUPLES)
+                .append(QueryStats.SORT_TUPLES - this.INITIAL_SORT_TUPLES)
                 .append("\n")
                 .append(ConstantController.getString("COMPARE_FILTER"))
                 .append(" = ")
-                .append(Query.COMPARE_FILTER - this.INITIAL_COMPARE_FILTER)
+                .append(QueryStats.COMPARE_FILTER - this.INITIAL_COMPARE_FILTER)
                 .append("\n")
-                .append(ConstantController.getString("COMPARE_JOIN"))
+                .append(ConstantController.getString("RECORDS_READ"))
                 .append(" = ")
-                .append(Query.COMPARE_JOIN - this.INITIAL_COMPARE_JOIN)
+                .append(Parameters.RECORDS_READ - this.INITIAL_RECORDS_READ)
+                .append("\n")
+                .append(ConstantController.getString("NEXT_CALLS"))
+                .append(" = ")
+                .append(QueryStats.NEXT_CALLS - this.INITIAL_NEXT_CALLS)
                 .append("\n")
                 .append(ConstantController.getString("COMPARE_DISTINCT_TUPLE"))
                 .append(" = ")
-                .append(Query.COMPARE_DISTINCT_TUPLE - this.INITIAL_DISTINCT_TUPLE)
+                .append(QueryStats.COMPARE_DISTINCT_TUPLE - this.INITIAL_DISTINCT_TUPLE)
                 .append("\n\n")
                 .append(ConstantController.getString("dataframe.disk"))
                 .append(":")
@@ -400,13 +418,17 @@ public class DataFrame extends JDialog implements ActionListener {
                 .append((Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME - this.INITIAL_IO_TOTAL_TIME) / 1000000f)
                 .append("ms")
                 .append("\n")
-                .append(ConstantController.getString("BLOCK_LOADED"))
+                .append(ConstantController.getString("BLOCKS_LOADED"))
                 .append(" = ")
-                .append(Parameters.BLOCK_LOADED - this.INITIAL_BLOCK_LOADED)
+                .append(Parameters.BLOCKS_LOADED - this.INITIAL_BLOCKS_LOADED)
                 .append("\n")
-                .append(ConstantController.getString("BLOCK_SAVED"))
+                .append(ConstantController.getString("BLOCKS_ACCESSED"))
                 .append(" = ")
-                .append(Parameters.BLOCK_SAVED - this.INITIAL_BLOCK_SAVED)
+                .append(Parameters.BLOCKS_ACCESSED - this.INITIAL_BLOCKS_ACCESSED)
+                .append("\n")
+                .append(ConstantController.getString("BLOCKS_SAVED"))
+                .append(" = ")
+                .append(Parameters.BLOCKS_SAVED - this.INITIAL_BLOCKS_SAVED)
                 .append("\n");
 
         this.textPane.setText(sb.toString());

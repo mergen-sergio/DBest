@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import controllers.ConstantController;
 import controllers.MainController;
+import database.TableCreator;
 import dsl.entities.*;
 import dsl.utils.DslUtils;
 import entities.cells.CSVTableCell;
@@ -12,7 +13,7 @@ import enums.FileType;
 import enums.CellType;
 import exceptions.dsl.InputException;
 import gui.frames.dsl.TextEditor;
-import sgbd.source.table.Table;
+import ibd.table.Table;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DslController {
 
@@ -123,8 +126,13 @@ public class DslController {
 		}
 
 
-		Table table = Table.loadFromHeader(path);
-		table.open();
+		Table table = null;
+            try {
+                table = TableCreator.loadFromHeader(path);
+                table.open();
+            } catch (Exception ex) {
+            }
+		
 
 		switch (cellType){
 

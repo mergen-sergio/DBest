@@ -69,9 +69,12 @@ public class AggregationForm extends OperationForm implements ActionListener, IO
                 String prefix = Utils.getFirstMatchingPrefixIgnoreCase(column, Aggregation.PREFIXES);
                 column = column.substring(prefix.length());
                 comboBoxAggregation.setSelectedItem(switch (prefix){
+                    case "SUM:" -> ConstantController.getString("operationForm.sum");
                     case "MAX:" -> ConstantController.getString("operationForm.maximum");
                     case "MIN:" -> ConstantController.getString("operationForm.minimum");
                     case "AVG:" -> ConstantController.getString("operationForm.average");
+                    case "FIRST:" -> ConstantController.getString("operationForm.first");
+                    case "LAST:" -> ConstantController.getString("operationForm.last");
                     case "COUNT:" -> ConstantController.getString("operationForm.count");
                     default -> throw new IllegalStateException("Unexpected value: " + prefix);
                 });
@@ -109,6 +112,12 @@ public class AggregationForm extends OperationForm implements ActionListener, IO
                suffix = "AVG:";
            else  if(selected.equals(ConstantController.getString("operationForm.count")))
                suffix = "COUNT:";
+           else  if(selected.equals(ConstantController.getString("operationForm.count")))
+               suffix = "FIRST:";
+           else  if(selected.equals(ConstantController.getString("operationForm.first")))
+               suffix = "LAST:";
+           else if(selected.equals(ConstantController.getString("operationForm.last")))
+               suffix = "SUM:";
            else
                throw new IllegalStateException("Unexpected value: " + selected);
 

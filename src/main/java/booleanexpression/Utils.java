@@ -1,13 +1,17 @@
 package booleanexpression;
 
 import enums.ColumnDataType;
+import ibd.table.prototype.query.fields.DoubleField;
+import ibd.table.prototype.query.fields.FloatField;
+import ibd.table.prototype.query.fields.IntegerField;
+import ibd.table.prototype.query.fields.LongField;
+import ibd.table.prototype.query.fields.StringField;
 
 import lib.booleanexpression.entities.elements.Element;
 import lib.booleanexpression.entities.elements.Null;
 import lib.booleanexpression.entities.elements.Value;
 import lib.booleanexpression.entities.elements.Variable;
 
-import sgbd.prototype.query.fields.*;
 
 public class Utils {
 

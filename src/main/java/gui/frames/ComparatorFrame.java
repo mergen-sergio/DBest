@@ -19,6 +19,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ComparatorFrame extends JFrame implements ActionListener {
 
@@ -196,14 +198,22 @@ public class ComparatorFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if(btnNext == e.getSource()){
-            updateJTable();
+            try {
+                updateJTable();
+            } catch (Exception ex) {
+                Logger.getLogger(ComparatorFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
             verifyIfTuplesAreDone();
             updateLblText();
         }
 
         if(btnAllNext == e.getSource()){
             while (btnAllNext.isEnabled()){
-                updateJTable();
+                try {
+                    updateJTable();
+                } catch (Exception ex) {
+                    Logger.getLogger(ComparatorFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 verifyIfTuplesAreDone();
                 updateLblText();
             }

@@ -8,27 +8,18 @@ import entities.cells.OperationCell;
 import entities.utils.cells.CellUtils;
 import enums.OperationErrorType;
 import exceptions.tree.TreeException;
+import ibd.query.unaryop.aggregation.AggregationType;
 import operations.IOperator;
 import operations.Operation;
 import operations.OperationErrorVerifier;
-import sgbd.prototype.Prototype;
-import sgbd.prototype.RowData;
-import sgbd.prototype.metadata.Metadata;
-import sgbd.query.Operator;
-import sgbd.query.agregation.*;
-import sgbd.query.binaryop.joins.NestedLoopJoin;
-import sgbd.query.sourceop.TableScan;
-import sgbd.query.unaryop.FilterColumnsOperator;
-import sgbd.query.unaryop.GroupOperator;
-import sgbd.source.components.Header;
-import sgbd.source.table.MemoryTable;
-import sgbd.source.table.Table;
 import utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Aggregation implements IOperator {
 
@@ -56,6 +47,30 @@ public class Aggregation implements IOperator {
 
             public String getPrefix() {
                 return "AVG:";
+            }
+        }, SUM {
+            public String getDisplayName() {
+                return ConstantController.getString("operationForm.sum");
+            }
+
+            public String getPrefix() {
+                return "SUM:";
+            }
+        }, FIRST {
+            public String getDisplayName() {
+                return ConstantController.getString("operationForm.first");
+            }
+
+            public String getPrefix() {
+                return "FIRST:";
+            }
+        }, LAST {
+            public String getDisplayName() {
+                return ConstantController.getString("operationForm.last");
+            }
+
+            public String getPrefix() {
+                return "LAST:";
             }
         }, COUNT {
             public String getDisplayName() {
@@ -121,7 +136,7 @@ public class Aggregation implements IOperator {
 
         Cell parentCell = cell.getParents().get(0);
 
-        Operator operator = parentCell.getOperator();
+        ibd.query.Operation operator = parentCell.getOperator();
 
         String fixedArgument = arguments
             .get(0)
@@ -130,32 +145,37 @@ public class Aggregation implements IOperator {
         String sourceName = Column.removeName(fixedArgument).substring(Utils.getFirstMatchingPrefixIgnoreCase(fixedArgument, PREFIXES).length());
         String columnName = Column.removeSource(fixedArgument);
 
-        List<AgregationOperation> aggregations = new ArrayList<>();
+        List<AggregationType> aggregations = new ArrayList<>();
+        String aggregateCol = null;
+        int aggregateType = -1;
 
         if (Utils.startsWithIgnoreCase(fixedArgument, "MAX:")) {
-            aggregations.add(new MaxAgregation(sourceName, columnName));
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.MAX));
         } else if (Utils.startsWithIgnoreCase(fixedArgument, "MIN:")) {
-            aggregations.add(new MinAgregation(sourceName, columnName));
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.MIN));
         } else if (Utils.startsWithIgnoreCase(fixedArgument, "AVG:")) {
-            aggregations.add(new AvgAgregation(sourceName, columnName));
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.AVG));
+        } else if (Utils.startsWithIgnoreCase(fixedArgument, "SUM:")) {
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.SUM));
+        } else if (Utils.startsWithIgnoreCase(fixedArgument, "FIRST:")) {
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.FIRST));
+        } else if (Utils.startsWithIgnoreCase(fixedArgument, "LAST:")) {
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.LAST));
         } else if (Utils.startsWithIgnoreCase(fixedArgument, "COUNT:")) {
-            aggregations.add(new CountAgregation(sourceName, columnName));
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT));
         }
 
-        Prototype prototype = new Prototype();
-        prototype.addColumn("madeUp", 4, Metadata.SIGNED_INTEGER_COLUMN | Metadata.PRIMARY_KEY);
+        //ibd.query.Operation readyOperator = new GroupOperator(operator, Column.removeName(groupBy), Column.removeSource(groupBy), aggregations);
+        ibd.query.Operation readyOperator = null;
+        try {
+            //readyOperator = new ibd.query.unaryop.AllAggregation(operator, "aggregate",  aggregateCol, aggregateType);
+            readyOperator = new ibd.query.unaryop.aggregation.AllAggregation(operator, "aggregate",  aggregations);
+        } catch (Exception ex) {
+            Logger.getLogger(Group.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
-        Table table = MemoryTable.openTable(new Header(prototype, "Aux"));
-        table.open();
+        String operationName = String.format("%s %s", cell.getType().symbol, arguments);
 
-        RowData row = new RowData();
-        row.setInt("madeUp", 1);
-        table.insert(row);
-
-        Operator readyOperator = new NestedLoopJoin(operator, new TableScan(table));
-        readyOperator = new GroupOperator(readyOperator, "Aux", "madeUp", aggregations);
-        readyOperator = new FilterColumnsOperator(readyOperator, List.of("Aux.madeUp"));
-
-        Operation.operationSetter(cell, arguments.get(0), List.of(fixedArgument), readyOperator);
+        Operation.operationSetter(cell, operationName, arguments, readyOperator);
     }
 }

@@ -14,8 +14,8 @@ import enums.OperationType;
 import gui.frames.ErrorFrame;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.main.MainFrame;
+import ibd.query.Operation;
 import operations.IOperator;
-import sgbd.query.Operator;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -289,7 +289,7 @@ public final class OperationCell extends Cell {
     }
 
     @Override
-    public void setOperator(Operator operator) {
+    public void setOperator(Operation operator) {
         this.operator = operator;
         this.setColumns();
     }

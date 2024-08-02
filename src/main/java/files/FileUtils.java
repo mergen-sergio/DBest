@@ -82,7 +82,7 @@ public class FileUtils {
         TableCell tableCell;
         try {
             tableCell = TableCreator.createTable(file);
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 

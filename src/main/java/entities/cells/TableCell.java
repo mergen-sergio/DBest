@@ -6,16 +6,15 @@ import entities.Column;
 import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
 import enums.ColumnDataType;
-import sgbd.prototype.Prototype;
-import sgbd.query.sourceop.SourceOperator;
-import sgbd.query.sourceop.TableScan;
-import sgbd.source.table.Table;
-import sgbd.util.global.Util;
 import static entities.utils.cells.CellUtils.changeCellName;
+import ibd.query.sourceop.IndexScan;
+import ibd.query.sourceop.SourceOperation;
+import ibd.table.Table;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import ibd.table.prototype.Prototype;
 
 public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITableCell, MemoryTableCell {
 
@@ -23,7 +22,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
 
     private final Table table;
 
-    private final SourceOperator sourceOperator;
+    private final SourceOperation sourceOperator;
 
     private final Prototype prototype;
 
@@ -36,7 +35,8 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
         this.table = table;
         this.prototype = prototype;
 
-        this.sourceOperator = new TableScan(table);
+        //this.sourceOperator = new TableScan(table);
+        this.sourceOperator = new IndexScan(name, table);
 
         this.setOperator(sourceOperator);
     }
@@ -114,8 +114,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
 
 
     public void setColumns() {
-        List<sgbd.prototype.column.Column> prototypeColumns = this.table
-            .getHeader()
+        List<ibd.table.prototype.column.Column> prototypeColumns = this.table
             .getPrototype()
             .getColumns()
             .stream()
@@ -124,15 +123,24 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
 
         List<Column> columns = new ArrayList<>();
 
-        for (sgbd.prototype.column.Column prototypeColumn : prototypeColumns) {
-            ColumnDataType dataType = switch (Util.typeOfColumn(prototypeColumn)) {
-                case "int" -> ColumnDataType.INTEGER;
-                case "long" -> ColumnDataType.LONG;
-                case "float" -> ColumnDataType.FLOAT;
-                case "double" -> ColumnDataType.DOUBLE;
-                case "string" -> prototypeColumn.getSize() == 1 ? ColumnDataType.CHARACTER : ColumnDataType.STRING;
-                default -> ColumnDataType.NONE;
-            };
+        for (ibd.table.prototype.column.Column prototypeColumn : prototypeColumns) {
+            
+            ColumnDataType dataType = switch (prototypeColumn.getType()) {
+                        case ibd.table.prototype.column.Column.INTEGER_TYPE ->
+                            ColumnDataType.INTEGER;
+                        case ibd.table.prototype.column.Column.LONG_TYPE ->
+                            ColumnDataType.LONG;
+                        case ibd.table.prototype.column.Column.FLOAT_TYPE ->
+                            ColumnDataType.FLOAT;
+                        case ibd.table.prototype.column.Column.DOUBLE_TYPE ->
+                            ColumnDataType.DOUBLE;
+                        case ibd.table.prototype.column.Column.BOOLEAN_TYPE ->
+                            ColumnDataType.BOOLEAN;
+                        case ibd.table.prototype.column.Column.STRING_TYPE ->
+                            ColumnDataType.STRING;
+                        default -> ColumnDataType.NONE;
+                    };
+            
             columns.add(new Column(prototypeColumn.getName(), this.getName(), dataType, prototypeColumn.isPrimaryKey()));
         }
 

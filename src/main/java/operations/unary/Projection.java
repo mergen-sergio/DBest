@@ -10,9 +10,6 @@ import exceptions.tree.TreeException;
 import operations.IOperator;
 import operations.Operation;
 import operations.OperationErrorVerifier;
-import sgbd.query.Operator;
-import sgbd.query.unaryop.DistinctOperator;
-import sgbd.query.unaryop.SelectColumnsOperator;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,14 +55,19 @@ public class Projection implements IOperator {
 
         List<String> fixedArguments = Column.composeSourceAndName(arguments, parentCell);
 
-        Operator operator = parentCell.getOperator();
+        ibd.query.Operation operator = parentCell.getOperator();
 
-        Operator filterColumns = new SelectColumnsOperator(operator, fixedArguments);
+        ibd.query.Operation filterColumns = null;
+        try {
+            filterColumns = new ibd.query.unaryop.Projection(operator, "projection", fixedArguments.toArray(new String[0]), false);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
-        Operator readyOperator = new DistinctOperator(filterColumns);
+        //Operator readyOperator = new DistinctOperator(filterColumns);
 
         String operationName = String.format("%s %s", cell.getType().symbol, fixedArguments);
 
-        Operation.operationSetter(cell, operationName, fixedArguments, readyOperator);
+        Operation.operationSetter(cell, operationName, fixedArguments, filterColumns);
     }
 }

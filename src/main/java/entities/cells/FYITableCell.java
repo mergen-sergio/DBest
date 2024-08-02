@@ -10,9 +10,9 @@ import com.mxgraph.model.mxGeometry;
 import controllers.ConstantController;
 
 import entities.Column;
+import ibd.table.Table;
 
-import sgbd.prototype.Prototype;
-import sgbd.source.table.Table;
+import ibd.table.prototype.Prototype;
 
 public final class FYITableCell extends TableCell {
 

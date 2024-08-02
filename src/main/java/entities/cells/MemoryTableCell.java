@@ -2,11 +2,10 @@ package entities.cells;
 
 import com.mxgraph.model.mxCell;
 import entities.Column;
-import sgbd.prototype.Prototype;
-import sgbd.source.table.Table;
+import ibd.table.Table;
 
-import java.io.File;
 import java.util.List;
+import ibd.table.prototype.Prototype;
 
 public final class MemoryTableCell extends TableCell {
 

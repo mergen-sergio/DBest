@@ -16,8 +16,8 @@ import enums.FileType;
 import gui.frames.ErrorFrame;
 import gui.frames.forms.importexport.ExportSQLScriptForm;
 import gui.frames.main.MainFrame;
+import ibd.query.Operation;
 import net.coobird.thumbnailator.Thumbnails;
-import sgbd.query.Operator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,10 +26,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -66,8 +63,8 @@ public class ExportFile extends JPanel {
 
         if (fileToSave.exists()) {
             int selectedOption = JOptionPane.showConfirmDialog(
-                null, ConstantController.getString("file.substitution"),
-                ConstantController.getString("file.substitutionConfirmation"), JOptionPane.YES_NO_OPTION
+                    null, ConstantController.getString("file.substitution"),
+                    ConstantController.getString("file.substitutionConfirmation"), JOptionPane.YES_NO_OPTION
             );
 
             if (selectedOption == JOptionPane.NO_OPTION) {
@@ -81,13 +78,15 @@ public class ExportFile extends JPanel {
         String text = String.format("%s: ", ConstantController.getString("exportFile.createNewDatabase"));
 
         ExportSQLScriptForm.SQLScriptInf inf = new ExportSQLScriptForm.SQLScriptInf(
-            new StringBuilder(), new StringBuilder(), new HashMap<>(), new HashMap<>(),
-            new HashMap<>(), new JCheckBox(text), new StringBuilder(), new Vector<>(), new Vector<>()
+                new StringBuilder(), new StringBuilder(), new HashMap<>(), new HashMap<>(),
+                new HashMap<>(), new JCheckBox(text), new StringBuilder(), new Vector<>(), new Vector<>()
         );
 
         new ExportSQLScriptForm(cell, inf, exitReference);
 
-        if (exitReference.get()) return;
+        if (exitReference.get()) {
+            return;
+        }
 
         try {
             FileWriter sql = new FileWriter(fileToSave);
@@ -109,21 +108,27 @@ public class ExportFile extends JPanel {
                 }
 
                 Column column = cell
-                    .getColumns()
-                    .stream()
-                    .filter(c -> c.getSourceAndName().equals(columnName))
-                    .findFirst()
-                    .orElseThrow();
+                        .getColumns()
+                        .stream()
+                        .filter(c -> c.getSourceAndName().equals(columnName))
+                        .findFirst()
+                        .orElseThrow();
 
                 String name = inf.newColumnNameTxtFields().get(columnName).getText();
 
                 String type = switch (column.DATA_TYPE) {
-                    case INTEGER, LONG -> "INT";
-                    case FLOAT -> "FLOAT";
-                    case DOUBLE -> "DOUBLE";
-                    case CHARACTER -> "VARCHAR(1)";
-                    case STRING, NONE -> "TEXT";
-                    case BOOLEAN -> "BOOLEAN";
+                    case INTEGER, LONG ->
+                        "INT";
+                    case FLOAT ->
+                        "FLOAT";
+                    case DOUBLE ->
+                        "DOUBLE";
+                    case CHARACTER ->
+                        "VARCHAR(1)";
+                    case STRING, NONE ->
+                        "TEXT";
+                    case BOOLEAN ->
+                        "BOOLEAN";
                 };
 
                 sqlContent.append(String.format("\t%s %s ", name, type));
@@ -136,12 +141,12 @@ public class ExportFile extends JPanel {
             }
 
             int numberOfPrimaryKeys = inf
-                .pkCheckBoxes()
-                .values()
-                .stream()
-                .filter(AbstractButton::isSelected)
-                .toList()
-                .size();
+                    .pkCheckBoxes()
+                    .values()
+                    .stream()
+                    .filter(AbstractButton::isSelected)
+                    .toList()
+                    .size();
 
             if (numberOfPrimaryKeys > 0) {
                 sqlContent.append(",\n\n\tPRIMARY KEY (");
@@ -168,12 +173,11 @@ public class ExportFile extends JPanel {
                     Vector<String> finalColumnNames = inf.columnNames();
 
                     ColumnDataType type = cell
-                        .getColumns()
-                        .stream()
-                        .filter(c -> c.getSourceAndName().equals(finalColumnNames.get(finalI)))
-                        .findFirst()
-                        .orElseThrow()
-                        .DATA_TYPE;
+                            .getColumns()
+                            .stream()
+                            .filter(c -> c.getSourceAndName().equals(finalColumnNames.get(finalI)))
+                            .findFirst()
+                            .orElseThrow().DATA_TYPE;
 
                     boolean isString = type == ColumnDataType.STRING || type == ColumnDataType.NONE || type == ColumnDataType.CHARACTER;
 
@@ -206,7 +210,9 @@ public class ExportFile extends JPanel {
     }
 
     public void exportToFYI(Cell cell, List<Column> primaryKeyColumns) {
-        if (primaryKeyColumns == null || primaryKeyColumns.isEmpty()) return;
+        if (primaryKeyColumns == null || primaryKeyColumns.isEmpty()) {
+            return;
+        }
 
         String pathname = String.format("%s%s", cell.getName(), FileType.HEADER.extension);
 
@@ -238,68 +244,76 @@ public class ExportFile extends JPanel {
 
             Map<Integer, Map<String, String>> rows = new HashMap<>();
 
-            Operator operator = cell.getOperator();
-            operator.open();
+            Operation operator = cell.getOperator();
 
-            int i = 0;
+            try {
+                operator.open();
 
-            while (operator.hasNext()) {
-                Map<String, String> row = TuplesExtractor.getRow(cell.getOperator(), false);
+                int i = 0;
 
-                if (row != null) {
-                    rows.put(i++, row);
+                while (operator.hasNext()) {
+                    Map<String, String> row = TuplesExtractor.getRow(cell.getOperator(), false);
+                    if (row != null) {
+                        rows.put(i++, row);
+                    }
                 }
-            }
 
-            operator.close();
+                operator.close();
+            } catch (Exception ex) {
+            }
 
             AtomicReference<Boolean> exitReference = new AtomicReference<>(false);
 
             List<Column> columnsWithPrimaryKey = new ArrayList<>();
 
-            for (Column pkColumns : primaryKeyColumns)
+            for (Column pkColumns : primaryKeyColumns) {
                 columnsWithPrimaryKey.add(new Column(cell.getColumns().stream()
-                    .filter(c -> c.getSourceAndName()
+                        .filter(c -> c.getSourceAndName()
                         .equalsIgnoreCase((primaryKeyColumns.stream()
-                            .filter(x -> x.getSourceAndName()
+                                .filter(x -> x.getSourceAndName()
                                 .equalsIgnoreCase(pkColumns.getSourceAndName()))
-                            .findFirst().orElseThrow()).getSourceAndName())).findFirst().orElseThrow(), true));
+                                .findFirst().orElseThrow()).getSourceAndName())).findFirst().orElseThrow(), true));
+            }
 
-            for (Column c : cell.getColumns()){
+            for (Column c : cell.getColumns()) {
 
-                if(columnsWithPrimaryKey.stream().anyMatch(x -> x.getSourceAndName().equalsIgnoreCase(c.getSourceAndName()))) continue;
+                if (columnsWithPrimaryKey.stream().anyMatch(x -> x.getSourceAndName().equalsIgnoreCase(c.getSourceAndName()))) {
+                    continue;
+                }
 
                 columnsWithPrimaryKey.add(new Column(c, false));
 
             }
 
-            if (exitReference.get()) return;
+            if (exitReference.get()) {
+                return;
+            }
 
             try {
 
                 TableCell createdCell = TableCreator.createFYITable(fileName, columnsWithPrimaryKey, rows, fileToSave, true);
-                createdCell.getTable().saveHeader(headFileName);
-                createdCell.getTable().close();
+//                createdCell.getTable().saveHeader(headFileName);
+//                createdCell.getTable().close();
 
-            }catch (DataBaseException e){
+            } catch (DataBaseException e) {
 
                 new ErrorFrame(e.getMessage());
                 return;
             }
 
-            Path headSourcePath = Paths.get(headFileName);
-            String datFileName = String.format("%s%s", fileName, FileType.FYI.extension);
-            Path datSourcePath = Paths.get(datFileName);
-
-            Path headDestinationPath = Paths.get(filePath);
-            Path datDestinationPath = Paths.get(filePath.replace(headFileName, datFileName));
-
-            try {
-                Files.move(headSourcePath, headDestinationPath, StandardCopyOption.REPLACE_EXISTING);
-                Files.move(datSourcePath, datDestinationPath, StandardCopyOption.REPLACE_EXISTING);
-            } catch (Exception exception) {
-                new ErrorFrame(exception.getMessage());
-            }
+//            Path headSourcePath = Paths.get(headFileName);
+//            String datFileName = String.format("%s%s", fileName, FileType.FYI.extension);
+//            Path datSourcePath = Paths.get(datFileName);
+//
+//            Path headDestinationPath = Paths.get(filePath);
+//            Path datDestinationPath = Paths.get(filePath.replace(headFileName, datFileName));
+//
+//            try {
+//                Files.move(headSourcePath, headDestinationPath, StandardCopyOption.REPLACE_EXISTING);
+//                Files.move(datSourcePath, datDestinationPath, StandardCopyOption.REPLACE_EXISTING);
+//            } catch (Exception exception) {
+//                new ErrorFrame(exception.getMessage());
+//            }
         }
     }
 
@@ -428,7 +442,9 @@ public class ExportFile extends JPanel {
         String defaultFileName = String.format("%s.txt", ConstantController.getString("file.treeFileName"));
         fileChooser.setSelectedFile(new File(defaultFileName));
 
-        if (fileChooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return;
+        if (fileChooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
 
         String filePath = fileChooser.getSelectedFile().getPath();
 

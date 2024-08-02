@@ -19,7 +19,6 @@ import lib.booleanexpression.enums.RelationalOperator;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import sgbd.prototype.query.fields.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +28,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static booleanexpression.Utils.getElement;
+import ibd.table.prototype.query.fields.DoubleField;
+import ibd.table.prototype.query.fields.FloatField;
+import ibd.table.prototype.query.fields.IntegerField;
+import ibd.table.prototype.query.fields.LongField;
+import ibd.table.prototype.query.fields.StringField;
 
 public class BooleanExpressionRecognizer {
 

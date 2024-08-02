@@ -13,27 +13,32 @@ import com.mxgraph.util.mxUtils;
 import com.mxgraph.view.mxStylesheet;
 
 import enums.OperationType;
+import java.awt.Dimension;
 
 public class OperationButton extends Button<JButton> {
 
     private final String style;
 
-    public OperationButton(mxStylesheet stylesheet, OperationType type, ActionListener listener, JPanel panel) {
+    public OperationButton(mxStylesheet stylesheet, OperationType type, ActionListener listener, JPanel  panel) {
         super(JButton.class, type.getFormattedDisplayName(), listener, type.getAction());
 
         this.style = type.displayName;
 
         JButton button = this.getButton();
-
+//        System.out.println(button.getHorizontalAlignment());
+//        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+//        System.out.println(button.getHorizontalAlignment());
         button.setBounds(600, 300, 100, 50);
 
-        JPanel typePanel = new JPanel();
+        button.setMaximumSize(new Dimension(200, 50));
 
-        typePanel.add(button);
+        //JPanel typePanel = new JPanel();
+
+        //typePanel.add(button);
 
         stylesheet.putCellStyle(this.style, this.createStyle());
 
-        panel.add(typePanel);
+        panel.add(button);
     }
 
     public String getStyle() {

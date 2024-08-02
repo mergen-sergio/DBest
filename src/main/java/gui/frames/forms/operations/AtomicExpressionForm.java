@@ -1,30 +1,15 @@
 package gui.frames.forms.operations;
 
-import booleanexpression.BooleanExpressionException;
-import booleanexpression.BooleanExpressionRecognizer;
 
 import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
-import entities.Column;
 import entities.cells.Cell;
 import entities.utils.cells.CellUtils;
-import gui.frames.ErrorFrame;
 import gui.frames.forms.IFormCondition;
 import lib.booleanexpression.entities.elements.Element;
 import lib.booleanexpression.entities.elements.Null;
-import lib.booleanexpression.entities.elements.Value;
-import lib.booleanexpression.entities.elements.Variable;
 import lib.booleanexpression.entities.expressions.AtomicExpression;
-import lib.booleanexpression.entities.expressions.BooleanExpression;
 import lib.booleanexpression.enums.RelationalOperator;
-import sgbd.prototype.query.fields.BinaryField;
-import sgbd.prototype.query.fields.BooleanField;
-import sgbd.prototype.query.fields.DoubleField;
-import sgbd.prototype.query.fields.FloatField;
-import sgbd.prototype.query.fields.IntegerField;
-import sgbd.prototype.query.fields.LongField;
-import sgbd.prototype.query.fields.NullField;
-import sgbd.prototype.query.fields.StringField;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;

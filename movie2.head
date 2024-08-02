@@ -1,0 +1,1 @@
+{"information":{"saved":"true","clear":"false","tablename":"movie2","file-path":"C:\\Users\\ferna\\Documents\\dbest\\oficina\\oficina-profs\\movie2.head"},"subHeaders":{},"prototype":{"columns":[{"name":"movie_id","type":"INTEGER","size":4,"flags":24},{"name":"title","type":"STRING","size":500,"flags":34}],"stat":true,"headerSize":0}}

@@ -13,6 +13,8 @@ import gui.frames.DataFrame;
 import javax.swing.JOptionPane;
 
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class OpenDataFrame implements Runnable{
 
@@ -35,7 +37,11 @@ public class OpenDataFrame implements Runnable{
             if (!(cell instanceof TableCell || ((OperationCell) cell).hasBeenInitialized())) return;
 
             if (!cell.hasError()) {
-                new DataFrame(cell);
+                try {
+                    new DataFrame(cell);
+                } catch (Exception ex) {
+                    Logger.getLogger(OpenDataFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
             } else {
                 JOptionPane.showMessageDialog(null, ConstantController.getString("cell.operationCell.error"), ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);
             }

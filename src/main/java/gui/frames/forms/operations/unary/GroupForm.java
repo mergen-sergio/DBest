@@ -27,6 +27,9 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
             ConstantController.getString("operationForm.minimum"),
             ConstantController.getString("operationForm.maximum"),
             ConstantController.getString("operationForm.average"),
+            ConstantController.getString("operationForm.sum"),
+            ConstantController.getString("operationForm.first"),
+            ConstantController.getString("operationForm.last"),
             ConstantController.getString("operationForm.count")});
 
     public GroupForm(mxCell jCell) {
@@ -147,6 +150,12 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
             suffix = "MIN:";
         else  if(selected.equals(ConstantController.getString("operationForm.average")))
             suffix = "AVG:";
+        else if(selected.equals(ConstantController.getString("operationForm.sum")))
+            suffix = "SUM:";
+        else if(selected.equals(ConstantController.getString("operationForm.first")))
+            suffix = "FIRST:";
+        else if(selected.equals(ConstantController.getString("operationForm.last")))
+            suffix = "LAST:";
         else  if(selected.equals(ConstantController.getString("operationForm.count")))
             suffix = "COUNT:";
         else

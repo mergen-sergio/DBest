@@ -3,7 +3,6 @@ package operations.binary.joins;
 import booleanexpression.BooleanExpressionException;
 import booleanexpression.BooleanExpressionRecognizer;
 import com.mxgraph.model.mxCell;
-import com.mxgraph.view.mxGraph;
 
 import controllers.ConstantController;
 import controllers.MainController;
@@ -16,9 +15,7 @@ import lib.booleanexpression.entities.expressions.BooleanExpression;
 import operations.IOperator;
 import operations.Operation;
 import operations.OperationErrorVerifier;
-import sgbd.query.Operator;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,12 +59,12 @@ public abstract class JoinOperators implements IOperator {
         Cell parentCell1 = cell.getParents().get(0);
         Cell parentCell2 = cell.getParents().get(1);
 
-        Operator operator1 = parentCell1.getOperator();
-        Operator operator2 = parentCell2.getOperator();
+        ibd.query.Operation operator1 = parentCell1.getOperator();
+        ibd.query.Operation operator2 = parentCell2.getOperator();
 
         try {
             BooleanExpression booleanExpression = new BooleanExpressionRecognizer(jCell).recognizer(arguments.get(0));
-            Operator readyOperator = this.createJoinOperator(operator1, operator2, booleanExpression);
+            ibd.query.Operation readyOperator = this.createJoinOperator(operator1, operator2, booleanExpression);
             String operationName = String.format("%s   %s", cell.getType().symbol, new BooleanExpressionRecognizer(jCell).recognizer(booleanExpression));
             Operation.operationSetter(cell, operationName, arguments, readyOperator);
 
@@ -80,5 +77,5 @@ public abstract class JoinOperators implements IOperator {
         MainController.getGraph().getModel().setValue(edges[1], ConstantController.getString("right"));
     }
 
-    abstract Operator createJoinOperator(Operator operator1, Operator operator2, BooleanExpression booleanExpression);
+    abstract ibd.query.Operation createJoinOperator(ibd.query.Operation operator1, ibd.query.Operation operator2, BooleanExpression booleanExpression);
 }

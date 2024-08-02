@@ -31,7 +31,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected static mxGraphComponent graphComponent;
 
-    protected JPanel operationsPanel;
+    protected JPanel  operationsPanel;
 
     protected static mxGraph tablesGraph;
 
@@ -75,15 +75,17 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem sortMenuItem;
 
-//    protected JMenuItem aggregationMenuItem;
+    protected JMenuItem aggregationMenuItem;
 
-//    protected JMenuItem groupMenuItem;
+    protected JMenuItem groupMenuItem;
 
     protected JMenuItem renameMenuItem;
 
 //    protected JMenuItem indexerMenuItem;
 
     protected JMenuItem joinMenuItem;
+    
+    protected JMenuItem semiJoinMenuItem;
 
     protected JMenuItem leftJoinMenuItem;
 
@@ -94,6 +96,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JMenuItem unionMenuItem;
 
     protected JMenuItem intersectionMenuItem;
+    
+    protected JMenuItem differenceMenuItem;
 
     protected JMenuItem importTableMenuItem;
 
@@ -156,16 +160,18 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
         this.filterColumnMenuItem = new JMenuItem(OperationType.SELECT_COLUMNS.displayName);
         this.sortMenuItem = new JMenuItem(OperationType.SORT.displayName);
-//        this.aggregationMenuItem = new JMenuItem(OperationType.AGGREGATION.displayName);
-//        this.groupMenuItem = new JMenuItem(OperationType.GROUP.displayName);
+        this.aggregationMenuItem = new JMenuItem(OperationType.AGGREGATION.displayName);
+        this.groupMenuItem = new JMenuItem(OperationType.GROUP.displayName);
         this.renameMenuItem = new JMenuItem(OperationType.RENAME.displayName);
 //        this.indexerMenuItem = new JMenuItem(OperationType.INDEXER.displayName);
         this.joinMenuItem = new JMenuItem(OperationType.JOIN.displayName);
+        this.semiJoinMenuItem = new JMenuItem(OperationType.SEMI_JOIN.displayName);
         this.leftJoinMenuItem = new JMenuItem(OperationType.LEFT_JOIN.displayName);
         this.rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_JOIN.displayName);
         this.cartesianProductMenuItem = new JMenuItem(OperationType.CARTESIAN_PRODUCT.displayName);
         this.unionMenuItem = new JMenuItem(OperationType.UNION.displayName);
         this.intersectionMenuItem = new JMenuItem(OperationType.INTERSECTION.displayName);
+        this.differenceMenuItem = new JMenuItem(OperationType.DIFFERENCE.displayName);
         this.importTableMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
         this.importTreeMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTree"));
     }
@@ -184,9 +190,13 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.getContentPane().add(this.topMenuBar, BorderLayout.NORTH);
         this.getContentPane().add(graphComponent, BorderLayout.CENTER);
         this.getContentPane().add(tablesPanel, BorderLayout.WEST);
-        this.getContentPane().add(this.operationsPanel, BorderLayout.EAST);
+        JScrollPane scrollPane = new JScrollPane(operationsPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        this.getContentPane().add(scrollPane, BorderLayout.EAST);
         this.getContentPane().add(this.toolBar, BorderLayout.SOUTH);
 
+        
+        
         this.addOperationButtons();
         this.addBottomButtons();
         this.addTopMenuBarFileItems();
@@ -313,24 +323,30 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         tablesGraph.getStylesheet().putCellStyle(customStyle, style);
 
     }
-
+    
     private void addOperationButtons() {
         mxStylesheet stylesheet = graph.getStylesheet();
 
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECTION, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SORT, this, this.operationsPanel));
-//        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.operationsPanel));
-//        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.operationsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_JOIN, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_JOIN, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.operationsPanel));
     }
 
     private void addBottomButtons() {
@@ -398,8 +414,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.selectionMenuItem.addActionListener(this);
         this.projectionMenuItem.addActionListener(this);
         this.sortMenuItem.addActionListener(this);
-//        this.aggregationMenuItem.addActionListener(this);
-//        this.groupMenuItem.addActionListener(this);
+        this.aggregationMenuItem.addActionListener(this);
+        this.groupMenuItem.addActionListener(this);
         this.renameMenuItem.addActionListener(this);
 //        this.indexerMenuItem.addActionListener(this);
         this.joinMenuItem.addActionListener(this);
@@ -415,8 +431,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.operationsMenuItem.add(this.projectionMenuItem);
         this.operationsMenuItem.add(this.filterColumnMenuItem);
         this.operationsMenuItem.add(this.sortMenuItem);
-//        this.operationsMenuItem.add(this.aggregationMenuItem);
-//        this.operationsMenuItem.add(this.groupMenuItem);
+        this.operationsMenuItem.add(this.aggregationMenuItem);
+        this.operationsMenuItem.add(this.groupMenuItem);
         this.operationsMenuItem.add(this.renameMenuItem);
 //        this.operationsMenuItem.add(this.indexerMenuItem);
         this.operationsMenuItem.addSeparator();
