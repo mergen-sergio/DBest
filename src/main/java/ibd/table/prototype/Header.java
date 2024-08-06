@@ -44,9 +44,8 @@ public class Header {
     public String save(String path) throws IOException {
         String filePath = get(Header.FILE_PATH);
         if(filePath!=null){
-            //String filePathRelative = new File(new File(path).getAbsolutePath()).getParentFile().toURI().relativize(new File(new File(filePath).getAbsolutePath()).toURI()).getPath();
-            //path = replaceFileName(filePath, path);
-            //set(Header.FILE_PATH,filePath);
+            String filePathRelative = new File(new File(path).getAbsolutePath()).getParentFile().toURI().relativize(new File(new File(filePath).getAbsolutePath()).toURI()).getPath();
+            set(Header.FILE_PATH,filePathRelative);
         }
         setBool("saved",true);
         Gson gson = new Gson();
