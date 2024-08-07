@@ -78,9 +78,22 @@ public class Prototype implements Iterable<Column> {
         }
         columns.add(c);
         c.index = columns.size()-1;
+
         if (c.isDinamicSize()) {
             stat = false;
         }
+        columnsDic.put(c.getName(), c);
+    }
+
+    public void replaceColumn(Column c) {
+        if(!columnsDic.containsKey(c.getName())) {
+            this.addColumn(c);
+            return;
+        }
+        Column ori = columnsDic.get(c.getName());
+
+        columns.set(ori.index, c);
+        c.index = ori.index;
         columnsDic.put(c.getName(), c);
     }
 
@@ -276,7 +289,7 @@ public class Prototype implements Iterable<Column> {
 
     /**
      *
-     * @return the size in bytes considering all columns of the prototypr
+     * @return the size in bytes considering all columns of the prototype
      */
     public int getSizeInBytes() {
         int size = Integer.BYTES;

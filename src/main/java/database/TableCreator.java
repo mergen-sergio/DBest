@@ -162,7 +162,26 @@ public class TableCreator {
         String dataFileName = removeSuffix(headerFile.getPath(), ".head") + ".dat";
         header.set(Header.FILE_PATH, dataFileName);
 
-        //String.format("%s%s", tableName, FileType.HEADER.extension)
+        Map<String,Integer> dict = new HashMap<>();
+
+        for(BasicDataRow row: rows){
+            for(ibd.table.prototype.column.Column c:prototype.getColumns()){
+                if(!c.isString())continue;
+                String key = c.getName();
+                String s = row.getString(key);
+                if(s==null)continue;
+                if(dict.containsKey(key))
+                    dict.put(key,Math.max(dict.get(key),s.length() + 1));
+                else
+                    dict.put(key,s.length() + 1);
+            }
+        }
+        for(Map.Entry<String,Integer> c:dict.entrySet()) {
+            prototype.replaceColumn(new StringColumn(c.getKey(), (short) (c.getValue() + 1)));
+        }
+
+
+            //String.format("%s%s", tableName, FileType.HEADER.extension)
         String headerFileName = headerFile.getPath();
 
         mxCell jCell = null;

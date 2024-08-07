@@ -72,7 +72,6 @@ public class Column extends Metadata {
                 + getName().getBytes().length + Integer.BYTES
                 + Integer.BYTES
                 + Short.BYTES;
-
     }
 
 }
