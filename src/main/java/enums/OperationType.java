@@ -9,6 +9,7 @@ import entities.Action.CreateOperationCellAction;
 
 import gui.frames.forms.operations.BooleanExpressionForm;
 import gui.frames.forms.operations.IOperationForm;
+import gui.frames.forms.operations.JoinForm;
 import gui.frames.forms.operations.unary.AggregationForm;
 import gui.frames.forms.operations.unary.GroupForm;
 import gui.frames.forms.operations.unary.LimitForm;
@@ -51,7 +52,7 @@ DUPLICATE_REMOVAL(ConstantController.getString("operation.duplicateRemoval"), "\
         AGGREGATION       (ConstantController.getString("operation.aggregation"), "G", "aggregation", "aggregation[args](relation)", OperationArity.UNARY, AggregationForm.class, Aggregation.class, false),
     SORT              (ConstantController.getString("operation.sort"), "↕", "sort", "sort[args](relation)", OperationArity.UNARY, SortForm.class, Sort.class, true),
 //    INDEXER           (ConstantController.getString("operation.indexer"), "❶", "indexer", "indexer[args](source)", OperationArity.UNARY, IndexerForm.class, Indexer.class),
-    JOIN              (ConstantController.getString("operation.join"), "|X|", "join", "join[args](source1,source2)", OperationArity.BINARY, BooleanExpressionForm.class, Join.class, false),
+    JOIN              (ConstantController.getString("operation.join"), "|X|", "join", "join[args](source1,source2)", OperationArity.BINARY, JoinForm.class, Join.class, false),
     SEMI_JOIN              (ConstantController.getString("operation.semiJoin"), "\u22C9", "semiJoin", "semiJoin[args](source1,source2)", OperationArity.BINARY, BooleanExpressionForm.class, SemiJoin.class, false),
     ANTI_JOIN              (ConstantController.getString("operation.antiJoin"), "\u25B7", "antiJoin", "antiJoin[args](source1,source2)", OperationArity.BINARY, BooleanExpressionForm.class, AntiJoin.class, false),
     LEFT_JOIN         (ConstantController.getString("operation.leftJoin"), "⟕", "leftJoin", "leftJoin[args](source1,source2)", OperationArity.BINARY, BooleanExpressionForm.class, LeftJoin.class, false),

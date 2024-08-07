@@ -41,10 +41,27 @@ public class FileUtils {
 
     public static Path getDBestLogo() throws Exception{
 
-        File assets = new File("assets");
+        File assets = new File("assets\\images");
 
-        File images = (Objects.requireNonNull(Arrays.stream(Objects.requireNonNull(assets.listFiles()))
-                .filter(x -> x.getName().equals("dbest-logo.png")).findFirst().orElseThrow()));
+//        File images = (Objects.requireNonNull(Arrays.stream(Objects.requireNonNull(assets.listFiles()))
+//                .filter(x -> x.getName().equals("dbest-logo.png")).findFirst().orElseThrow()));
+File[] files = assets.listFiles();
+        if (files == null) {
+            throw new NullPointerException("No files found in the assets directory.");
+        }
+
+        File images = null;
+        for (File file : files) {
+            if (file.getName().equals("dbest-logo.png")) {
+                images = file;
+                break;
+            }
+        }
+
+        if (images == null) {
+            throw new RuntimeException("File dbest-logo.png not found.");
+        }
+
 
         return images.toPath();
 

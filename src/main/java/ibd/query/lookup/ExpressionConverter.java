@@ -38,9 +38,9 @@ public class ExpressionConverter {
                 String leftColumn = getQualifiedColumnName((Variable) ae.getFirstElement());
                 String rightColumn = getQualifiedColumnName((Variable) ae.getSecondElement());
                 int compType = convertComparisonType(ae);
-                TwoColumnsLookupFilter tclf = new TwoColumnsLookupFilter(leftColumn, rightColumn, compType);
-                //SingleColumnLookupFilterByValue
-                return tclf;
+                //TwoColumnsLookupFilter tclf = new TwoColumnsLookupFilter(leftColumn, rightColumn, compType);
+                SingleColumnLookupFilterByReference sclf = new SingleColumnLookupFilterByReference(leftColumn, compType, rightColumn);
+                return sclf;
             } else {//if (ae.isSecondElementAColumn()){
                 String leftColumn = getQualifiedColumnName((Variable) ae.getFirstElement());
                 Comparable value = null;

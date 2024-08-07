@@ -7,11 +7,17 @@ import javax.swing.JTextPane;
 
 import controllers.ConstantController;
 import engine.info.Parameters;
+import files.FileUtils;
 import ibd.query.QueryStats;
+import javax.swing.ImageIcon;
 
 public class GeneralStatsFrame extends JDialog {
 
     public GeneralStatsFrame() {
+        try {
+            this.setIconImage(new ImageIcon(String.valueOf(FileUtils.getDBestLogo())).getImage());
+        }catch (Exception ignored){
+        }
         JTextPane textPane = new JTextPane();
 
         this.add(textPane);

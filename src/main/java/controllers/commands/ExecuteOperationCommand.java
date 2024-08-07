@@ -83,6 +83,10 @@ public class ExecuteOperationCommand extends BaseUndoableRedoableCommand {
         ) {
             this.executeOperationWithoutForm(operationType);
         }
+        
+        //TO DO: added to recalculate after operation created.
+        //need to check if the recalculate before creation (a few lines of code above) is really needed
+        TreeUtils.recalculateContent(operationCell);
     }
 
     @Override

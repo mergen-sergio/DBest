@@ -80,7 +80,6 @@ public class MainController extends MainFrame {
 
     public MainController() {
         super(new HashSet<>());
-        System.out.println("teste");
         this.tablesComponent.getGraphControl().addMouseListener(new MouseAdapter() {
  
             @Override

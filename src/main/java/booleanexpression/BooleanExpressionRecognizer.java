@@ -28,6 +28,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static booleanexpression.Utils.getElement;
+import entities.Column;
+import entities.cells.OperationCell;
+import gui.frames.forms.operations.OperationForm;
 import ibd.table.prototype.query.fields.DoubleField;
 import ibd.table.prototype.query.fields.FloatField;
 import ibd.table.prototype.query.fields.IntegerField;
@@ -37,9 +40,12 @@ import ibd.table.prototype.query.fields.StringField;
 public class BooleanExpressionRecognizer {
 
     private final List<Cell> parents;
+    private final List<Column> leftSideColumns;
 
-    public BooleanExpressionRecognizer(mxCell jCell){
+    public BooleanExpressionRecognizer(mxCell jCell) {
         this.parents = CellUtils.getActiveCells().get(jCell).getParents();
+        OperationCell cell = (OperationCell)CellUtils.getActiveCells().get(jCell);
+        leftSideColumns = OperationForm.getLeftSideCorrelationColumns(cell);
     }
 
     public String recognizer(BooleanExpression booleanExpression) {
@@ -99,12 +105,11 @@ public class BooleanExpressionRecognizer {
         }
     }
 
-
     public BooleanExpression recognizer(String text) throws BooleanExpressionException {
         BooleanExpressionDSLParser parser = new BooleanExpressionDSLParser(
-            new CommonTokenStream(
-                new BooleanExpressionDSLLexer(CharStreams.fromString(text))
-            )
+                new CommonTokenStream(
+                        new BooleanExpressionDSLLexer(CharStreams.fromString(text))
+                )
         );
 
         parser.removeErrorListeners();
@@ -128,7 +133,9 @@ public class BooleanExpressionRecognizer {
     private BooleanExpression recognize(String text) throws BooleanExpressionException {
         boolean isAtomic = !this.hasAnyLogicalOperator(text);
 
-        if (isAtomic) return (this.recognizeAtomic(text));
+        if (isAtomic) {
+            return (this.recognizeAtomic(text));
+        }
 
         List<String> tokens = new ArrayList<>(this.tokenize(text).stream().map(String::strip).toList());
 
@@ -155,14 +162,24 @@ public class BooleanExpressionRecognizer {
         List<Integer> andIndexes = new ArrayList<>();
 
         for (int i = 0; i < tokens.size(); i++) {
-            if (this.isRightBracket(tokens.get(i))) bracketsController++;
-            if (this.isLeftBracket(tokens.get(i))) bracketsController--;
+            if (this.isRightBracket(tokens.get(i))) {
+                bracketsController++;
+            }
+            if (this.isLeftBracket(tokens.get(i))) {
+                bracketsController--;
+            }
 
-            if (bracketsController == 0 && this.isAnd(tokens.get(i))) andIndexes.add(i);
-            if (bracketsController == 0 && this.isOr(tokens.get(i))) existsOr = true;
+            if (bracketsController == 0 && this.isAnd(tokens.get(i))) {
+                andIndexes.add(i);
+            }
+            if (bracketsController == 0 && this.isOr(tokens.get(i))) {
+                existsOr = true;
+            }
         }
 
-        if (!existsOr) return;
+        if (!existsOr) {
+            return;
+        }
 
         for (Integer index : andIndexes) {
             tokens.add(index - 1, "(");
@@ -185,13 +202,9 @@ public class BooleanExpressionRecognizer {
             }
 
             if (this.isAndOrOr(currentToken)) {
-                if (
-                    logicalOperatorIndexes.contains(i) &&
-                    (
-                        (this.isAnd(currentToken) && logicalOperator.equals(LogicalOperator.AND)) ||
-                        (this.isOr(currentToken) && logicalOperator.equals(LogicalOperator.OR))
-                    )
-                ) {
+                if (logicalOperatorIndexes.contains(i)
+                        && ((this.isAnd(currentToken) && logicalOperator.equals(LogicalOperator.AND))
+                        || (this.isOr(currentToken) && logicalOperator.equals(LogicalOperator.OR)))) {
                     expressionIndex++;
                 } else {
                     eachExpressionTokens.get(expressionIndex).add(currentToken);
@@ -215,11 +228,19 @@ public class BooleanExpressionRecognizer {
         int bracketsController = 0;
 
         for (int i = 0; i < tokens.size(); i++) {
-            if (this.isRightBracket(tokens.get(i))) bracketsController++;
-            if (this.isLeftBracket(tokens.get(i))) bracketsController--;
+            if (this.isRightBracket(tokens.get(i))) {
+                bracketsController++;
+            }
+            if (this.isLeftBracket(tokens.get(i))) {
+                bracketsController--;
+            }
 
-            if (bracketsController == 0 && this.isAnd(tokens.get(i))) andIndexes.add(i);
-            if (bracketsController == 0 && this.isOr(tokens.get(i))) orIndexes.add(i);
+            if (bracketsController == 0 && this.isAnd(tokens.get(i))) {
+                andIndexes.add(i);
+            }
+            if (bracketsController == 0 && this.isOr(tokens.get(i))) {
+                orIndexes.add(i);
+            }
         }
 
         return andIndexes.isEmpty() ? orIndexes : andIndexes;
@@ -237,10 +258,16 @@ public class BooleanExpressionRecognizer {
             int bracketsController = 0;
 
             for (String token : tokens.stream().limit(tokens.size() - 1L).toList()) {
-                if (this.isRightBracket(token)) bracketsController--;
-                if (this.isLeftBracket(token)) bracketsController++;
+                if (this.isRightBracket(token)) {
+                    bracketsController--;
+                }
+                if (this.isLeftBracket(token)) {
+                    bracketsController++;
+                }
 
-                if (bracketsController < 1) return false;
+                if (bracketsController < 1) {
+                    return false;
+                }
             }
 
             return bracketsController == 1;
@@ -257,11 +284,19 @@ public class BooleanExpressionRecognizer {
         Optional<LogicalOperator> logicalOperator = Optional.empty();
 
         for (String token : tokens) {
-            if (this.isRightBracket(token)) bracketsController++;
-            if (this.isLeftBracket(token)) bracketsController--;
+            if (this.isRightBracket(token)) {
+                bracketsController++;
+            }
+            if (this.isLeftBracket(token)) {
+                bracketsController--;
+            }
 
-            if (bracketsController == 0 && this.isAnd(token)) return Optional.of(LogicalOperator.AND);
-            if (bracketsController == 0 && this.isOr(token)) logicalOperator = Optional.of(LogicalOperator.OR);
+            if (bracketsController == 0 && this.isAnd(token)) {
+                return Optional.of(LogicalOperator.AND);
+            }
+            if (bracketsController == 0 && this.isOr(token)) {
+                logicalOperator = Optional.of(LogicalOperator.OR);
+            }
         }
 
         return logicalOperator;
@@ -320,12 +355,12 @@ public class BooleanExpressionRecognizer {
         String finalText = text;
 
         String relationalOperator = ConstantController.RELATIONAL_OPERATORS
-            .stream()
-            .filter(finalText::contains)
-            .findFirst()
-            .orElseThrow(() -> new BooleanExpressionException(
+                .stream()
+                .filter(finalText::contains)
+                .findFirst()
+                .orElseThrow(() -> new BooleanExpressionException(
                 ConstantController.getString("booleanExpression.error.relationalOperatorUnknown")
-            ));
+        ));
 
         String[] elements = text.split(relationalOperator);
 
@@ -338,26 +373,49 @@ public class BooleanExpressionRecognizer {
 
         if (firstElement instanceof Variable) {
             this.parents
-                .stream()
-                .map(Cell::getColumns)
-                .flatMap(Collection::stream)
-                .filter(column -> column.NAME.equals(elements[0].strip()) || column.getSourceAndName().equals(elements[0].strip()))
-                .findAny()
-                .orElseThrow(() -> new BooleanExpressionException(
+                    .stream()
+                    .map(Cell::getColumns)
+                    .flatMap(Collection::stream)
+                    .filter(column -> column.NAME.equals(elements[0].strip()) || column.getSourceAndName().equals(elements[0].strip()))
+                    .findAny()
+                    .orElseThrow(() -> new BooleanExpressionException(
                     ConstantController.getString("booleanExpression.error.elementIsNotAColumn")
-                ));
+            ));
         }
 
+//        if (secondElement instanceof Variable) {
+//            this.parents
+//                .stream()
+//                .map(Cell::getColumns)
+//                .flatMap(Collection::stream)
+//                .filter(column -> column.NAME.equals(elements[1].strip()) || column.getSourceAndName().equals(elements[1].strip()))
+//                .findAny()
+//                .orElseThrow(() -> new BooleanExpressionException(
+//                    ConstantController.getString("booleanExpression.error.elementIsNotAColumn")
+//                ));
+//        }
         if (secondElement instanceof Variable) {
-            this.parents
-                .stream()
-                .map(Cell::getColumns)
-                .flatMap(Collection::stream)
-                .filter(column -> column.NAME.equals(elements[1].strip()) || column.getSourceAndName().equals(elements[1].strip()))
-                .findAny()
-                .orElseThrow(() -> new BooleanExpressionException(
-                    ConstantController.getString("booleanExpression.error.elementIsNotAColumn")
-                ));
+            boolean found = false;
+            outerLoop:
+            for (Cell parent : this.parents) {
+                List<Column> columns = parent.getColumns();
+                for (Column column : columns) {
+                    if (column.NAME.equals(elements[1].strip()) || column.getSourceAndName().equals(elements[1].strip())) {
+                        found = true;
+                        break outerLoop;
+                    }
+                }
+            }
+                for (Column column : leftSideColumns) {
+                    if (column.NAME.equals(elements[1].strip()) || column.getSourceAndName().equals(elements[1].strip())) {
+                        found = true;
+                    }
+                }
+            if (!found) {
+                throw new BooleanExpressionException(
+                        ConstantController.getString("booleanExpression.error.elementIsNotAColumn")
+                );
+            }
         }
 
         return new AtomicExpression(firstElement, secondElement, RelationalOperator.getOperator(relationalOperator));

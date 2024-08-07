@@ -6,6 +6,7 @@ import entities.cells.Cell;
 import entities.cells.CellStats;
 import entities.cells.OperationCell;
 import entities.utils.cells.CellUtils;
+import files.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.swing.*;
@@ -42,6 +43,11 @@ public class ComparatorFrame extends JFrame implements ActionListener {
     int tuplesLoaded = 0;
 
     public ComparatorFrame(){
+        
+        try {
+            this.setIconImage(new ImageIcon(String.valueOf(FileUtils.getDBestLogo())).getImage());
+        }catch (Exception ignored){
+        }
 
         this.markedCells = CellUtils
                 .getActiveCells()

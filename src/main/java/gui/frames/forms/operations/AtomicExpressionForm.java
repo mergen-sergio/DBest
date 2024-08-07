@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static booleanexpression.Utils.*;
+import entities.cells.OperationCell;
+import ibd.query.Operation;
 
 public class AtomicExpressionForm extends OperationForm implements ActionListener, IOperationForm, IFormCondition {
 
@@ -100,26 +102,59 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
 
 		this.root = root;
 
-		parent1.getColumns().stream()
-				.map(column -> column.SOURCE).distinct()
-				.forEach(comboBoxSource2::addItem);
-
-		setColumns(comboBoxColumn2, comboBoxSource2, parent1);
+//		parent1.getColumns().stream()
+//				.map(column -> column.SOURCE).distinct()
+//				.forEach(comboBoxSource2::addItem);
+//
+//		setColumns(comboBoxColumn2, comboBoxSource2, parent1);
 
 		parent2 = null;
 
+                
+                
 		if(CellUtils.getActiveCell(jCell).get().getParents().size() == 2){
-
+                        OperationCell cell = (OperationCell)CellUtils.getActiveCell(jCell).get();
 			this.parent2 = CellUtils.getActiveCell(jCell).get().getParents().get(1);
-			parent2.getColumns().stream()
-					.map(column -> column.SOURCE).distinct()
-					.forEach(comboBoxSource::addItem);
+//			parent2.getColumns().stream()
+//					.map(column -> column.SOURCE).distinct()
+//					.forEach(comboBoxSource::addItem);
+
+                        java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell);
 
 			parent2.getColumns().stream()
 					.map(column -> column.SOURCE).distinct()
 					.forEach(comboBoxSource2::addItem);
+                        
+                        leftSideCorrelationCols.stream()
+					.map(column -> column.SOURCE).distinct()
+					.forEach(comboBoxSource2::addItem);
+                        
+                        
+                        setColumns(comboBoxColumn2, comboBoxSource2, parent2);
 
 		}
+                else if (CellUtils.getActiveCell(jCell).get().getChild() !=null){
+                        OperationCell cell = CellUtils.getActiveCell(jCell).get().getChild();
+                    
+			this.parent2 = cell;
+//			parent2.getColumns().stream()
+//					.map(column -> column.SOURCE).distinct()
+//					.forEach(comboBoxSource::addItem);
+
+                        java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell.getOperator());
+
+//			parent2.getColumns().stream()
+//					.map(column -> column.SOURCE).distinct()
+//					.forEach(comboBoxSource2::addItem);
+                        
+                        leftSideCorrelationCols.stream()
+					.map(column -> column.SOURCE).distinct()
+					.forEach(comboBoxSource2::addItem);
+                        
+                        
+                        setColumns(comboBoxColumn2, comboBoxSource2, parent2);
+
+                }
 
 		for(ActionListener actionListener : comboBoxSource.getActionListeners())
 			comboBoxSource.removeActionListener(actionListener);
@@ -272,20 +307,22 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
 
 				setColumns(comboBoxColumn, comboBoxSource, parent1);
 
-			}else if(parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
-					equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))){
-
-				setColumns(comboBoxColumn, comboBoxSource, parent2);
-
-			}
+//			}else if(parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
+//					equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))){
+//
+//				setColumns(comboBoxColumn, comboBoxSource, parent2);
+//
+//			}
 		}
 		if(e.getSource() == comboBoxSource2){
-			if(parent1.getColumns().stream().anyMatch(column -> column.SOURCE.
-							equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))){
-
-				setColumns(comboBoxColumn2, comboBoxSource2, parent1);
-
-			}else if(parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
+//			if(parent1.getColumns().stream().anyMatch(column -> column.SOURCE.
+//							equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))){
+//
+//				setColumns(comboBoxColumn2, comboBoxSource2, parent1);
+//
+			}
+                //else 
+                        if(parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
 					equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))){
 
 				setColumns(comboBoxColumn2, comboBoxSource2, parent2);

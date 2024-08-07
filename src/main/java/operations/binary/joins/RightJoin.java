@@ -21,4 +21,14 @@ public class RightJoin extends JoinOperators {
         }
         return null;
     }
+    
+    @Override
+    public Operation createJoinOperator(Operation operator1, Operation operator2, JoinPredicate joinPredicate) {
+        try {
+            return new RightNestedLoopJoin(operator1, operator2, joinPredicate);
+        } catch (Exception ex) {
+            Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
 }

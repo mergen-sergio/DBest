@@ -8,6 +8,9 @@ package ibd.query.binaryop.join;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.lookup.LookupFilter;
+import ibd.query.lookup.NoLookupFilter;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -17,7 +20,7 @@ import java.util.List;
  *
  * @author Sergio
  */
-public class CrossJoin extends Join {
+public class CrossJoinOld extends Join {
 
     /**
      *
@@ -25,7 +28,7 @@ public class CrossJoin extends Join {
      * @param rightOperation the right side operation
      * @throws Exception
      */
-    public CrossJoin(Operation leftOperation, Operation rightOperation) throws Exception {
+    public CrossJoinOld(Operation leftOperation, Operation rightOperation) throws Exception {
         super(leftOperation, rightOperation, new JoinPredicate());
     }
     
@@ -72,6 +75,7 @@ public class CrossJoin extends Join {
         //the iterator over the operation on the left side
         Iterator<Tuple> rightTuples;
         
+        List rightTuplesList;
         
         public CrossJoinIterator(List<Tuple> processedTuples,  boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
@@ -86,25 +90,29 @@ public class CrossJoin extends Join {
         protected Tuple findNextTuple() {
 
             //the left side cursor only advances if the current left side tuple is done.
-            //it means all corresponding tuples from the right side were processed
+            //it means all tuples from the right side were processed
             while (currentLeftTuple != null || leftTuples.hasNext()) {
                 if (currentLeftTuple == null) {
                     currentLeftTuple = leftTuples.next();
-
                     //the computed rows from the current left side tuple can be used by the right part of the join
                     processedTuples.add(currentLeftTuple);
-
-                    //lookup the tuples from the right side
-                    rightTuples = rightOperation.lookUp(processedTuples, true);
-
+                    //stores the right side list only once to be used with every left side tuple 
+                    if (rightTuplesList==null){
+                        rightTuplesList = new ArrayList();
+                        Iterator<Tuple> tempTuples = rightOperation.lookUp(processedTuples,  false);
+                         while (tempTuples.hasNext()) {
+                             Tuple curTuple2 = (Tuple) tempTuples.next();
+                             rightTuplesList.add(curTuple2);
+                         }
+                    }
                     
+                    rightTuples = rightTuplesList.iterator();
                 }
 
                 //iterate through the right side tuples that satisfy the lookup
                 while (rightTuples.hasNext()) {
-                    //sgbd.info.Query.COMPARE_JOIN++;
                     Tuple curTuple2 = (Tuple) rightTuples.next();
-                    //create a returning tuple and add the joined tuples
+                    //create returning tuple and add the joined tuples
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
                     //a tuple must satisfy the lookup filter that comes from the parent operation
@@ -113,17 +121,18 @@ public class CrossJoin extends Join {
                     }
 
                 }
+                //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
+                processedTuples.remove(processedTuples.size() - 1);
                 //All corresponding tuples from the right side processed. 
                 //set null to allow left side cursor to advance
                 currentLeftTuple = null;
-                
-                //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
-                processedTuples.remove(processedTuples.size() - 1);
             }
 
             //no more tuples to be joined
             return null;
         }
     }
+    
+    
 
 }

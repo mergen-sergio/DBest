@@ -103,6 +103,9 @@ public class IndexScan extends SourceOperation {
 
         //an empty row filter is prepared, just in case
         slowLookupFilter = new NoRowLookupFilter();
+        
+        //reset variable
+        canLookup = false;
 
         //the parent operator has delegated filters to the index scan
         if (hasDelegatedFilters) {

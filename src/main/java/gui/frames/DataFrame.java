@@ -6,6 +6,7 @@ import engine.info.Parameters;
 import entities.Column;
 import entities.cells.Cell;
 import entities.cells.OperationCell;
+import files.FileUtils;
 import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
@@ -111,6 +112,11 @@ public class DataFrame extends JDialog implements ActionListener {
 
         super((Window) null, ConstantController.getString("dataframe"));
         this.setModal(true);
+        
+        try {
+            this.setIconImage(new ImageIcon(String.valueOf(FileUtils.getDBestLogo())).getImage());
+        }catch (Exception ignored){
+        }
 
         if (cell instanceof OperationCell operationCell) {
             this.lblText.setText(operationCell.getType().displayName + ":");
