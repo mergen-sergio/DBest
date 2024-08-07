@@ -147,39 +147,8 @@ public class TableCreator {
 
     public static FYITableCell createFYITable(
             String tableName, List<entities.Column> columns, Cell tableCell) {
-
-        List<BasicDataRow> rows = new ArrayList<>(getRowData(columns, TuplesExtractor.getAllRowsMap(tableCell.getOperator(), false)));
-        Prototype prototype = createPrototype(columns);
-
         File file = new File(tableName + FileType.HEADER.extension);
-
-        Table table = null;
-        mxCell jCell = null;
-        try {
-            table = openTable(new Header(prototype, tableName), false);
-
-            table.open();
-
-            RowConverter converter = new RowConverter();
-            for (BasicDataRow row : rows) {
-                //BasicDataRow dataRow = converter.convertRow(row);
-                table.addRecord(row);
-            }
-
-            table.saveHeader(String.format("%s%s", tableName, FileType.HEADER.extension));
-
-            FileUtils.moveToTempDirectory(file, new File(tableName + FileType.FYI.extension));
-
-            jCell = (mxCell) MainFrame
-                    .getGraph()
-                    .insertVertex(
-                            MainFrame.getGraph().getDefaultParent(), null, tableName, 0, 0,
-                            ConstantController.TABLE_CELL_WIDTH, ConstantController.TABLE_CELL_HEIGHT, CellType.FYI_TABLE.id
-                    );
-        } catch (Exception ex) {
-        }
-        return new FYITableCell(jCell, tableName, columns, table, prototype, file);
-
+        return TableCreator.createFYITable(tableName,columns,TuplesExtractor.getAllRowsMap(tableCell.getOperator(),false),file,false);
     }
 
     public static FYITableCell createFYITable(
@@ -190,7 +159,7 @@ public class TableCreator {
         Prototype prototype = createPrototype(columns);
 
         Header header = new Header(prototype, tableName);
-        String dataFileName = removeSuffix(headerFile.getPath(), ".head");
+        String dataFileName = removeSuffix(headerFile.getPath(), ".head") + ".dat";
         header.set(Header.FILE_PATH, dataFileName);
 
         //String.format("%s%s", tableName, FileType.HEADER.extension)

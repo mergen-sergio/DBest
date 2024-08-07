@@ -227,3 +227,6 @@ META-INF/
 .classpath
 
 # End of https://www.toptal.com/developers/gitignore/api/maven,java,intellij,eclipse
+
+*.dat
+*.head

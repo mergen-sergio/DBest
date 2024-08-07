@@ -43,6 +43,7 @@ public class Header {
     }
     public String save(String path) throws IOException {
         String filePath = get(Header.FILE_PATH);
+        this.path = path;
         if(filePath!=null){
             String filePathRelative = new File(new File(path).getAbsolutePath()).getParentFile().toURI().relativize(new File(new File(filePath).getAbsolutePath()).toURI()).getPath();
             set(Header.FILE_PATH,filePathRelative);
@@ -94,11 +95,11 @@ public class Header {
 
     public String getTablePath(){
         String filePath = this.get(Header.FILE_PATH);
-        if(this.path!=null && filePath!=null){
-            filePath = Path.of(filePath).isAbsolute() ? filePath : new File(new File(this.path).getAbsolutePath()).getParentFile() + "/" + filePath;
-        }
         if(filePath == null){
             filePath = this.get(Header.TABLE_NAME)+".dat";
+        }
+        if(this.path!=null){
+            filePath = Path.of(filePath).isAbsolute() ? filePath : new File(new File(this.path).getAbsolutePath()).getParentFile() + "/" + filePath;
         }
         return filePath;
     }
