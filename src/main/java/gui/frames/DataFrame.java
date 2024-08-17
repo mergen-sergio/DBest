@@ -11,6 +11,7 @@ import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
 import ibd.query.QueryStats;
+import ibd.query.ReferedDataSource;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -23,6 +24,7 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -194,9 +196,17 @@ public class DataFrame extends JDialog implements ActionListener {
         this.currentLastPage = Math.max(this.currentLastPage, page);
 
         if (!this.rows.isEmpty()) {
-            for (Map.Entry<String, List<String>> columns : this.cell.getOperator().getContentInfo().entrySet()) {
-                for (String columnName : columns.getValue()) {
-                    model.addColumn(Column.composeSourceAndName(columns.getKey(), columnName));
+//            for (Map.Entry<String, List<String>> columns : this.cell.getOperator().getContentInfo().entrySet()) {
+//                for (String columnName : columns.getValue()) {
+//                    model.addColumn(Column.composeSourceAndName(columns.getKey(), columnName));
+//                }
+//            }
+            
+            ReferedDataSource sources[] = this.cell.getOperator().getDataSources();
+            for (ReferedDataSource source : sources) {
+                List<ibd.table.prototype.column.Column> columns = source.prototype.getColumns();
+                for (ibd.table.prototype.column.Column column : columns) {
+                    model.addColumn(Column.composeSourceAndName(source.alias, column.getName()));
                 }
             }
 
@@ -238,12 +248,14 @@ public class DataFrame extends JDialog implements ActionListener {
 
     private void getTuples(int currentElement, int page, int lastElement) throws Exception {
         if (page > this.currentLastPage) {
-            Map<String, String> row = TuplesExtractor.getRow(this.cell.getOperator(), true);
+            Set<String> getPossibleKeys = TuplesExtractor.getPossibleKeys(this.cell.getOperator(), true);
+            
+            Map<String, String> row = TuplesExtractor.getRow(this.cell.getOperator(), true, getPossibleKeys);
 
             while (row != null && currentElement < lastElement) {
                 this.rows.add(row);
 
-                row = TuplesExtractor.getRow(this.cell.getOperator(), true);
+                row = TuplesExtractor.getRow(this.cell.getOperator(), true, getPossibleKeys);
 
                 if (row != null) currentElement++;
 

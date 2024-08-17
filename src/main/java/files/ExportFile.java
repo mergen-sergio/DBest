@@ -5,6 +5,7 @@ import controllers.ConstantController;
 import controllers.MainController;
 import database.TableCreator;
 import database.TuplesExtractor;
+import static database.TuplesExtractor.getPossibleKeys;
 import dsl.utils.DslUtils;
 import engine.exceptions.DataBaseException;
 import entities.Column;
@@ -248,11 +249,11 @@ public class ExportFile extends JPanel {
 
             try {
                 operator.open();
-
+                Set<String> getPossibleKeys = TuplesExtractor.getPossibleKeys(operator, false);
+                
                 int i = 0;
-
                 while (operator.hasNext()) {
-                    Map<String, String> row = TuplesExtractor.getRow(cell.getOperator(), false);
+                    Map<String, String> row = TuplesExtractor.getRow(operator, false, getPossibleKeys);
                     if (row != null) {
                         rows.put(i++, row);
                     }

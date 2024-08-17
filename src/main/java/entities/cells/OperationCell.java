@@ -4,6 +4,7 @@ import com.mxgraph.model.mxCell;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxStyleUtils;
 import controllers.ConstantController;
+import database.RowConverter;
 import entities.Column;
 import entities.Edge;
 import entities.utils.cells.CellUtils;
@@ -15,6 +16,7 @@ import gui.frames.ErrorFrame;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.main.MainFrame;
 import ibd.query.Operation;
+import ibd.query.ReferedDataSource;
 import operations.IOperator;
 
 import java.lang.reflect.Constructor;
@@ -46,7 +48,7 @@ public final class OperationCell extends Cell {
 
     public OperationCell(mxCell jCell, OperationType type) {
         super(
-            type.getFormattedDisplayName(), jCell, ConstantController.OPERATION_CELL_HEIGHT
+                type.getFormattedDisplayName(), jCell, ConstantController.OPERATION_CELL_HEIGHT
         );
 
         this.parents = new ArrayList<>();
@@ -79,15 +81,15 @@ public final class OperationCell extends Cell {
     }
 
     public void editOperation(mxCell jCell) {
-        if (!this.hasBeenInitialized) return;
+        if (!this.hasBeenInitialized) {
+            return;
+        }
 
         try {
             Constructor<? extends IOperationForm> constructor = this.form.getDeclaredConstructor(mxCell.class);
             constructor.newInstance(jCell);
-        } catch (
-            InstantiationException | IllegalAccessException |
-            NoSuchMethodException | InvocationTargetException exception
-        ) {
+        } catch (InstantiationException | IllegalAccessException
+                | NoSuchMethodException | InvocationTargetException exception) {
             new ErrorFrame(ConstantController.getString("error"));
         }
     }
@@ -97,16 +99,16 @@ public final class OperationCell extends Cell {
     }
 
     public void updateOperation() {
-        if (!this.hasBeenInitialized) return;
+        if (!this.hasBeenInitialized) {
+            return;
+        }
 
         try {
             Constructor<? extends IOperator> constructor = this.operatorClass.getDeclaredConstructor();
             IOperator operation = constructor.newInstance();
             operation.executeOperation(this.getJCell(), this.getArguments());
-        } catch (
-            InstantiationException | IllegalAccessException |
-            NoSuchMethodException | InvocationTargetException exception
-        ) {
+        } catch (InstantiationException | IllegalAccessException
+                | NoSuchMethodException | InvocationTargetException exception) {
             new ErrorFrame(ConstantController.getString("error"));
         }
     }
@@ -190,17 +192,28 @@ public final class OperationCell extends Cell {
         this.error = true;
 
         this.errorMessage = switch (message) {
-            case NO_ONE_ARGUMENT -> ConstantController.getString("cell.operationCell.error.noOneArgument");
-            case NO_ONE_PARENT -> ConstantController.getString("cell.operationCell.error.noOneParent");
-            case NO_PARENT -> ConstantController.getString("cell.operationCell.error.noParent");
-            case NULL_ARGUMENT -> ConstantController.getString("cell.operationCell.error.nullArgument");
-            case PARENT_ERROR -> ConstantController.getString("cell.operationCell.error.parentError");
-            case PARENT_WITHOUT_COLUMN -> ConstantController.getString("cell.operationCell.error.parentWithoutColumn");
-            case NO_TWO_PARENTS -> ConstantController.getString("cell.operationCell.error.noTwoParents");
-            case NO_TWO_ARGUMENTS -> ConstantController.getString("cell.operationCell.error.noTwoArguments");
-            case EMPTY_ARGUMENT -> ConstantController.getString("cell.operationCell.error.emptyArgument");
-            case NO_PREFIX -> ConstantController.getString("cell.operationCell.error.noPrefix");
-            case SAME_SOURCE -> ConstantController.getString("cell.operationCell.error.sameSource");
+            case NO_ONE_ARGUMENT ->
+                ConstantController.getString("cell.operationCell.error.noOneArgument");
+            case NO_ONE_PARENT ->
+                ConstantController.getString("cell.operationCell.error.noOneParent");
+            case NO_PARENT ->
+                ConstantController.getString("cell.operationCell.error.noParent");
+            case NULL_ARGUMENT ->
+                ConstantController.getString("cell.operationCell.error.nullArgument");
+            case PARENT_ERROR ->
+                ConstantController.getString("cell.operationCell.error.parentError");
+            case PARENT_WITHOUT_COLUMN ->
+                ConstantController.getString("cell.operationCell.error.parentWithoutColumn");
+            case NO_TWO_PARENTS ->
+                ConstantController.getString("cell.operationCell.error.noTwoParents");
+            case NO_TWO_ARGUMENTS ->
+                ConstantController.getString("cell.operationCell.error.noTwoArguments");
+            case EMPTY_ARGUMENT ->
+                ConstantController.getString("cell.operationCell.error.emptyArgument");
+            case NO_PREFIX ->
+                ConstantController.getString("cell.operationCell.error.noPrefix");
+            case SAME_SOURCE ->
+                ConstantController.getString("cell.operationCell.error.sameSource");
         };
     }
 
@@ -229,8 +242,8 @@ public final class OperationCell extends Cell {
     }
 
     public OperationCell copy() {
-        OperationCell operationCell =  new OperationCell(
-            this.jCell, this.type, new ArrayList<>(this.parents), new ArrayList<>(this.arguments)
+        OperationCell operationCell = new OperationCell(
+                this.jCell, this.type, new ArrayList<>(this.parents), new ArrayList<>(this.arguments)
         );
 
         operationCell.name = this.name;
@@ -257,6 +270,29 @@ public final class OperationCell extends Cell {
     }
 
     public void setColumns() {
+        //List<Column> columns = new ArrayList<>();
+        columns.clear();
+        ReferedDataSource dataSources[] = null;
+        try {
+            this.getOperator().setDataSourcesInfo();
+            dataSources = this.getOperator().getDataSources();
+        } catch (Exception ex) {
+        }
+        for (int i = 0; i < dataSources.length; i++) {
+            ReferedDataSource dataSource = dataSources[i];
+            List<ibd.table.prototype.column.Column> sourceColumns = dataSource.prototype.getColumns();
+            for (int j = 0; j < sourceColumns.size(); j++) {
+                ibd.table.prototype.column.Column col = sourceColumns.get(j);
+                ColumnDataType dataType = RowConverter.convertDataType(col);
+                Column column = new Column(col.getName(), dataSource.alias, dataType, false);
+                columns.add(column);
+            }
+        }
+
+        //this.columns = columns;
+    }
+
+    public void setColumnsOld() {
         List<Column> columns = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> contentInfo : this.getOperator().getContentInfo().entrySet()) {

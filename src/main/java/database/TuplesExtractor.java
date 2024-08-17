@@ -22,13 +22,13 @@ public class TuplesExtractor {
         try {
             operator.open();
 
+            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
             Map<String, String> row;
-
-            row = getRow(operator, sourceAndName);
+            row = getRow(operator, sourceAndName, getPossibleKeys);
             int i = 0;
             while (row != null) {
                 rows.put(i++, row);
-                row = getRow(operator, sourceAndName);
+                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
 
             operator.close();
@@ -42,14 +42,14 @@ public class TuplesExtractor {
         List<Map<String, String>> rows = new ArrayList<>();
         try {
             operator.open();
-
+            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
+            
             Map<String, String> row;
-
-            row = getRow(operator, sourceAndName);
+            row = getRow(operator, sourceAndName, getPossibleKeys);
             int i = 1;
             while (row != null && i++ <= amount) {
                 rows.add(row);
-                row = getRow(operator, sourceAndName);
+                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
 
             operator.close();
@@ -64,14 +64,14 @@ public class TuplesExtractor {
 
         try {
             operator.open();
-
+            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
+            
             Map<String, String> row;
-
-            row = getRow(operator, sourceAndName);
+            row = getRow(operator, sourceAndName,getPossibleKeys);
 
             while (row != null) {
                 rows.add(row);
-                row = getRow(operator, sourceAndName);
+                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
 
             operator.close();
@@ -87,10 +87,11 @@ public class TuplesExtractor {
             throw new IllegalArgumentException();
         }
 
+        Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
         List<Map<String, String>> rows = new ArrayList<>();
 
         for (int i = 0; i < amount; i++) {
-            Map<String, String> row = getRow(operator, sourceAndName);
+            Map<String, String> row = getRow(operator, sourceAndName, getPossibleKeys);
             if (row == null) {
                 return rows;
             }
@@ -101,17 +102,10 @@ public class TuplesExtractor {
         return rows;
 
     }
-
-    public static Map<String, String> getRow(Operation operator, boolean sourceAndName) {
-        if (operator == null) {
-            return null;
-        }
-
-        Set<String> possibleKeys = new HashSet<>();
-
-        Map<String, String> row = new TreeMap<>();
-
-        for (Map.Entry<String, List<String>> content : operator.getContentInfo().entrySet()) {
+    
+    public static Set<String> getPossibleKeys(Operation operator, boolean sourceAndName) {
+    Set<String> possibleKeys = new HashSet<>();
+    for (Map.Entry<String, List<String>> content : operator.getContentInfo().entrySet()) {
             possibleKeys.addAll(content
                     .getValue()
                     .stream()
@@ -119,6 +113,16 @@ public class TuplesExtractor {
                     .toList()
             );
         }
+    return possibleKeys;
+    }
+
+    public static Map<String, String> getRow(Operation operator, boolean sourceAndName, Set<String> possibleKeys) {
+        if (operator == null) {
+            return null;
+        }
+
+
+        Map<String, String> row = new TreeMap<>();
 
         if (operator.hasNext()) {
             Tuple tuple = operator.next();

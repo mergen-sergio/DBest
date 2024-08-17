@@ -26,9 +26,6 @@ public class FilteredCSVRowsIterator extends CSVRowsIterator {
     
     @Override
     protected boolean match(LinkedDataRow dataRow){
-        if (dataRow.getValue(5).equals(94463L))
-            System.out.println(dataRow.toString());
-        System.out.println(dataRow.toString());
         return filter.match(dataRow);
     }
     

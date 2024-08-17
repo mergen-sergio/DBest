@@ -5,10 +5,6 @@ import controllers.ConstantController;
 import entities.cells.Cell;
 import entities.utils.cells.CellUtils;
 import gui.frames.forms.IFormCondition;
-import lib.booleanexpression.entities.elements.Element;
-import lib.booleanexpression.entities.elements.Null;
-import lib.booleanexpression.entities.expressions.AtomicExpression;
-import lib.booleanexpression.enums.RelationalOperator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,12 +12,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
 import java.util.Objects;
 
-import static booleanexpression.Utils.*;
-import entities.cells.OperationCell;
-import java.util.StringTokenizer;
 
 public class JoinForm extends OperationForm implements ActionListener, IOperationForm, IFormCondition {
 
@@ -40,7 +32,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
 
         boolean isTxtField1Empty = textArea.getText().isEmpty() || textArea.getText().isBlank();
 
-        btnReady.setEnabled(!isTxtField1Empty);
+        //btnReady.setEnabled(!isTxtField1Empty);
 
         updateToolTipText(isTxtField1Empty);
 

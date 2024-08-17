@@ -4,6 +4,7 @@
  */
 package database;
 
+import enums.ColumnDataType;
 import ibd.table.Table;
 import ibd.table.prototype.Header;
 import ibd.table.prototype.Prototype;
@@ -37,6 +38,35 @@ public class RowConverter {
             newProt.addColumn(convertColumn(c));
         }
         return newProt;
+    }
+    
+    public static ColumnDataType convertDataType(Column col){
+    ColumnDataType type;
+
+        switch (col.getType()) {
+            case "STRING":
+                type = ColumnDataType.STRING;
+                break;
+            case "INTEGER":
+                type = ColumnDataType.INTEGER;
+                break;
+            case "LONG":
+                type = ColumnDataType.LONG;
+                break;
+            case "FLOAT":
+                type = ColumnDataType.FLOAT;
+                break;
+            case "DOUBLE":
+                type = ColumnDataType.DOUBLE;
+                break;
+            case "BOOLEAN":
+                type = ColumnDataType.BOOLEAN;
+                break;
+            default:
+                throw new AssertionError();
+        }
+
+        return type;
     }
     
     public static Column convertColumn(Column col) {

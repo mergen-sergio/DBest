@@ -30,8 +30,8 @@ public abstract class JoinOperators implements IOperator {
         OperationErrorType errorType = null;
 
         try {
-            errorType = OperationErrorType.NULL_ARGUMENT;
-            OperationErrorVerifier.noNullArgument(arguments);
+            //errorType = OperationErrorType.NULL_ARGUMENT;
+            //OperationErrorVerifier.noNullArgument(arguments);
 
 //            errorType = OperationErrorType.NO_ONE_ARGUMENT;
 //            OperationErrorVerifier.oneArgument(arguments);
@@ -81,7 +81,9 @@ public abstract class JoinOperators implements IOperator {
     
     private JoinPredicate createJoinPredicate(List<String> arguments){
         JoinPredicate joinPredicate = new JoinPredicate();
+       
         for (String term : arguments) {
+            if (term.isBlank() || term.isEmpty()) continue;
             int index = term.indexOf("=", 0);
             String col1 = term.substring(0, index);
             String col2 = term.substring(index+1, term.length());

@@ -32,6 +32,10 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected static mxGraphComponent graphComponent;
 
     protected JPanel  operationsPanel;
+    
+    protected JPanel  outerJoinOperatorsPanel;
+    protected JPanel  semiAntiJoinOperatorsPanel;
+    protected JPanel  setOperatorsPanel;
 
     protected static mxGraph tablesGraph;
 
@@ -135,6 +139,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         graph = new mxGraph();
         graphComponent = new mxGraphComponent(graph);
         this.operationsPanel = new JPanel();
+        this.outerJoinOperatorsPanel = new JPanel();
+        this.semiAntiJoinOperatorsPanel = new JPanel();
+        this.setOperatorsPanel = new JPanel();
         tablesGraph = new mxGraph();
         this.tablesComponent = new mxGraphComponent(tablesGraph);
         tablesPanel = new JPanel();
@@ -182,6 +189,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.setLocationRelativeTo(null);
 
         this.operationsPanel.setLayout(new BoxLayout(this.operationsPanel, BoxLayout.Y_AXIS));
+
+        
+        
         tablesPanel.add(this.tablesComponent, BorderLayout.CENTER);
 
         this.getContentPane().add(this.topMenuBar, BorderLayout.NORTH);
@@ -218,6 +228,36 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.setVisible(true);
     }
 
+    private void addGroupButton(JPanel panel, String buttonName){
+    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        // Add an empty border to the panel to shift all buttons to the right
+        int leftPadding = 20; // Amount of pixels to shift to the right
+        panel.setBorder(BorderFactory.createEmptyBorder(0, leftPadding, 0, 0));
+        
+        JButton groupedButton = new JButton("+" + buttonName);
+        groupedButton.setBackground(new Color(173, 216, 230)); // Light blue color (RGB)
+        groupedButton.setBounds(600, 50, 200, 50);
+        groupedButton.setBounds(600, 300, 100, 50);
+        groupedButton.setMaximumSize(new Dimension(200, 50));
+        this.operationsPanel.add(groupedButton);
+        this.operationsPanel.add(panel);
+        panel.setVisible(false);
+        // Add action listener to toggle visibility of the first panel
+        groupedButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (panel.isVisible()){
+                    panel.setVisible(false);
+                    groupedButton.setText("+" +buttonName);
+                }
+                else {
+                    panel.setVisible(true);
+                    groupedButton.setText("-" + buttonName);
+                }
+            }
+        });
+        
+    }
+    
     private void addTopMenuBarFileItems() {
         JMenu fileMenu = new JMenu(ConstantController.getString("menu.file"));
         this.topMenuBar.add(fileMenu);
@@ -335,15 +375,21 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.operationsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_JOIN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_JOIN, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.operationsPanel));
+        
+        addGroupButton(this.outerJoinOperatorsPanel, "Outer Join Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_JOIN, this, this.outerJoinOperatorsPanel));
+        
+        addGroupButton(this.semiAntiJoinOperatorsPanel, "Semi/Anti Join Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.semiAntiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.semiAntiJoinOperatorsPanel));
+        
+        addGroupButton(this.setOperatorsPanel, "Set Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.setOperatorsPanel));
     }
 
     private void addBottomButtons() {

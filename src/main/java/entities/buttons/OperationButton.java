@@ -13,7 +13,9 @@ import com.mxgraph.util.mxUtils;
 import com.mxgraph.view.mxStylesheet;
 
 import enums.OperationType;
+import java.awt.Component;
 import java.awt.Dimension;
+import javax.swing.BorderFactory;
 
 public class OperationButton extends Button<JButton> {
 
@@ -29,7 +31,6 @@ public class OperationButton extends Button<JButton> {
 //        button.setAlignmentX(Component.LEFT_ALIGNMENT);
 //        System.out.println(button.getHorizontalAlignment());
         button.setBounds(600, 300, 100, 50);
-
         button.setMaximumSize(new Dimension(200, 50));
 
         //JPanel typePanel = new JPanel();
