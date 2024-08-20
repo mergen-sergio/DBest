@@ -191,7 +191,8 @@ public abstract class Operation {
                 }
             } else {
                 //the parent binary operator does not delegates filters to the right side
-                //hasFilters = false;
+                //TO DO: check if this works
+                hasDelegatedFilters = false;
             }
 
         }

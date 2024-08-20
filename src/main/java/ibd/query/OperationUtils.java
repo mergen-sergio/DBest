@@ -6,6 +6,7 @@
 package ibd.query;
 
 import ibd.query.binaryop.BinaryOperation;
+import ibd.query.binaryop.conditional.Exists;
 import ibd.query.binaryop.join.Join;
 import ibd.query.binaryop.join.MergeJoin;
 import java.util.ArrayList;
@@ -17,18 +18,28 @@ import java.util.List;
  */
 public class OperationUtils {
 
-    public static List<Operation> findLeftSideCorrelations(Operation op){
+    public static List<Operation> findLeftSideCorrelations(Operation op) {
         Operation op1 = op;
         List<Operation> operations = new ArrayList();
-        while (op1!=null){
-            if (op1 instanceof BinaryOperation){
-                if (!(op1 instanceof Join)) return operations;
-                if (op1 instanceof MergeJoin) return operations;
+        while (op1 != null) {
+            if (op1 instanceof BinaryOperation && isleftSideCorrelated(op1)) {
                 operations.add(((BinaryOperation) op1).getLeftOperation());
             }
             op1 = op1.getParentOperation();
         }
+
         return operations;
     }
-    
+
+    public static boolean isleftSideCorrelated(Operation op) {
+        if (op instanceof Exists) {
+            return true;
+        } else if (op instanceof Join) {
+            if (!(op instanceof MergeJoin)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

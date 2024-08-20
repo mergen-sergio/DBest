@@ -6,14 +6,14 @@
 package ibd.query;
 
 import ibd.query.binaryop.conditional.Exists;
-import ibd.query.binaryop.join.AntiNestedLoopJoin;
+import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
 import ibd.query.binaryop.set.Union;
 import ibd.query.binaryop.join.BlockNestedLoopJoin;
 import ibd.query.binaryop.join.CrossJoin;
 import ibd.table.*;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.SemiNestedLoopJoin;
+import ibd.query.binaryop.join.semi.NestedLoopSemiJoin;
 import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilterByValue;
@@ -750,7 +750,7 @@ public class MainMovie {
 
         JoinPredicate terms = new JoinPredicate();
         terms.addTerm("person.person_id", "movie_castIndex.person_id");
-        SemiNestedLoopJoin join1 = new SemiNestedLoopJoin(scanPerson, scanMovieCrewIndex, terms);
+        NestedLoopSemiJoin join1 = new NestedLoopSemiJoin(scanPerson, scanMovieCrewIndex, terms);
         //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
         
         return join1;
@@ -765,7 +765,7 @@ public class MainMovie {
 
         JoinPredicate terms = new JoinPredicate();
         terms.addTerm("person.person_id", "movie_castIndex.person_id");
-        AntiNestedLoopJoin join1 = new AntiNestedLoopJoin(scanPerson, scanMovieCrewIndex, terms);
+        NestedLoopAntiJoin join1 = new NestedLoopAntiJoin(scanPerson, scanMovieCrewIndex, terms);
         //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
         
         return join1;
@@ -799,16 +799,16 @@ public class MainMovie {
         
         JoinPredicate termsSemiJoinCast = new JoinPredicate();
         termsSemiJoinCast.addTerm("movie1.movie_id", "movie_cast.movie_id");
-        SemiNestedLoopJoin joinCast = new SemiNestedLoopJoin(filterCast, scanMovieCast, termsSemiJoinCast);
+        NestedLoopSemiJoin joinCast = new NestedLoopSemiJoin(filterCast, scanMovieCast, termsSemiJoinCast);
         
         JoinPredicate termsSemiJoinCrew = new JoinPredicate();
         termsSemiJoinCrew.addTerm("movie2.movie_id", "movie_crew.movie_id");
-        SemiNestedLoopJoin joinCrew = new SemiNestedLoopJoin(filterCrew, scanMovieCrew, termsSemiJoinCrew);
+        NestedLoopSemiJoin joinCrew = new NestedLoopSemiJoin(filterCrew, scanMovieCrew, termsSemiJoinCrew);
         
         Exists exists = new Exists(joinCast, joinCrew, false);
         
         JoinPredicate termsFinalSemiJoin = new JoinPredicate();
-        SemiNestedLoopJoin finalSemiJoinCrew = new SemiNestedLoopJoin(scanMovie, exists, termsFinalSemiJoin);
+        NestedLoopSemiJoin finalSemiJoinCrew = new NestedLoopSemiJoin(scanMovie, exists, termsFinalSemiJoin);
         
         
 

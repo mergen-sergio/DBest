@@ -6,12 +6,13 @@
 package ibd.query;
 
 import ibd.query.binaryop.conditional.Exists;
-import ibd.query.binaryop.join.AntiNestedLoopJoin;
+import ibd.query.binaryop.join.CrossJoinOld;
+import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
 import ibd.query.binaryop.set.Union;
-import ibd.query.binaryop.join.CrossJoin;
+import ibd.query.binaryop.join.HashJoin;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.SemiNestedLoopJoin;
+import ibd.query.binaryop.join.semi.NestedLoopSemiJoin;
 import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilterByValue;
@@ -22,6 +23,7 @@ import ibd.query.unaryop.HashIndex;
 import ibd.query.unaryop.Projection;
 import ibd.query.unaryop.aggregation.AggregationType;
 import ibd.query.unaryop.filter.Filter;
+import ibd.query.unaryop.sort.Sort;
 import ibd.table.ComparisonTypes;
 import ibd.table.Directory;
 import ibd.table.Table;
@@ -423,11 +425,11 @@ public class SBBD {
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("movie.movie_id", "movie_cast.movie_id");
             //terms.addTerm("movie_cast.person_id", "person.person_id");
-            Operation join1 = new NestedLoopJoin(scanMovie, scanMovieCast, terms);
+            Operation join1 = new HashJoin(scanMovie, scanMovieCast, terms);
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("movie_cast.person_id", "person.person_id");
-            NestedLoopJoin join2 = new NestedLoopJoin(join1, scanPerson, terms1);
+            Operation join2 = new HashJoin(join1, scanPerson, terms1);
 
             /*
         CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
@@ -465,16 +467,16 @@ public class SBBD {
                 scanPerson = new HashIndex(scanPerson);
             }
 
-            LookupFilter lup = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_THAN, "X");
+            LookupFilter lup = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_THAN, "ZZ");
             Filter filter = new Filter(scanMovie, lup);
 
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("movie.movie_id", "movie_cast.movie_id");
-            NestedLoopJoin join1 = new NestedLoopJoin(filter, scanMovieCast, terms);
+            Operation join1 = new NestedLoopJoin(filter, scanMovieCast, terms);
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("movie_cast.person_id", "person.person_id");
-            NestedLoopJoin join2 = new NestedLoopJoin(join1, scanPerson, terms1);
+            Operation join2 = new NestedLoopJoin(join1, scanPerson, terms1);
 
             return join2;
         } catch (Exception e) {
@@ -498,7 +500,7 @@ public class SBBD {
 
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("person.person_id", "movie_castIndex.person_id");
-            SemiNestedLoopJoin join1 = new SemiNestedLoopJoin(scanPerson, scanMovieCrewIndex, terms);
+            Operation join1 = new NestedLoopSemiJoin(scanPerson, scanMovieCrewIndex, terms);
             //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
 
             return join1;
@@ -523,7 +525,7 @@ public class SBBD {
 
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("person.person_id", "movie_castIndex.person_id");
-            AntiNestedLoopJoin join1 = new AntiNestedLoopJoin(scanPerson, scanMovieCrewIndex, terms);
+            NestedLoopAntiJoin join1 = new NestedLoopAntiJoin(scanPerson, scanMovieCrewIndex, terms);
             //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
 
             return join1;
@@ -554,23 +556,23 @@ public class SBBD {
             }
 
             SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie1.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
-            Filter filterCast = new Filter(scanMovie1, lookupCast);
+            Operation filterCast = new Filter(scanMovie1, lookupCast);
 
             SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie2.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
-            Filter filterCrew = new Filter(scanMovie2, lookupCrew);
+            Operation filterCrew = new Filter(scanMovie2, lookupCrew);
 
             JoinPredicate termsSemiJoinCast = new JoinPredicate();
             termsSemiJoinCast.addTerm("movie1.movie_id", "movie_cast.movie_id");
-            SemiNestedLoopJoin joinCast = new SemiNestedLoopJoin(filterCast, scanMovieCast, termsSemiJoinCast);
+            NestedLoopSemiJoin joinCast = new NestedLoopSemiJoin(filterCast, scanMovieCast, termsSemiJoinCast);
 
             JoinPredicate termsSemiJoinCrew = new JoinPredicate();
             termsSemiJoinCrew.addTerm("movie2.movie_id", "movie_crew.movie_id");
-            SemiNestedLoopJoin joinCrew = new SemiNestedLoopJoin(filterCrew, scanMovieCrew, termsSemiJoinCrew);
+            Operation joinCrew = new NestedLoopSemiJoin(filterCrew, scanMovieCrew, termsSemiJoinCrew);
 
-            Exists exists = new Exists(joinCast, joinCrew, false);
+            Exists exists = new Exists(joinCast, joinCrew, true);
 
             JoinPredicate termsFinalSemiJoin = new JoinPredicate();
-            SemiNestedLoopJoin finalSemiJoinCrew = new SemiNestedLoopJoin(scanMovie, exists, termsFinalSemiJoin);
+            Operation finalSemiJoinCrew = new NestedLoopSemiJoin(scanMovie, exists, termsFinalSemiJoin);
 
             return finalSemiJoinCrew;
         } catch (Exception e) {
@@ -593,13 +595,13 @@ public class SBBD {
                 scanPerson = new HashIndex(scanPerson);
             }
 
-            Aggregation groupBy = new Aggregation(scanMovieCastIndex, "gr", "movie_cast", "person_id", "movie_cast", "movie_id", AggregationType.COUNT, true);
+            Operation groupBy = new Aggregation(scanMovieCastIndex, "gr", "movie_cast", "person_id", "movie_cast", "movie_id", AggregationType.COUNT, true);
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("gr.person_id", "person.person_id");
-            NestedLoopJoin join1 = new NestedLoopJoin(groupBy, scanPerson, terms1);
+            Operation join1 = new HashJoin(groupBy, scanPerson, terms1);
             SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-            Filter filter = new Filter(join1, singleFilter1);
+            Operation filter = new Filter(join1, singleFilter1);
             return join1;
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -637,11 +639,11 @@ public class SBBD {
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("person_cast.person_id", "movie_cast_index.person_id");
-            NestedLoopJoin join1 = new NestedLoopJoin(filterCast, scanMovieCastIndex, terms1);
+            Operation join1 = new NestedLoopJoin(filterCast, scanMovieCastIndex, terms1);
 
             JoinPredicate terms2 = new JoinPredicate();
             terms2.addTerm("movie_cast_index.movie_id", "movie1.movie_id");
-            NestedLoopJoin join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
+            Operation join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
             Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"}, false);
 
@@ -650,15 +652,17 @@ public class SBBD {
 
             JoinPredicate terms3 = new JoinPredicate();
             terms3.addTerm("person_crew.person_id", "movie_crew_index.person_id");
-            NestedLoopJoin join3 = new NestedLoopJoin(filterCrew, scanMovieCrewIndex, terms3);
+            Operation join3 = new NestedLoopJoin(filterCrew, scanMovieCrewIndex, terms3);
 
             JoinPredicate terms4 = new JoinPredicate();
             terms4.addTerm("movie_crew_index.movie_id", "movie2.movie_id");
-            NestedLoopJoin join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
+            Operation join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
             Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"}, false);
 
-            Union union = new Union(proj1, proj2);
+            Sort s1 = new Sort(proj1, "p_cast.title", true);
+            Sort s2 = new Sort(proj2, "p_crew.title", true);
+            Operation union = new Union(s1, s2);
 
             return union;
         } catch (Exception e) {
@@ -761,7 +765,7 @@ public class SBBD {
             NestedLoopJoin join2 = new NestedLoopJoin(filterCrew, scanPersonCrew, terms2);
 
             JoinPredicate terms = new JoinPredicate();
-            CrossJoin join3 = new CrossJoin(join1, join2);
+            CrossJoinOld join3 = new CrossJoinOld(join1, join2);
             //NestedLoopJoin join3 = new NestedLoopJoin(filterCrew, filterCast, terms);
 
             //SingleColumnLookupFilterByValue filterMovie_ = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_EQUAL_THAN, "X");
@@ -769,14 +773,14 @@ public class SBBD {
             NestedLoopJoin join4 = new NestedLoopJoin(scanMovie, join3, terms);
 
             //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person_crew.person_name", "person_cast.person_name", ComparisonTypes.EQUAL);
-            CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
-
-            SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-            SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-            filter1.addFilter(singleFilter1);
-            filter1.addFilter(singleFilter2);
-
-            Filter filter = new Filter(join4, filter1);
+//            CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
+//
+//            SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+//            SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+//            filter1.addFilter(singleFilter1);
+//            filter1.addFilter(singleFilter2);
+//
+//            Filter filter = new Filter(join4, filter1);
 
             return join4;
         } catch (Exception e) {
@@ -942,8 +946,8 @@ public class SBBD {
 
         String action = "NONE";
 
-        args = new String[]{"EVAL", "all_queries", "10","no_HASH"};
-        //args = new String[]{"RUN", "5", "ALL_ROWS","NO_HASH"};
+        //args = new String[]{"EVAL", "8", "10","no_HASH"};
+        args = new String[]{"RUN", "5", "ALL_ROWS","NO_HASH"};
         //args = new String[]{"VIEW", "8", "no_HASH"};
         //args = new String[]{"CREATE"};
         for (int i = 0; i < args.length; i++) {

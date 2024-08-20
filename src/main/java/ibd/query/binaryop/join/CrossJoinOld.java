@@ -37,10 +37,6 @@ public class CrossJoinOld extends Join {
         super.prepare();
     }
     
-    @Override
-    public boolean useLeftSideLookups() {
-        return true;
-    }
 
     /**
      *

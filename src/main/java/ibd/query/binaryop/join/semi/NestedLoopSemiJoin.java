@@ -3,14 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ibd.query.binaryop.join;
+package ibd.query.binaryop.join.semi;
 
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilterByValue;
 import ibd.table.ComparisonTypes;
 import java.util.Iterator;
@@ -18,12 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Performs a nested loop join between the left and the right operations using
- * the terms provided by the join predicate.
+ * Performs a semi nested loop join between the left and the right operations
+ * using the terms provided by the join predicate.
  *
  * @author Sergio
  */
-public class AntiNestedLoopJoin extends Join {
+public class NestedLoopSemiJoin extends Join {
 
     //the filter that needs to be performed over the right side operation.
     CompositeLookupFilter joinFilter;
@@ -35,7 +39,7 @@ public class AntiNestedLoopJoin extends Join {
      * @param joinPredicate the join predicate
      * @throws Exception
      */
-    public AntiNestedLoopJoin(Operation leftOperation, Operation rightOperation, JoinPredicate joinPredicate) throws Exception {
+    public NestedLoopSemiJoin(Operation leftOperation, Operation rightOperation, JoinPredicate joinPredicate) throws Exception {
         super(leftOperation, rightOperation, joinPredicate);
     }
 
@@ -71,7 +75,7 @@ public class AntiNestedLoopJoin extends Join {
     @Override
     public void prepare() throws Exception {
         
-        //creates the filter condition that will be pushed down to the right side operation.
+        //creates the single filter condition that will be pushed down to the right side operation.
         createJoinFilter();
         
         super.prepare();
@@ -88,7 +92,7 @@ public class AntiNestedLoopJoin extends Join {
         }
     }
 
-    //creates the filter condition that will be pushed down to the right side operation. 
+    //creates the single filter condition that will be pushed down to the right side operation. 
     //each time a left-side tuple performs a lookup on the right side, ths filter is reused. 
     //Only the look-up value coming from the left is replaced, in the moment of the lookup.
     private void createJoinFilter() {
@@ -99,37 +103,55 @@ public class AntiNestedLoopJoin extends Join {
         }
     }
 
+    /**
+     *
+     * @return the join filters
+     */
     @Override
     public LookupFilter getFilters() {
         return joinFilter;
     }
 
+    ;
+
+
+    /**
+     *
+     * @return the name of the operation
+     */
     @Override
     public String toString() {
-        return "Anti Nested Loop Join";
+        return "Semi Nested Loop Join";
     }
 
     /**
      * {@inheritDoc }
      *
-     * @return an iterator that performs am anti nested loop join over the
+     * @return an iterator that performs a simple nested loop join over the
      * tuples from the left and right sides
      */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new AntiNestedLoopJoinIterator(processedTuples, withFilterDelegation);
+        return new NestedLoopJoinIterator(processedTuples, withFilterDelegation);
     }
 
     /**
-     * the class that produces resulting tuples from the anti join between the two
+     * the class that produces resulting tuples from the join between the two
      * underlying operations.
      */
-    private class AntiNestedLoopJoinIterator extends UnpagedOperationIterator {
+    private class NestedLoopJoinIterator extends UnpagedOperationIterator {
 
         //the iterator over the operation on the left side
         Iterator<Tuple> leftTuples;
 
-        public AntiNestedLoopJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        /**
+         * @param processedTuples the tuples that come from operations already
+         * processed. The columns from rows that are part of these tuples can be
+         * used by the unprocessed operations, like for filtering.
+         * @param lookup the condition from the parent operation that needs to
+         * be satisfied
+         */
+        public NestedLoopJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
 
             //scan all tuples that comes from the left side
@@ -142,7 +164,7 @@ public class AntiNestedLoopJoin extends Join {
             int x = 0;
             for (LookupFilter filter : joinFilter.getFilters()) {
                 JoinTerm joinTerm = joinTerms.get(x);
-                SingleColumnLookupFilterByValue f = (SingleColumnLookupFilterByValue) filter;
+                SingleColumnLookupFilter f = (SingleColumnLookupFilter) filter;
                 //Comparable value = currentLeftTuple.rows[joinTerm.getLeftTupleRowIndex()].getValue(f.getColumn());
                 Comparable value = currentLeftTuple.rows[joinTerm.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(joinTerm.getLeftColumnDescriptor().getColumnLocation().colIndex);
                 f.setValue(value);
@@ -151,6 +173,10 @@ public class AntiNestedLoopJoin extends Join {
             }
         }
 
+        /**
+         *
+         * @return the next satisfying tuple, if any
+         */
         @Override
         protected Tuple findNextTuple() {
 
@@ -162,14 +188,14 @@ public class AntiNestedLoopJoin extends Join {
 
                 //the lookup conditions are filled with values taken from the computed rows from the current left side
                 fillFilter(currentLeftTuple);
-                
+
                 //check if there exists a correpondendence on the right side
                 boolean exists = rightOperation.exists(processedTuples, true);
-                
+
                 //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
                 processedTuples.remove(processedTuples.size() - 1);
 
-                if (!exists) {
+                if (exists) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple);
                     //a tuple must satisfy the lookup filter that comes from the parent operation

@@ -2,20 +2,18 @@ package operations.binary.joins;
 
 import ibd.query.Operation;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.SemiNestedLoopJoin;
 import ibd.query.lookup.ExpressionConverter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
 
-
-public class SemiJoin extends JoinOperators {
+public class HashFullOuterJoin extends JoinOperators {
 
     @Override
     public Operation createJoinOperator(Operation operator1, Operation operator2, BooleanExpression booleanExpression) {
         try {
             JoinPredicate joinPredicate = ExpressionConverter.convert2JoinPredicate(booleanExpression);
-            return new SemiNestedLoopJoin(operator1, operator2, joinPredicate);
+            return new ibd.query.binaryop.join.outer.HashFullOuterJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -25,7 +23,7 @@ public class SemiJoin extends JoinOperators {
     @Override
     public Operation createJoinOperator(Operation operator1, Operation operator2, JoinPredicate joinPredicate) {
         try {
-            return new SemiNestedLoopJoin(operator1, operator2, joinPredicate);
+            return new ibd.query.binaryop.join.outer.HashFullOuterJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }

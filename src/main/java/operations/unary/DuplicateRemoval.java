@@ -1,23 +1,16 @@
 package operations.unary;
 
 import com.mxgraph.model.mxCell;
-import entities.Column;
 import entities.cells.Cell;
 import entities.cells.OperationCell;
 import entities.utils.cells.CellUtils;
 import enums.OperationErrorType;
 import exceptions.tree.TreeException;
-import ibd.query.unaryop.aggregation.AggregationType;
 import operations.IOperator;
 import operations.Operation;
 import operations.OperationErrorVerifier;
-import utils.Utils;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DuplicateRemoval implements IOperator {
 

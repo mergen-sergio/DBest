@@ -47,6 +47,10 @@ public class HashIndex extends UnaryOperation {
      * keys of the hash
      */
     LookupFilter unhashedFilters;
+    
+    
+    boolean memoryUsedDefined = false;
+    long memoryUsed = 0;
 
     /**
      *
@@ -67,6 +71,7 @@ public class HashIndex extends UnaryOperation {
         //erases the previously built hash.
         //a new one is created when the first query is executed. 
         tuples = null;
+        memoryUsedDefined = false;
     }
 
     //sets the list of columns that will be part of the hash keys
@@ -150,9 +155,31 @@ public class HashIndex extends UnaryOperation {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             //only the unhashed filters from the parent need to be verififed. The others will be satisfied by the hash search.
             this.lookup = unhashedFilters;
-            //build hash, if one does not exist yet
+            buildHash();
+            queryHash();
+        }
+        
+        private void queryHash(){
+        //here is where we build an iterator to traverse the query results
+            //the hash is queried using as key the values of the hashed filter columns
+            String key = "";
+            for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
+                key += lookupFilter.getValue().toString();
+            }
+
+            List<Tuple> result = tuples.get(key);
+            if (result != null) {
+                it = result.iterator();
+            } else {
+                it = new ArrayList<Tuple>().iterator();
+            }
+        }
+        
+        private void buildHash(){
+        //build hash, if one does not exist yet
             if (tuples == null) {
                 tuples = new HashMap();
+                memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     it = childOperation.lookUp(processedTuples, false);
@@ -173,7 +200,7 @@ public class HashIndex extends UnaryOperation {
                             tuples.put(key, tupleList);
                         }
                         tupleList.add(tuple);
-                        QueryStats.MEMORY_USED+=tupleSize;
+                        memoryUsed+=tupleSize;
                     }
 
                 } catch (Exception ex) {
@@ -181,24 +208,15 @@ public class HashIndex extends UnaryOperation {
                 
             }
 
-            //here is where we build an iterator to traverse the query results
-            //the hash is queried using as key the values of the hashed filter columns
-            String key = "";
-            for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
-                key += lookupFilter.getValue().toString();
-            }
-
-            List<Tuple> result = tuples.get(key);
-            if (result != null) {
-                it = result.iterator();
-            } else {
-                it = new ArrayList<Tuple>().iterator();
-            }
-
+            
         }
 
         @Override
         protected Tuple findNextTuple() {
+            if (!memoryUsedDefined){
+                memoryUsedDefined = true;
+                QueryStats.MEMORY_USED += memoryUsed;
+            }
             while (it.hasNext()) {
                 Tuple tp = it.next();
                 //a tuple must satisfy the lookup filter that comes from the parent operation

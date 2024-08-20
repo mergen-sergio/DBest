@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ibd.query.binaryop.join;
+package ibd.query.binaryop.join.outer;
 
 import ibd.query.Operation;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 
 /**
  * Performs a rigth nested loop join between the left and the right operations using
@@ -13,9 +15,9 @@ import ibd.query.Operation;
  *
  * @author Sergio
  */
-public class RightNestedLoopJoin extends LeftNestedLoopJoin {
+public class NestedLoopRightJoin extends NestedLoopLeftJoin {
 
-    public RightNestedLoopJoin(Operation leftOperation, Operation rightOperation, JoinPredicate terms) throws Exception {
+    public NestedLoopRightJoin(Operation leftOperation, Operation rightOperation, JoinPredicate terms) throws Exception {
         super(rightOperation, leftOperation, terms);
     }
 

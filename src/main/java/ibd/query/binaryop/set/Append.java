@@ -21,9 +21,9 @@ import java.util.List;
  *
  * @author Sergio
  */
-public class UnionAll extends Set {
+public class Append extends Set {
 
-    public UnionAll(Operation leftOperation, Operation rightOperation) throws Exception {
+    public Append(Operation leftOperation, Operation rightOperation) throws Exception {
         super(leftOperation, rightOperation);
     }
 

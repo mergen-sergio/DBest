@@ -8,10 +8,9 @@ public class Union extends SetOperators {
     public ibd.query.Operation createSetOperator(ibd.query.Operation operator1, ibd.query.Operation operator2, List<String> columns1, List<String> columns2) {
         try {
             //return new UnionOperator(operator1, operator2, columns1, columns2);
-            //return new ibd.query.binaryop.set.UnionAll(operator1, operator2);
             return new ibd.query.binaryop.set.Union(operator1, operator2);
         } catch (Exception ex) {
         }
-        return null;
+        return null; 
     }
 }

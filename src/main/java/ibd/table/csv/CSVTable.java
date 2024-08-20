@@ -1,8 +1,5 @@
 package ibd.table.csv;
 
-import ibd.table.csv.AllCSVRowsIterator;
-import ibd.table.csv.KeyFilteredCSVRowsIterator1;
-import ibd.table.csv.FilteredCSVRowsIterator;
 import engine.exceptions.DataBaseException;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
@@ -17,8 +14,6 @@ import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.Column;
 import ibd.table.prototype.column.LongColumn;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import sources.csv.CSVRecognizer;
 import sources.csv.InvalidCsvException;
 

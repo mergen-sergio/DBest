@@ -5,26 +5,27 @@
  */
 package ibd.query.unaryop;
 
+import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
+import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.binaryop.BinaryOperation;
 import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.NoLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
 import ibd.table.ComparisonTypes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This unary operation is materialized. It creates a hash containing all the
  * tuples that come from the child operation. Useful for lookups based on
- * equivalence over a primary key, and the child operation is not a source
- * operation.
+ * equivalence conditions.
  *
  * @author Sergio
  */
@@ -35,26 +36,41 @@ public class Memoize extends UnaryOperation {
     It can answer lookups based on equivalence conditions efficiently.
     This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
      */
-    HashMap<Integer, List<Tuple>> tuples = new HashMap();
+    HashMap<String, List<Tuple>> tuples;
 
-    int cont;
-
-    //ColumnDescriptor hashColumn;
-    //int hashTupleIndex = -1;
     /**
-     * the list of filters conditions that enable efficient table lookups
+     * the list of conjunctive equality filters conditions that form keys of the
+     * hash
      */
-    List<SingleColumnLookupFilter> lookupFilters;
+    List<SingleColumnLookupFilter> hashedFilters;
+
+    /**
+     * the filters that of conjunctive equality filters conditions that form
+     * keys of the hash
+     */
+    LookupFilter unhashedFilters;
+
+    
 
     /**
      *
      * @param childOperation the child operation
-     * @param col the name of the column used to create the hash index
      * @throws Exception
      */
-    public Memoize(Operation childOperation, String col) throws Exception {
+    public Memoize(Operation childOperation) throws Exception {
         super(childOperation);
-        //hashColumn = new ColumnDescriptor(col);
+    }
+
+    @Override
+    public void prepare() throws Exception {
+        super.prepare();
+
+        //sets the list of columns that will be part of the hash keys
+        prepareHashColumns();
+
+        //erases the previously built hash.
+        //a new one is created when the first query is executed. 
+        tuples = new HashMap();
     }
 
     @Override
@@ -65,177 +81,146 @@ public class Memoize extends UnaryOperation {
         return new NoLookupFilter();
     }
 
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
+    ;
 
-        //fills the lookupFilters list and checks whether those filters can be efficiently processed by the table
-        setLookUp();
+    //sets the list of columns that will be part of the hash keys
+    private void prepareHashColumns() throws Exception {
 
-        //erases the previosulsy built hash.
-        //a new one is created when the first query is executed. 
-        tuples = null;
-        //uses the table name to set the index of the tuple that contains the hash column
-        //childOperation.getColumnLocation(hashColumn);
+        hashedFilters = new ArrayList();
+        unhashedFilters = new NoLookupFilter();
+        if (hasDelegatedfilters()) {
+            LookupFilter joinFilter = parentOperation.getFilters();
+
+            prepareHashColumns(joinFilter);
+
+            unhashedFilters = copyUnhashedFilters(joinFilter);
+        }
     }
 
-    //fills the lookupFilters list and checks whether those filters can be efficiently processed by the table
-    private void setLookUp() {
-        if (parentOperation == null) {
-            return;
-        }
-
-        if (parentOperation instanceof BinaryOperation) {
-            BinaryOperation bop = (BinaryOperation) parentOperation;
-            if (bop.useLeftSideLookups()) {
-                if (bop.getLeftOperation().equals(this)) {
-                    return;
-                }
-            } else {
+    //sets the list of columns that will be part of the hash keys
+    private void prepareHashColumns(LookupFilter filter) {
+        if (filter instanceof CompositeLookupFilter compositeLookupFilter) {
+            if (compositeLookupFilter.getBooleanConnector() == CompositeLookupFilter.OR) {
                 return;
             }
-
-        }
-
-        LookupFilter joinFilter = parentOperation.getFilters();
-        lookupFilters = extractEqualFilters(joinFilter);
-
-    }
-
-    //Extract the equality filter conditions from a filter
-    private List<SingleColumnLookupFilter> extractEqualFilters(LookupFilter filter) {
-        if (filter instanceof CompositeLookupFilter) {
-            return extractEqualFilters_((CompositeLookupFilter) filter);
-        } else if (filter instanceof SingleColumnLookupFilter) {
-            return extractEqualFilters_((SingleColumnLookupFilter) filter);
-        } else {
-            return new ArrayList();
-        }
-    }
-
-    //Extract the equality filter conditions from a composed filter
-    private List<SingleColumnLookupFilter> extractEqualFilters_(CompositeLookupFilter filter) {
-        List<SingleColumnLookupFilter> columns = new ArrayList();
-        for (LookupFilter f : filter.getFilters()) {
-            if (f instanceof SingleColumnLookupFilterByValue) {
-                SingleColumnLookupFilterByValue f1 = (SingleColumnLookupFilterByValue) f;
-                if (f1.getComparisonType() == ComparisonTypes.EQUAL) {
-                    columns.add(f1);
-                }
+            for (LookupFilter f : compositeLookupFilter.getFilters()) {
+                prepareHashColumns(f);
+            }
+        } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter) {
+            if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) {
+                hashedFilters.add(singleColumnLookupFilter);
             }
         }
 
-        return columns;
     }
 
-    //Extract the equality filter conditions from a single column filter
-    private List<SingleColumnLookupFilter> extractEqualFilters_(SingleColumnLookupFilter filter) {
+    //Copies the unhashed filters into a new structure
+    private LookupFilter copyUnhashedFilters(LookupFilter filter) throws Exception {
 
-        List<SingleColumnLookupFilter> columns = new ArrayList();
-        if (filter.getComparisonType() == ComparisonTypes.EQUAL) {
-            columns.add(filter);
+        if (filter instanceof CompositeLookupFilter clf) {
+
+            CompositeLookupFilter rowFilter = new CompositeLookupFilter(clf.getBooleanConnector());
+            for (LookupFilter f : clf.getFilters()) {
+                LookupFilter rlf = copyUnhashedFilters(f);
+                if (!(rlf instanceof NoLookupFilter)) {
+                    rowFilter.addFilter(rlf);
+                }
+            }
+            if (rowFilter.getFilters().isEmpty()) {
+                return new NoLookupFilter();
+            }
+            return rowFilter;
+        } else if (filter instanceof SingleColumnLookupFilter f) {
+            if (hashedFilters.contains(f)) {
+                return new NoLookupFilter();
+            }
+            return f;
+        } else {
+            return new NoLookupFilter();
         }
-
-        return columns;
     }
 
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new MaterializedIndexIterator(processedTuples, withFilterDelegation);
+        return new MemoizeIterator(processedTuples, withFilterDelegation);
     }
 
     @Override
     public String toString() {
-        return "Memoize";
+        return "Hash";
     }
 
     /**
      * the class that materializes a collection of tuples that come from the
      * child operation using a hash. The query is answered using the hash.
      */
-    public class MaterializedIndexIterator extends UnpagedOperationIterator {
+    public class MemoizeIterator extends UnpagedOperationIterator {
 
         //the iterator over the child operation
         Iterator<Tuple> it = null;
+        
+        boolean memoryUsedDefined = false;
+        long memoryUsed = 0;
 
-        public MaterializedIndexIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        public MemoizeIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
 
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
+            //only the unhashed filters from the parent need to be verififed. The others will be satisfied by the hash search.
+            this.lookup = unhashedFilters;
+            queryHash(processedTuples);
+        }
 
-            //build hash, if one does not exist yet
-            if (tuples == null) {
-                tuples = new HashMap();
-            }
-            {
-                try {
-                    //accesses and indexes all tuples that come from the child operation
-                    Integer key = 0;
-
-                    for (SingleColumnLookupFilter filter : lookupFilters) {
-                        //row.setValue(filter.getColumn(), (Integer) filter.getValue());
-                        key += (Integer) filter.getValue();
-                    }
-                    List tupleList = tuples.get(key);
-                    if (tupleList != null) {
-                        //System.out.println("found key "+key);
-
-                        it = tupleList.iterator();
-                        return;
-                    }
-                    //System.out.println("not found key "+key);
-                    //System.out.println("count "+cont++);
-                    tupleList = new ArrayList();
-                    tuples.put(key, tupleList);
-
-                    it = childOperation.lookUp(processedTuples, true);
-                    while (it.hasNext()) {
-                        Tuple tuple = (Tuple) it.next();
-                        tupleList.add(tuple);
-                    }
-                    it = tupleList.iterator();
-
-                } catch (Exception ex) {
-                }
-            }
-            /*
+        private void queryHash(List<Tuple> processedTuples) {
             //here is where we build an iterator to traverse the query results
-            //if the query has a equivalence over the pk filter, the index can be used
-            //if (lookup instanceof SingleColumnLookupFilterByValue) 
-            if (lookupFilters.size() > 0) {
-                Integer key = 0;
-                for (SingleColumnLookupFilter lookupFilter : lookupFilters) {
-                    key += (Integer) lookupFilter.getValue();
-                }
-
-                //SingleColumnLookupFilterByValue pklf = (SingleColumnLookupFilterByValue) lookup;
-                //if (pklf.getComparisonType() == ComparisonTypes.EQUAL && pklf.getColumnDescriptor().getColumnName().equals(hashColumn.getColumnName())) {
-                //use the hash to find results based on the lookup key
-                //ArrayList<Tuple> result = new ArrayList<>();
-                //Tuple t = tuples.get(pklf.getValue().toString());
-                List<Tuple> result = tuples.get(key);
-
-                //the iterator now accesses only the tuples that satisfy the pk filter
-                if (result != null) {
-                    it = result.iterator();
-                } else {
-                    it = new ArrayList<Tuple>().iterator();
-                }
-                return;
+            //the hash is queried using as key the values of the hashed filter columns
+            String key = "";
+            for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
+                key += lookupFilter.getValue().toString();
             }
-             */
-            //if the filter is not equivalence over the pk field, we need to access all tuples from the hash
-            //it = tuples.values().iterator();
+
+            List<Tuple> result = tuples.get(key);
+            if (result != null) {
+                it = result.iterator();
+            } else {
+                it = childOperation.lookUp(processedTuples, true);//pushes filter down to the child operation
+                it = feedHash(key);
+            }
+        }
+
+        private Iterator<Tuple> feedHash(String key) {
+            //build hash, if one does not exist yet
+
+            memoryUsed = 0;
+            List tupleList = new ArrayList();
+            int tupleSize = 0;
+            try {
+                tupleSize = childOperation.getTupleSize();
+            } catch (Exception ex) {
+            }
+
+            while (it.hasNext()) {
+                Tuple tuple = (Tuple) it.next();
+                tupleList.add(tuple);
+
+            }
+            memoryUsed += tupleList.size() * tupleSize;
+            tuples.put(key, tupleList);
+            return tupleList.iterator();
 
         }
 
         @Override
         protected Tuple findNextTuple() {
+            if (!memoryUsedDefined) {
+                memoryUsedDefined = true;
+                QueryStats.MEMORY_USED += memoryUsed;
+            }
             while (it.hasNext()) {
+                QueryStats.NEXT_CALLS++;
                 Tuple tp = it.next();
                 //a tuple must satisfy the lookup filter that comes from the parent operation
-                //if the filter is equivalence over the pk, all found tuples will match
-                //if (lookup.match(tp)) 
-                {
+                //only the unhashed filters need to be checked
+                if (lookup.match(tp)) {
                     return tp;
                 }
 

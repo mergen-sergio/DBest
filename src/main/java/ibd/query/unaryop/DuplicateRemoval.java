@@ -5,11 +5,9 @@
  */
 package ibd.query.unaryop;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.unaryop.sort.Sort;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,6 +36,15 @@ public class DuplicateRemoval extends UnaryOperation {
     @Override
     public void prepare() throws Exception {
         super.prepare();
+    }
+    
+    /**
+     *
+     * @return the name of the operation
+     */
+    @Override
+    public String toString() {
+        return "Sorted Duplicate Removal";
     }
 
     @Override

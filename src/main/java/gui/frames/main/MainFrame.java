@@ -33,8 +33,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JPanel  operationsPanel;
     
+    protected JPanel  indexOperatorsPanel;
+    protected JPanel  aggregationOperatorsPanel;
+    protected JPanel  innerJoinOperatorsPanel;
     protected JPanel  outerJoinOperatorsPanel;
-    protected JPanel  semiAntiJoinOperatorsPanel;
+    protected JPanel  semiJoinOperatorsPanel;
+    protected JPanel  antiJoinOperatorsPanel;
     protected JPanel  setOperatorsPanel;
 
     protected static mxGraph tablesGraph;
@@ -139,8 +143,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         graph = new mxGraph();
         graphComponent = new mxGraphComponent(graph);
         this.operationsPanel = new JPanel();
+        this.indexOperatorsPanel = new JPanel();
+        this.aggregationOperatorsPanel = new JPanel();
+        this.innerJoinOperatorsPanel = new JPanel();
         this.outerJoinOperatorsPanel = new JPanel();
-        this.semiAntiJoinOperatorsPanel = new JPanel();
+        this.semiJoinOperatorsPanel = new JPanel();
+        this.antiJoinOperatorsPanel = new JPanel();
         this.setOperatorsPanel = new JPanel();
         tablesGraph = new mxGraph();
         this.tablesComponent = new mxGraphComponent(tablesGraph);
@@ -170,8 +178,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 //        this.indexerMenuItem = new JMenuItem(OperationType.INDEXER.displayName);
         this.joinMenuItem = new JMenuItem(OperationType.JOIN.displayName);
         this.semiJoinMenuItem = new JMenuItem(OperationType.SEMI_JOIN.displayName);
-        this.leftJoinMenuItem = new JMenuItem(OperationType.LEFT_JOIN.displayName);
-        this.rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_JOIN.displayName);
+        this.leftJoinMenuItem = new JMenuItem(OperationType.LEFT_OUTER_JOIN.displayName);
+        this.rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_OUTER_JOIN.displayName);
         this.cartesianProductMenuItem = new JMenuItem(OperationType.CARTESIAN_PRODUCT.displayName);
         this.unionMenuItem = new JMenuItem(OperationType.UNION.displayName);
         this.intersectionMenuItem = new JMenuItem(OperationType.INTERSECTION.displayName);
@@ -366,31 +374,77 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECTION, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DUPLICATE_REMOVAL, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SORT, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.operationsPanel));
+        
+        
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.operationsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.operationsPanel));
+        
+        addGroupButton(this.indexOperatorsPanel, "Index Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.indexOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MEMOIZE, this, this.indexOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MATERIALIZATION, this, this.indexOperatorsPanel));
+        
+        
+        addGroupButton(this.aggregationOperatorsPanel, "Aggregation Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.aggregationOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.aggregationOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.aggregationOperatorsPanel));
+        
+        
+        addGroupButton(this.innerJoinOperatorsPanel, "Inner Join Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.innerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_JOIN, this, this.innerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_JOIN, this, this.innerJoinOperatorsPanel));
         
         addGroupButton(this.outerJoinOperatorsPanel, "Outer Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        //this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         
-        addGroupButton(this.semiAntiJoinOperatorsPanel, "Semi/Anti Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.semiAntiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.semiAntiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        
+        addGroupButton(this.semiJoinOperatorsPanel, "Semi Join Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        
+        
+        addGroupButton(this.antiJoinOperatorsPanel, "Anti Join Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        
         
         addGroupButton(this.setOperatorsPanel, "Set Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.APPEND, this, this.setOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_UNION, this, this.setOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_INTERSECTION, this, this.setOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.setOperatorsPanel));
+
+                
+        this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
+        
     }
+    
+    
 
     private void addBottomButtons() {
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (i)", ConstantController.getString("toolBarButtons.importTable")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.IMPORT_FILE)));

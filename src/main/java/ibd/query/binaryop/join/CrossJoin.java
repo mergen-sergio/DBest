@@ -36,7 +36,7 @@ public class CrossJoin extends Join {
     
     @Override
     public boolean useLeftSideLookups() {
-        return true;
+        return false;
     }
 
     /**
@@ -95,7 +95,7 @@ public class CrossJoin extends Join {
                     processedTuples.add(currentLeftTuple);
 
                     //lookup the tuples from the right side
-                    rightTuples = rightOperation.lookUp(processedTuples, true);
+                    rightTuples = rightOperation.lookUp(processedTuples, false);
 
                     
                 }

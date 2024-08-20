@@ -19,7 +19,7 @@ import java.util.List;
 public abstract class Join extends BinaryOperation {
 
     //the join predicate
-    JoinPredicate joinPredicate;
+    protected JoinPredicate joinPredicate;
 
     /**
      *

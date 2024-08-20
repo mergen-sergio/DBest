@@ -31,13 +31,13 @@ public class AggregationType {
     public AggregationType(String col, int type) throws Exception {
         this.type = type;
         aggregateColumn = new ColumnDescriptor(col);
-        aggregateColumnName = getStringType() + "(" + aggregateColumn.getColumnName() + ")";
+        aggregateColumnName = getStringType() + "_" + aggregateColumn.getColumnName();
     }
 
     public AggregationType(String table, String col, int type) {
         this.type = type;
         aggregateColumn = new ColumnDescriptor(table, col);
-        aggregateColumnName = getStringType() + "(" + aggregateColumn.getColumnName() + ")";
+        aggregateColumnName = getStringType() + "_" + aggregateColumn.getColumnName();
     }
 
     public int getAgregationType() {
@@ -67,6 +67,6 @@ public class AggregationType {
 
     @Override
     public String toString() {
-        return getStringType() + "(" + aggregateColumn + ")";
+        return getStringType() + "_" + aggregateColumn;
     }
 }

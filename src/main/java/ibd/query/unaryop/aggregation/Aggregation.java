@@ -307,6 +307,10 @@ public class Aggregation extends UnaryOperation {
                         groupedValues[i].clear();
                         groupedValues[i].add((Integer) aggregatedValue);
                     }
+                    
+                    if (!lookup.match(tuple)) {
+                    continue;
+                }
                     return tuple;
                 }
 
@@ -319,7 +323,8 @@ public class Aggregation extends UnaryOperation {
                 //dataRow.setMetadata(prototype);
                 tuple.setSingleSourceRow(alias, dataRow);
                 prevGroupByValue = null;
-                return tuple;
+                if (lookup.match(tuple)) 
+                    return tuple;
             }
 
             return null;

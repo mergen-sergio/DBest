@@ -226,10 +226,6 @@ public class AllAggregation extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                //a tuple must satisfy the lookup filter 
-                if (!lookup.match(tp)) {
-                    continue;
-                }
 
                 for (int i = 0; i < aggregationTypes.size(); i++) {
                     AggregationType aggregationType = aggregationTypes.get(i);
@@ -246,7 +242,13 @@ public class AllAggregation extends UnaryOperation {
             //dataRow.setMetadata(prototype);
             tuple.setSingleSourceRow(alias, dataRow);
             groupedValues[0].clear();
-            return tuple;
+
+            //a tuple must satisfy the lookup filter 
+            if (lookup.match(tuple)) {
+                return tuple;
+            }
+
+            return null;
 
         }
 

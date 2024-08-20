@@ -12,7 +12,7 @@ import ibd.query.sourceop.FullTableScan;
 import ibd.query.unaryop.HashIndex;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.LeftNestedLoopJoin;
+import ibd.query.binaryop.join.outer.NestedLoopLeftJoin;
 import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilterByValue;
 import ibd.query.sourceop.IndexScan;
@@ -152,7 +152,7 @@ public class MainPerson {
 
         JoinPredicate terms = new JoinPredicate();
         terms.addTerm("id", "id");
-        Operation join1 = new LeftNestedLoopJoin(scan1, scan2, terms);
+        Operation join1 = new NestedLoopLeftJoin(scan1, scan2, terms);
         //Operation join1 = new MergeJoin(scan1, scan2);
         return join1;
 

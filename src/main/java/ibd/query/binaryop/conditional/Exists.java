@@ -206,6 +206,10 @@ public class Exists extends BinaryOperation {
             if (leftTuple == null && rightTuple == null) {
                 return null;
             }
+            
+            if ((leftTuple == null || rightTuple == null) && conjunctive) {
+                return null;
+            }
 
             //if it gets here, it means both sides contain values and conjunctive is true 
             Tuple tuple = new Tuple();

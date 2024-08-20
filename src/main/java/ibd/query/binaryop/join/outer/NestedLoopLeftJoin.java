@@ -3,12 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ibd.query.binaryop.join;
+package ibd.query.binaryop.join.outer;
 
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilter;
@@ -24,7 +27,7 @@ import java.util.List;
  *
  * @author Sergio
  */
-public class LeftNestedLoopJoin extends Join {
+public class NestedLoopLeftJoin extends Join {
 
     //the filter that needs to be performed over the right side operation.
     CompositeLookupFilter joinFilter;
@@ -39,7 +42,7 @@ public class LeftNestedLoopJoin extends Join {
      * @param terms the the terms of the join predicate
      * @throws Exception
      */
-    public LeftNestedLoopJoin(Operation leftOperation, Operation rightOperation, JoinPredicate terms) throws Exception {
+    public NestedLoopLeftJoin(Operation leftOperation, Operation rightOperation, JoinPredicate terms) throws Exception {
         super(leftOperation, rightOperation, terms);
     }
 
@@ -91,8 +94,6 @@ public class LeftNestedLoopJoin extends Join {
     }
 
     protected void setNullRightTuple() throws Exception {
-        //flowOperations = new ArrayList();
-
         ReferedDataSource right[] = getRightOperation().getDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];

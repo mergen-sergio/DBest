@@ -409,11 +409,11 @@ public class MainController extends MainFrame {
             createOperationAction = OperationType.JOIN.getAction();
             style = OperationType.JOIN.displayName;
         } else if (menuItem == this.leftJoinMenuItem) {
-            createOperationAction = OperationType.LEFT_JOIN.getAction();
-            style = OperationType.LEFT_JOIN.displayName;
+            createOperationAction = OperationType.LEFT_OUTER_JOIN.getAction();
+            style = OperationType.LEFT_OUTER_JOIN.displayName;
         } else if (menuItem == this.rightJoinMenuItem) {
-            createOperationAction = OperationType.RIGHT_JOIN.getAction();
-            style = OperationType.RIGHT_JOIN.displayName;
+            createOperationAction = OperationType.RIGHT_OUTER_JOIN.getAction();
+            style = OperationType.RIGHT_OUTER_JOIN.displayName;
         } else if (menuItem == this.cartesianProductMenuItem) {
             createOperationAction = OperationType.CARTESIAN_PRODUCT.getAction();
             style = OperationType.CARTESIAN_PRODUCT.displayName;

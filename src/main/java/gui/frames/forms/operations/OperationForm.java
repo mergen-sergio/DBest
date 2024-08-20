@@ -51,7 +51,9 @@ public abstract class OperationForm extends FormBase {
         this.jCell = jCell;
         this.parent1 = cell.getParents().get(0);
 
-        if(!cell.getArguments().isEmpty()) previousArguments.addAll(cell.getArguments());
+        if (!cell.getArguments().isEmpty()) {
+            previousArguments.addAll(cell.getArguments());
+        }
 
         setTitle(cell.getType().displayName);
 
@@ -59,7 +61,7 @@ public abstract class OperationForm extends FormBase {
 
     }
 
-    private void initializeGUI(){
+    private void initializeGUI() {
 
         setLocationRelativeTo(null);
 
@@ -78,7 +80,7 @@ public abstract class OperationForm extends FormBase {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        centerPanel.add(new JLabel(ConstantController.getString("operationForm.source") +":"), gbc);
+        centerPanel.add(new JLabel(ConstantController.getString("operationForm.source") + ":"), gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 0;
@@ -90,7 +92,7 @@ public abstract class OperationForm extends FormBase {
         gbc.gridy = 1;
         gbc.weightx = 0.0;
         gbc.fill = GridBagConstraints.NONE;
-        centerPanel.add(new JLabel(ConstantController.getString("operationForm.column") +":"), gbc);
+        centerPanel.add(new JLabel(ConstantController.getString("operationForm.column") + ":"), gbc);
 
         gbc.gridx = 1;
         gbc.gridy = 1;
@@ -138,100 +140,99 @@ public abstract class OperationForm extends FormBase {
 //        pack();
 //
 //    }
-    
     protected void setColumns(JComboBox<String> comboBox, JComboBox<String> comboBoxS, Cell parent) {
-    comboBox.removeAllItems();
-    if (comboBoxS.getSelectedItem()==null) return;
-    String selectedItem = Objects.requireNonNull(comboBoxS.getSelectedItem()).toString();
-    List<Column> columns = parent.getColumns();
+        comboBox.removeAllItems();
+        if (comboBoxS.getSelectedItem() == null) {
+            return;
+        }
+        String selectedItem = Objects.requireNonNull(comboBoxS.getSelectedItem()).toString();
+        List<Column> columns = parent.getColumns();
 
-    for (Column column : columns) {
-        if (column.SOURCE.equals(selectedItem)) {
-            String sourceAndName = column.getSourceAndName();
-            if (!restrictedColumns.contains(sourceAndName)) {
-                String name = column.removeSource(sourceAndName);
-                comboBox.addItem(name);
+        for (Column column : columns) {
+            if (column.SOURCE.equals(selectedItem)) {
+                String sourceAndName = column.getSourceAndName();
+                if (!restrictedColumns.contains(sourceAndName)) {
+                    String name = column.removeSource(sourceAndName);
+                    comboBox.addItem(name);
+                }
             }
         }
+
+        pack();
     }
 
-    pack();
-}
-    
     protected void setColumns2(JComboBox<String> comboBox, JComboBox<String> comboBoxS, Cell parent, List<Column> leftSideCols) {
-    comboBox.removeAllItems();
-    String selectedItem = Objects.requireNonNull(comboBoxS.getSelectedItem()).toString();
-    List<Column> columns = parent.getColumns();
+        comboBox.removeAllItems();
+        String selectedItem = Objects.requireNonNull(comboBoxS.getSelectedItem()).toString();
+        List<Column> columns = parent.getColumns();
 
-    
-    
-    for (Column column : columns) {
-        if (column.SOURCE.equals(selectedItem)) {
-            String sourceAndName = column.getSourceAndName();
-            if (!restrictedColumns.contains(sourceAndName)) {
-                String name = column.removeSource(sourceAndName);
-                comboBox.addItem(name);
+        for (Column column : columns) {
+            if (column.SOURCE.equals(selectedItem)) {
+                String sourceAndName = column.getSourceAndName();
+                if (!restrictedColumns.contains(sourceAndName)) {
+                    String name = column.removeSource(sourceAndName);
+                    comboBox.addItem(name);
+                }
             }
         }
-    }
-    
-    for (Column column : leftSideCols) {
-        if (column.SOURCE.equals(selectedItem)) {
-            String sourceAndName = column.getSourceAndName();
-            if (!restrictedColumns.contains(sourceAndName)) {
-                String name = column.removeSource(sourceAndName);
-                comboBox.addItem(name);
+
+        for (Column column : leftSideCols) {
+            if (column.SOURCE.equals(selectedItem)) {
+                String sourceAndName = column.getSourceAndName();
+                if (!restrictedColumns.contains(sourceAndName)) {
+                    String name = column.removeSource(sourceAndName);
+                    comboBox.addItem(name);
+                }
             }
         }
+
+        pack();
     }
 
-    pack();
-}
-    
     public static List<Column> getLeftSideCorrelationColumns(Operation op) {
-        
+
         List<Column> columns = new ArrayList<>();
-        
+
         List<Operation> leftSideCorrelations = OperationUtils.findLeftSideCorrelations(op);
         for (Operation leftSideCorrelation : leftSideCorrelations) {
             addColumns(leftSideCorrelation, columns);
         }
-        
+
         return columns;
     }
-    
+
     public static List<Operation> getLeftSideCorrelationOperations(OperationCell cell) {
-        
-        
+        //return OperationUtils.findLeftSideCorrelations(cell.getOperator());
+
         List<Operation> operations = new ArrayList();
-        while (cell!=null){
+        while (cell != null) {
             Operation op1 = cell.getOperator();
-            if (op1 instanceof BinaryOperation){
-                if (!(op1 instanceof Join)) return operations;
-                if (op1 instanceof MergeJoin) return operations;
-                operations.add(((BinaryOperation) op1).getLeftOperation());
+            if (op1 instanceof BinaryOperation) {
+                if (OperationUtils.isleftSideCorrelated(op1)) {
+                    operations.add(((BinaryOperation) op1).getLeftOperation());
+                }
             }
             cell = cell.getChild();
         }
         return operations;
-        
+
     }
-    
+
     public static List<Column> getLeftSideCorrelationColumns(OperationCell cell) {
-        
+
         List<Operation> leftSideCorrelations = getLeftSideCorrelationOperations(cell);
         List<Column> columns = new ArrayList<>();
-        
+
         for (Operation leftSideCorrelation : leftSideCorrelations) {
             addColumns(leftSideCorrelation, columns);
         }
-        
+
         return columns;
-        
+
     }
-    
-    private static void addColumns(Operation op, List<Column> columns){
-    for (Map.Entry<String, List<String>> contentInfo : op.getContentInfo().entrySet()) {
+
+    private static void addColumns(Operation op, List<Column> columns) {
+        for (Map.Entry<String, List<String>> contentInfo : op.getContentInfo().entrySet()) {
             for (String columnName : contentInfo.getValue()) {
                 Column column = new Column(columnName, contentInfo.getKey(), ColumnDataType.NONE, false);
                 columns.add(column);
@@ -239,7 +240,7 @@ public abstract class OperationForm extends FormBase {
         }
     }
 
-    protected void btnReady(){
+    protected void btnReady() {
 
         dispose();
 
@@ -250,7 +251,7 @@ public abstract class OperationForm extends FormBase {
             operation.executeOperation(jCell, arguments);
 
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
-                 | InvocationTargetException e) {
+                | InvocationTargetException e) {
             e.printStackTrace();
         }
 

@@ -67,9 +67,9 @@ public class TextEditor extends JFrame implements ActionListener {
 
     private final JMenuItem joinMenuItem = new JMenuItem(OperationType.JOIN.displayName);
 
-    private final JMenuItem leftJoinMenuItem = new JMenuItem(OperationType.LEFT_JOIN.displayName);
+    private final JMenuItem leftJoinMenuItem = new JMenuItem(OperationType.LEFT_OUTER_JOIN.displayName);
 
-    private final JMenuItem rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_JOIN.displayName);
+    private final JMenuItem rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_OUTER_JOIN.displayName);
 
     private final JMenuItem cartesianProductMenuItem = new JMenuItem(OperationType.CARTESIAN_PRODUCT.displayName);
 

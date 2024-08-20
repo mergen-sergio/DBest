@@ -38,13 +38,13 @@ public class TuplesPrinter {
         
         
         for (Tuple tuple : list) {
-            if (firstTime){
-                lineSize = getLineSize(tuple);
-                printLine(lineSize);
-                printSchema(tuple);
-            }
-            printRow(tuple);
-            firstTime = false;
+//            if (firstTime){
+//                lineSize = getLineSize(tuple);
+//                printLine(lineSize);
+//                printSchema(tuple);
+//            }
+//            printRow(tuple);
+//            firstTime = false;
             //System.out.println(count+":"+tuple);
             count++;
 //                if (count > 100) {

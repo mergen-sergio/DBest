@@ -8,6 +8,7 @@ package ibd.query.binaryop.join;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -24,6 +25,11 @@ public class MergeJoin extends Join {
     Comparable leftTupleArray[];
     //an array to contain values from the right side used as the join condition
     Comparable rightTupleArray[];
+
+    //an array to contain values from the left side used as the join condition
+    Comparable nextLeftTupleArray[];
+    //an array to contain values from the right side used as the join condition
+    Comparable nextRightTupleArray[];
 
     /**
      *
@@ -52,6 +58,9 @@ public class MergeJoin extends Join {
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
         rightTupleArray = new Comparable[joinPredicate.size()];
+
+        nextLeftTupleArray = new Comparable[joinPredicate.size()];
+        nextRightTupleArray = new Comparable[joinPredicate.size()];
     }
 
     @Override
@@ -85,6 +94,12 @@ public class MergeJoin extends Join {
         //the iterator over the operation on the left side
         Iterator<Tuple> rightTuples;
 
+        List<Tuple> leftDuplicates = new ArrayList<>();
+        List<Tuple> rightDuplicates = new ArrayList<>();
+        boolean returningDuplicates = false;
+        int rightIndex = 0;
+        int leftIndex = 0;
+
         public MergeJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             leftTuple = null;
@@ -95,21 +110,21 @@ public class MergeJoin extends Join {
         }
 
         //fills the left side join values
-        private void fillLeftTupleArray(Tuple currentLeftTuple) {
+        private void fillLeftTupleArray(Comparable tupleArray[], Tuple currentLeftTuple) {
             int i = 0;
             for (JoinTerm term : joinPredicate.getTerms()) {
                 Comparable value = currentLeftTuple.rows[term.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(term.getLeftColumnIndex());
-                leftTupleArray[i] = value;
+                tupleArray[i] = value;
                 i++;
             }
         }
 
         //fills the right side join values
-        private void fillRightTupleArray(Tuple currentRightTuple) {
+        private void fillRightTupleArray(Comparable tupleArray[], Tuple currentRightTuple) {
             int i = 0;
             for (JoinTerm term : joinPredicate.getTerms()) {
                 Comparable value = currentRightTuple.rows[term.getRightColumnDescriptor().getColumnLocation().rowIndex].getValue(term.getRightColumnIndex());
-                rightTupleArray[i] = value;
+                tupleArray[i] = value;
                 i++;
             }
         }
@@ -118,46 +133,94 @@ public class MergeJoin extends Join {
         protected Tuple findNextTuple() {
 
             while (true) {
-                //prepares left side join array
-                if (leftTuple == null) {
-                    if (leftTuples.hasNext()) {
-                        leftTuple = leftTuples.next();
-                        fillLeftTupleArray(leftTuple);
+                // If we have stored duplicates, return combinations of them
+                if (returningDuplicates) {
+                    if (leftIndex < leftDuplicates.size()) {
+                        if (rightIndex < rightDuplicates.size()) {
+                            Tuple tuple = new Tuple();
+                            tuple.setSourceRows(leftDuplicates.get(leftIndex), rightDuplicates.get(rightIndex));
+                            rightIndex++;
+                            if (rightIndex >= rightDuplicates.size()) {
+                                rightIndex = 0;
+                                leftIndex++;
+                            }
+                            return tuple;
+                        }
+                    } else {
+                        // Done returning duplicates, reset and proceed to normal processing
+                        returningDuplicates = false;
+                        leftDuplicates.clear();
+                        rightDuplicates.clear();
                     }
                 }
 
-                //prepares right side join array
-                if (rightTuple == null) {
-                    if (rightTuples.hasNext()) {
-                        rightTuple = rightTuples.next();
-                        fillRightTupleArray(rightTuple);
-                    }
+                // Prepare the left side tuple
+                if (leftTuple == null && leftTuples.hasNext()) {
+                    leftTuple = leftTuples.next();
+                    fillLeftTupleArray(leftTupleArray, leftTuple);
                 }
+
+                // Prepare the right side tuple
+                if (rightTuple == null && rightTuples.hasNext()) {
+                    rightTuple = rightTuples.next();
+                    fillLeftTupleArray(rightTupleArray, rightTuple);
+                }
+
                 if (leftTuple == null || rightTuple == null) {
-                    return null;
+                    return null; // No more tuples to process
                 }
 
                 int comp = Arrays.compare(leftTupleArray, rightTupleArray);
-                if (comp == 0) {
-                    //a match was found
-                    Tuple tuple = new Tuple();
-                    tuple.setSourceRows(leftTuple, rightTuple);
 
-                    rightTuple = null;
-                    
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        //leftTuple = null;
-                        return tuple;
+                if (comp == 0) {
+                    // A match was found, gather all duplicates
+                    if (leftDuplicates.isEmpty()) {
+                        leftDuplicates.add(leftTuple);
+                        rightDuplicates.add(rightTuple);
                     }
 
+                    leftTuple = null;
+                    // Gather more duplicates from the left side
+                    while (leftTuples.hasNext()) {
+                        Tuple nextLeft = leftTuples.next();
+                        fillLeftTupleArray(nextLeftTupleArray, nextLeft);
+                        if (Arrays.compare(nextLeftTupleArray, leftTupleArray) == 0) {
+                            leftDuplicates.add(nextLeft);
+                        } else {
+                            leftTuple = nextLeft;
+                            System.arraycopy(nextLeftTupleArray, 0, leftTupleArray, 0, leftTupleArray.length);
+                            break;
+                        }
+                    }
+
+                    rightTuple = null;
+                    // Gather more duplicates from the right side
+                    while (rightTuples.hasNext()) {
+                        Tuple nextRight = rightTuples.next();
+                        fillRightTupleArray(nextRightTupleArray, nextRight);
+                        if (Arrays.compare(nextRightTupleArray, rightTupleArray) == 0) {
+                            rightDuplicates.add(nextRight);
+                        } else {
+                            rightTuple = nextRight;
+                            System.arraycopy(nextRightTupleArray, 0, rightTupleArray, 0, rightTupleArray.length);
+                            break;
+                        }
+                    }
+
+                    // If we finished gathering all possible duplicates, start returning them
+                    returningDuplicates = true;
+                    leftIndex = 0;
+                    rightIndex = 0;
+
                 } else if (comp < 0) {
+                    // Left tuple is smaller, move to the next left tuple
                     leftTuple = null;
                 } else {
+                    // Right tuple is smaller, move to the next right tuple
                     rightTuple = null;
                 }
-
             }
+
         }
 
     }
