@@ -934,12 +934,28 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
     }
 
     @Override
-    public ValueIterator searchAllIterator() {
-        return new ValueIterator(this);
+    public AllKeysIterator searchAllIterator() {
+        return new AllKeysIterator(this);
     }
 
-    public FilteredValueIterator filteredIterator(Key key) {
-        return new FilteredValueIterator(this, key);
+    public EqualKeyIterator equalKeyIterator(Key key) {
+        return new EqualKeyIterator(this, key);
+    }
+    
+    public LargerKeyIterator largerKeyIterator(Key key, boolean largerEqual) {
+        return new LargerKeyIterator(this, key, largerEqual);
+    }
+    
+    public SmallerKeyIterator smallerKeyIterator(Key key, boolean smallerEqual) {
+        return new SmallerKeyIterator(this, key, smallerEqual);
+    }
+    
+    public DifferentKeyIterator differentKeyIterator(Key key) {
+        return new DifferentKeyIterator(this, key);
+    }
+    
+    public LeafNode getFirstPage() {
+        return (LeafNode) getNode(getFirstLeafID());
     }
 
     public LeafNode getFirstPage(Key key) {

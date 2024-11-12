@@ -4,7 +4,7 @@
  */
 package ibd.table.btree;
 
-import ibd.index.btree.ValueIterator;
+import ibd.index.btree.AllKeysIterator;
 import ibd.index.btree.table.BPlusTreeFileTable;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.Iterator;

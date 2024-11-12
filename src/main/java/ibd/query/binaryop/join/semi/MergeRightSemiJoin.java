@@ -84,7 +84,7 @@ public class MergeRightSemiJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Merge Right Semi Join";
     }
 

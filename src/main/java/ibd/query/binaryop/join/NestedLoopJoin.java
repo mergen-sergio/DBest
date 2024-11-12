@@ -88,7 +88,7 @@ public class NestedLoopJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Nested Loop Join";
     }
 

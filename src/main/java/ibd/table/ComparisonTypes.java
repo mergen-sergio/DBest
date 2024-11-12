@@ -87,13 +87,11 @@ public class ComparisonTypes {
      */
     public static boolean match(Comparable value1, Comparable value2, int comparisonType) {
 
-        if (value1 == null || value2 == null) {
-            if (value1 == null && value2==null && comparisonType == ComparisonTypes.IS_NULL) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+        if (comparisonType == ComparisonTypes.IS_NULL && value1==null) return true;
+        if (comparisonType == ComparisonTypes.IS_NOT_NULL && value1!=null) return true;
+        
+        if (value2==null) return false;
+        
 
         int resp = value1.compareTo(value2);
         if (resp == 0 && (comparisonType == ComparisonTypes.EQUAL

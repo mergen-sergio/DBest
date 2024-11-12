@@ -43,7 +43,7 @@ public class CrossJoinOld extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Cross Join";
     }
 

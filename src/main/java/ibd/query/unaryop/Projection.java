@@ -10,7 +10,6 @@ import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
-import ibd.query.unaryop.sort.Sort;
 import ibd.table.prototype.LinkedDataRow;
 import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.Column;
@@ -121,7 +120,7 @@ public class Projection extends UnaryOperation {
 
     @Override
     public String toString() {
-        return "projection:" + projectionColumns;
+        return "projection(" + projectionColumns+")";
     }
 
     /**

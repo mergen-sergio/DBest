@@ -18,6 +18,8 @@ import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilterByValue;
 import ibd.table.ComparisonTypes;
 import ibd.table.prototype.LinkedDataRow;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -106,8 +108,8 @@ public class NestedLoopLeftJoin extends Join {
     }
 
     @Override
-    public String toString() {
-        return "Left Nested Loop Join";
+    public String getJoinAlgorithm() {
+        return "Nested Loop Left Join";
     }
 
     /**
@@ -146,17 +148,20 @@ public class NestedLoopLeftJoin extends Join {
         }
 
         //fills the join filters with the values that are necessary to perform the lookup.
-        private void fillFilter() {
+        private boolean fillFilter() {
             List<JoinTerm> joinTerms = joinPredicate.getTerms();
             int x = 0;
             for (LookupFilter filter : joinFilter.getFilters()) {
                 JoinTerm joinTerm = joinTerms.get(x);
                 SingleColumnLookupFilter f = (SingleColumnLookupFilter) filter;
                 Comparable value = currentLeftTuple.rows[joinTerm.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(joinTerm.getLeftColumnDescriptor().getColumnLocation().colIndex);
+                if (value==null) 
+                    return false;
                 f.setValue(value);
                 x++;
 
             }
+            return true;
         }
 
         /**
@@ -177,11 +182,13 @@ public class NestedLoopLeftJoin extends Join {
                     processedTuples.add(currentLeftTuple);
 
                     //the lookup conditions are filled with values taken from the computed rows from the current left side
-                    fillFilter();
-                    //lookup the target tuples from the right side
-                    rightTuples = rightOperation.lookUp(processedTuples, true);
-
+                    boolean hasAllJoinTerms = fillFilter();
                     
+                    if (hasAllJoinTerms){
+                        //lookup the target tuples from the right side
+                        rightTuples = rightOperation.lookUp(processedTuples, true);
+                    }
+                    else rightTuples = Collections.emptyIterator();
                 }
 
                 //iterate through the right side tuples that satisfy the lookup
@@ -205,6 +212,7 @@ public class NestedLoopLeftJoin extends Join {
                     tuple.setSourceRows(currentLeftTuple, nullRightTuple);
                     if (lookup.match(tuple)) {
                         currentLeftTuple = null;
+                        processedTuples.remove(processedTuples.size() - 1);
                         return tuple;
                     }
                 }

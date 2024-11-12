@@ -474,7 +474,7 @@ public class ExportFile extends JPanel {
 
         tree.getLeaves().forEach(table -> {
             String tableName = table.getName();
-
+            
             FileUtils.copyDatFilesWithHead(String.format("%s%s", tableName, FileType.HEADER.extension), tableName, Path.of(finalPath));
         });
     }

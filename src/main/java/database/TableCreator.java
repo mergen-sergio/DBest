@@ -20,12 +20,12 @@ import static enums.ColumnDataType.INTEGER;
 import static enums.ColumnDataType.LONG;
 import static enums.ColumnDataType.STRING;
 import enums.FileType;
-import files.FileUtils;
 import files.csv.CSVInfo;
 import gui.frames.main.MainFrame;
 import ibd.table.btree.BTreeTable;
 import ibd.table.csv.CSVTable;
 import ibd.table.Table;
+import ibd.table.memory.MemoryTable;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
 import ibd.table.prototype.Prototype;
@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 
 public class TableCreator {
 
-    public static int cacheSize = 0;
+    public static int cacheSize = 5000000;
     
     public static TableCell createTable(File file) throws Exception {
 
@@ -102,10 +102,17 @@ public class TableCreator {
         return switch (header.get(Header.TABLE_TYPE)) {
             case "CSVTable" ->
                 new CSVTable(header);
-            //default -> new SimpleTable(header);
+            case "MemoryTable" ->
+                new MemoryTable(header);
             default ->
                 new BTreeTable(header, null, null, cacheSize);
         };
+    }
+    
+    public static Table openBTreeTable(String fileName) throws IOException, Exception {
+        
+        return new BTreeTable(fileName, cacheSize);
+        
     }
 
     public static CSVTableCell createCSVTable(
@@ -226,7 +233,7 @@ public class TableCreator {
             ignoredColumnName = "__IDX__" + i++;
         }
 
-        columns.add(new Column(ignoredColumnName, tableName, ColumnDataType.LONG, true, true));
+        columns.add(0,new Column(ignoredColumnName, tableName, ColumnDataType.LONG, true, true));
 
         HashMap<Integer, Map<String, String>> newData = new HashMap<>();
         for (Map.Entry<Integer, Map<String, String>> rows : data.entrySet()) {
@@ -247,9 +254,10 @@ public class TableCreator {
             String tableName, List<entities.Column> columns, Map<Integer, Map<String, String>> data
     ) {
 
-        if (columns.stream().noneMatch(column -> column.IS_PRIMARY_KEY)) {
-            createIgnoredPKColumn(columns, data, tableName);
-        }
+// there is no need to create a pk column for a memory table        
+//        if (columns.stream().noneMatch(column -> column.IS_PRIMARY_KEY)) {
+//            createIgnoredPKColumn(columns, data, tableName);
+//        }
 
         List<BasicDataRow> rows = new ArrayList<>(getRowData(columns, data));
 
@@ -261,14 +269,17 @@ public class TableCreator {
         Table table = null;
         mxCell jCell = null;
         try {
-            table = openTable(new Header(prototype, tableName), false);
+            table = openTable(h, false);
 
             table.open();
 
             RowConverter converter = new RowConverter();
+            long pk = 0;
             for (BasicDataRow row : rows) {
                 //BasicDataRow dataRow = converter.convertRow(row);
+                //row.setLong("__IDX__", pk); //only needed if we were to create a pk column
                 table.addRecord(row);
+                pk++;
             }
 
             jCell = (mxCell) MainFrame

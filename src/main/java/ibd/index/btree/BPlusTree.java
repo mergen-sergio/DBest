@@ -115,7 +115,7 @@ public abstract class BPlusTree {
      * @return an Iterator to access all dictionary pairs
      * 
      */
-    public abstract ValueIterator searchAllIterator();
+    public abstract AllKeysIterator searchAllIterator();
     
 
     

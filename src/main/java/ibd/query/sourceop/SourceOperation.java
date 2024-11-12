@@ -39,6 +39,12 @@ public abstract class SourceOperation extends Operation{
     public String getDataSourceAlias() {
     return dataSourceAlias;
     }
+    
+    /**
+     * 
+     * @return the name of the data source accessed by this source operation
+     */
+    public abstract String getDataSourceName();
 
     /**
      * {@inheritDoc }

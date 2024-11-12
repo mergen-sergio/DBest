@@ -120,8 +120,8 @@ public class NestedLoopSemiJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
-        return "Semi Nested Loop Join";
+    public String getJoinAlgorithm() {
+        return "Nested Loop Semi Join";
     }
 
     /**

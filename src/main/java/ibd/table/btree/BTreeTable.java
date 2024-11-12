@@ -66,7 +66,6 @@ public class BTreeTable extends Table {
 
             // Get the file name
             this.name = filePath.getFileName().toString();
-
             //header.set(Header.FILE_PATH, path);
             //header.set(Header.TABLE_TYPE,"SimpleTable");
         } else {
@@ -76,6 +75,48 @@ public class BTreeTable extends Table {
 
         this.cacheSize = cacheSize;
 
+    }
+
+    /**
+     *
+     * @param folder: the location of the table
+     * @param name: the file name uses to store the table's contents
+     * @param cacheSize: the size of the cache used to store table pages.
+     * @throws Exception
+     */
+    public BTreeTable(String path, int cacheSize) throws Exception {
+
+        
+        super(null);
+        
+        this.header = new Header(path);
+
+        Path filePath = Paths.get(path);
+        // Get the directory path (parent)
+        Path folder_ = filePath.getParent();
+        this.folder = ".";
+
+        if (folder_ != null) {
+            this.folder = folder_.toString();
+        }
+
+        // Get the file name
+        this.name = filePath.getFileName().toString();
+        //header.set(Header.FILE_PATH, path);
+        //header.set(Header.TABLE_TYPE,"SimpleTable");
+
+        this.cacheSize = cacheSize;
+
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getHeaderName() {
+        return header.getFileName();
     }
 
     /**
@@ -512,7 +553,6 @@ public class BTreeTable extends Table {
         return new FilteredRowsIterator(tree, filter);
     }
 
-        
     /**
      * Return an iterator to access the rows that satisfy a filter
      *
@@ -521,10 +561,10 @@ public class BTreeTable extends Table {
      * @throws Exception
      */
     @Override
-    public RowsIterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception {
+    public RowsIterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
         Key key = tree.createKey();
         key.setKeys(new DataRow[]{pkRow});
-        return new KeyFilteredRowsIterator(tree, key, rowFilter);
+        return new KeyFilteredRowsIterator(tree, key, rowFilter, compType);
     }
 
     /**

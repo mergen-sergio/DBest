@@ -154,6 +154,7 @@ File[] files = assets.listFiles();
         try {
             DslController.parser();
         } catch (InputException exception) {
+            DslController.reset();
         }
     }
 
@@ -242,7 +243,7 @@ File[] files = assets.listFiles();
         for (File file : files) {
             String fileName = file.getName();
 
-            if (file.isFile() && fileName.endsWith(FileType.FYI.extension)) {
+            if (file.isFile() && fileName.endsWith(FileType.DAT.extension)) {
                 fileNames.add(fileName.substring(0, fileName.length() - 4));
             }
         }
@@ -265,8 +266,8 @@ File[] files = assets.listFiles();
                 Files.copy(headFilePath, destinationHeadFilePath, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            String newDatFileName = String.format("%s%s", tableName, FileType.FYI.extension);
-            Path datFilePath = Path.of(path.replace(FileType.HEADER.extension, FileType.FYI.extension));
+            String newDatFileName = String.format("%s%s", tableName, FileType.DAT.extension);
+            Path datFilePath = Path.of(path.replace(FileType.HEADER.extension, FileType.DAT.extension));
 
             if (shouldReplaceFileName) {
                 Path newDatFilePath = destinationDirectory.resolve(newDatFileName);
@@ -280,5 +281,15 @@ File[] files = assets.listFiles();
         } catch (Exception exception) {
             return false;
         }
+    }
+    
+    public static String getFileExtension(File file) {
+        String fileName = file.getName();
+        int lastDotIndex = fileName.lastIndexOf('.');
+        
+        if (lastDotIndex > 0 && lastDotIndex < fileName.length() - 1) {
+            return fileName.substring(lastDotIndex + 1);
+        }
+        return ""; // No extension found
     }
 }

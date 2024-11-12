@@ -192,6 +192,7 @@ public class TextEditor extends JFrame implements ActionListener {
             try {
                 DslController.parser();
             } catch (InputException exception) {
+                DslController.reset();
                 DslErrorListener.throwError(this.console);
             }
             return;

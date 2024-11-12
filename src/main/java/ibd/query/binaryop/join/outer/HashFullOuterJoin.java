@@ -5,18 +5,15 @@
  */
 package ibd.query.binaryop.join.outer;
 
-import ibd.query.binaryop.join.*;
 import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
-import ibd.table.ComparisonTypes;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,17 +35,14 @@ public class HashFullOuterJoin extends Join {
     This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
      */
     HashMap<String, List<Tuple>> tuples;
-    
+
     HashMap<String, List<Tuple>> existingTuples;
-    
+
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
     Tuple nullRightTuple;
-    
+
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
     Tuple nullLeftTuple;
-    
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
 
     /**
      *
@@ -68,15 +62,14 @@ public class HashFullOuterJoin extends Join {
 
         //sets the column indexes for the terms of the join predicate
         setJoinTermsIndexes();
-        
+
         setNullLeftTuple();
         setNullRightTuple();
 
         //erases the previously built hash.
         //a new one is created when the first query is executed. 
         tuples = null;
-        
-        memoryUsedDefined = false;
+
     }
 
     //sets the column indexes for the terms of the join predicate
@@ -86,7 +79,7 @@ public class HashFullOuterJoin extends Join {
             rightOperation.setColumnLocation(term.getRightColumnDescriptor());
         }
     }
-    
+
     protected void setNullLeftTuple() throws Exception {
         ReferedDataSource left[] = getLeftOperation().getDataSources();
         nullLeftTuple = new Tuple();
@@ -98,7 +91,7 @@ public class HashFullOuterJoin extends Join {
         }
 
     }
-    
+
     protected void setNullRightTuple() throws Exception {
         ReferedDataSource right[] = getRightOperation().getDataSources();
         nullRightTuple = new Tuple();
@@ -116,8 +109,8 @@ public class HashFullOuterJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
-        return "Hash Left Loop";
+    public String getJoinAlgorithm() {
+        return "Hash Full Outer Join";
     }
 
     /**
@@ -143,9 +136,9 @@ public class HashFullOuterJoin extends Join {
         Iterator<Tuple> leftTuples;
         //the iterator over the operation on the right side
         Iterator<Tuple> rightTuples;
-        
+
         boolean foundJoin = false;
-        
+
         TupleTraverser tupleTraverser = null;
 
         public HashJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
@@ -154,7 +147,7 @@ public class HashFullOuterJoin extends Join {
             currentLeftTuple = null;
             //scan all tuples that comes from the left side
             leftTuples = leftOperation.lookUp(processedTuples, false);
-            
+
             buildHash();
 
         }
@@ -164,7 +157,7 @@ public class HashFullOuterJoin extends Join {
             if (tuples == null) {
                 tuples = new HashMap();
                 existingTuples = new HashMap();
-                memoryUsed = 0;
+                long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
@@ -188,11 +181,10 @@ public class HashFullOuterJoin extends Join {
                         tupleList.add(tuple);
                         memoryUsed += tupleSize;
                     }
-                    
 
                 } catch (Exception ex) {
                 }
-
+                QueryStats.MEMORY_USED += memoryUsed;
             }
         }
 
@@ -212,11 +204,6 @@ public class HashFullOuterJoin extends Join {
 
         @Override
         protected Tuple findNextTuple() {
-
-            if (!memoryUsedDefined){
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED = memoryUsed;
-            }
 
             //the left side cursor only advances if the current left side tuple is done.
             //it means all corresponding tuples from the right side were processed
@@ -249,7 +236,7 @@ public class HashFullOuterJoin extends Join {
                     //create a returning tuple and add the joined tuples
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
-                    
+
                     foundJoin = true;
                     //a tuple must satisfy the lookup filter that comes from the parent operation
                     if (lookup.match(tuple)) {
@@ -257,7 +244,7 @@ public class HashFullOuterJoin extends Join {
                     }
 
                 }
-                
+
                 //the left side tuples with no matches are complemented with null values
                 if (!foundJoin) {
                     Tuple tuple = new Tuple();
@@ -267,13 +254,13 @@ public class HashFullOuterJoin extends Join {
                         return tuple;
                     }
                 }
-                
+
                 //All corresponding tuples from the right side processed. 
                 //set null to allow left side cursor to advance
                 currentLeftTuple = null;
 
             }
-            
+
             if (tupleTraverser == null) {
                 tupleTraverser = new TupleTraverser(tuples);
             }
@@ -291,7 +278,7 @@ public class HashFullOuterJoin extends Join {
             return null;
         }
     }
-    
+
     class TupleTraverser {
 
         private final HashMap<String, List<Tuple>> tuples;
@@ -331,6 +318,5 @@ public class HashFullOuterJoin extends Join {
             return (currentList != null && currentIndex < currentList.size()) || mapIterator.hasNext();
         }
     }
-
 
 }

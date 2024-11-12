@@ -38,4 +38,19 @@ public class JoinPredicate {
     public void setTerms(List<JoinTerm> terms) {
         this.terms = terms;
     }
+    
+    @Override
+    public String toString(){
+        String result = "";
+        boolean first = true;
+        for (JoinTerm term : terms) {
+            if (first){
+                result+=term.toString();
+                first = false;
+            }
+            else result = " and "+term.toString();
+            
+        }
+        return result;
+    }
 }

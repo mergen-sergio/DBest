@@ -32,8 +32,8 @@ public class NestedLoopRightJoin extends NestedLoopLeftJoin {
     }
 
     @Override
-    public String toString() {
-        return "Right Nested Loop Join";
+    public String getJoinAlgorithm() {
+        return "Nested Loop Right Join";
     }
 
 }

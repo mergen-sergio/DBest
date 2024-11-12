@@ -13,7 +13,7 @@ import java.util.Iterator;
  *
  * @author Sergio
  */
-public class FilteredValueIterator implements Iterator<DictionaryPair>{
+public class DifferentKeyIterator implements Iterator<DictionaryPair> {
 
     //stores the next value to be returned by the next() function
     DictionaryPair nextValue = null;
@@ -22,27 +22,14 @@ public class FilteredValueIterator implements Iterator<DictionaryPair>{
     BPlusTreeFile btree;
     Key key;
     int index;
-    
-    public FilteredValueIterator(BPlusTreeFile btree,Key key){
+
+    public DifferentKeyIterator(BPlusTreeFile btree, Key key) {
         this.btree = btree;
         this.key = key;
-        //performs the sarch over the b-tree
-        curNode = btree.getFirstPage(key);
+        //performs the search over the b-tree
+        curNode = btree.getFirstPage();
         dps = curNode.dictionary;
-        // Perform binary search to find index of key within dictionary
-        index = Utils.binarySearch(dps, curNode.numPairs, key, btree);
-
-        // in this case, a negative index may simply mean that the key has less levels than the indexed keys.
-        // we need to access the largest value smaller than the key, and advance one position.
-        if (index < 0) {
-            index = ~index;
-        } //the bynary search might not retrieve the first matching value
-        //so we need to search back until the first matching position is found
-        else {
-            while (index > 0 && dps[index - 1].key.compareTo(key) == 0) {
-                index--;
-            }
-        }
+        index = 0;
     }
 
     /**
@@ -93,22 +80,21 @@ public class FilteredValueIterator implements Iterator<DictionaryPair>{
                     break;
                 }
                 Parameters.RECORDS_READ++;
-                if (key.partialMatch(dps[index].key)) {
+                if (!(key.partialMatch(dps[index].key))) {
                     nextValue = dps[index];
                     index++;
                     return nextValue;
-                } 
-                return null;
-
+                }
+                index++;
             }
 
 
             /* Update the current node to be the right sibling,
 			   leaf traversal is from left to right */
             curNode = (LeafNode) btree.getNode(curNode.rightSiblingID);
-            if (curNode!=null){
+            if (curNode != null) {
                 dps = curNode.dictionary;
-                index =0;
+                index = 0;
             }
         }
         return null;

@@ -75,9 +75,10 @@ public class Group implements IOperator {
 
         Cell parentCell = cell.getParents().get(0);
 
+        String source = parentCell.getSourceNameByColumnName(arguments.get(0));
+        
         List<String> fixedArguments = new ArrayList<>();
-
-        fixedArguments.add(Column.composeSourceAndName(parentCell.getSourceNameByColumnName(arguments.get(0)), arguments.get(0)));
+        fixedArguments.add(Column.composeSourceAndName(source, arguments.get(0)));
 
         for (String argument : arguments.subList(1, arguments.size())) {
             String fixedArgument = argument.substring(0, Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())
@@ -119,7 +120,7 @@ public class Group implements IOperator {
         ibd.query.Operation readyOperator = null;
         try {
             //readyOperator = new ibd.query.unaryop.Aggregation(operator, "aggregate", groupBy, aggregateCol, aggregateType, false);
-            readyOperator = new ibd.query.unaryop.aggregation.Aggregation(operator, "aggregate", groupBy, aggregations, false);
+            readyOperator = new ibd.query.unaryop.aggregation.Aggregation(operator, "aggregate", groupBy, aggregations, true);
         } catch (Exception ex) {
             Logger.getLogger(Group.class.getName()).log(Level.SEVERE, null, ex);
         }

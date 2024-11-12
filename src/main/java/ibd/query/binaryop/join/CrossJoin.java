@@ -36,7 +36,7 @@ public class CrossJoin extends Join {
     
     @Override
     public boolean useLeftSideLookups() {
-        return false;
+        return true;
     }
 
     /**
@@ -44,7 +44,7 @@ public class CrossJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Cross Join";
     }
 

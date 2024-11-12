@@ -29,7 +29,7 @@ public class Append extends Set {
 
     @Override
     public String toString() {
-        return "Union All";
+        return "Append";
     }
 
     protected void setPrototype() throws Exception {

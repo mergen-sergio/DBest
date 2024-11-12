@@ -66,6 +66,7 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         }
 
         if (this.cellReference.get() != null && !this.cellReference.get().isEdge()) {
+            System.out.println("aqui 5");
             this.insertEdge();
         }
 
@@ -112,12 +113,13 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
     private void insertCell() {
         if (this.currentActionReference.get() instanceof CreateOperationCellAction createOperationAction) {
+            int width = CellUtils.getCellWidth(createOperationAction.getName());
             this.mxCell = (mxCell) MainFrame
                 .getGraph()
                 .insertVertex(
                     MainFrame.getGraph().getDefaultParent(), null,
                     createOperationAction.getName(), this.mouseEvent.getX(),
-                    this.mouseEvent.getY(), 80, 30, CellType.OPERATION.id
+                    this.mouseEvent.getY(), width, 30, CellType.OPERATION.id
                 );
 
             this.cellReference.set(this.mxCell);
@@ -157,11 +159,13 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
         if (this.currentActionType == ActionType.CREATE_EDGE && !this.edgeReference.get().hasParent() &&
             !CellRepository.getActiveCell(cellReference.get()).get().hasChild()) {
+            System.out.println("aqui 6");
             this.edgeReference.get().addParent(this.cellReference.get());
             CellUtils.addMovableEdge(this.mouseEvent, this.invisibleCellReference, this.cellReference.get());
         }
 
         if (this.currentActionType == ActionType.CREATE_EDGE) {
+            System.out.println("aqui 7");
             this.commandController.execute(new InsertEdgeCommand(
                 this.cellReference, this.invisibleCellReference,
                 this.edgeReference, this.currentActionReference

@@ -86,7 +86,7 @@ public class MergeLeftOuterJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Merge Left Outer Join";
     }
 

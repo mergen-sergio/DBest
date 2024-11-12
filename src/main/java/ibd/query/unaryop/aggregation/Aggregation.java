@@ -27,6 +27,8 @@ import ibd.table.prototype.column.StringColumn;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import static operations.unary.Group.PREFIXES;
+import utils.Utils;
 
 /**
  * This operation groups tuples and computes an aggregated value (MIN. MAX, SUM,
@@ -137,25 +139,27 @@ public class Aggregation extends UnaryOperation {
 
     }
 
-    private Column createColumn(ColumnDescriptor colDesc) throws Exception {
+    private Column createColumn(ColumnDescriptor colDesc, String colName) throws Exception {
         //ColumnLocation location = colDesc.getColumnLocation();
         //ReferedDataSource[] childSources = childOperation.getDataSources();
         ReferedDataSource dataSource = childOperation.getDataSource(colDesc.getTableName());
         Column col = dataSource.prototype.getColumn(colDesc.getColumnName());
 
+        if (colName==null)
+            colName = colDesc.getColumnName();
         //Column col = childSources[location.rowIndex].prototype.getColumn(location.colIndex); 
         Column newCol = null;
         switch (col.getType()) {
             case Column.INTEGER_TYPE ->
-                newCol = new IntegerColumn(colDesc.getColumnName());
+                newCol = new IntegerColumn(colName);
             case Column.STRING_TYPE ->
-                newCol = new StringColumn(colDesc.getColumnName());
+                newCol = new StringColumn(colName);
             case Column.LONG_TYPE ->
-                newCol = new LongColumn(colDesc.getColumnName());
+                newCol = new LongColumn(colName);
             case Column.DOUBLE_TYPE ->
-                newCol = new DoubleColumn(colDesc.getColumnName());
+                newCol = new DoubleColumn(colName);
             case Column.FLOAT_TYPE ->
-                newCol = new FloatColumn(colDesc.getColumnName());
+                newCol = new FloatColumn(colName);
         }
         return newCol;
     }
@@ -163,20 +167,21 @@ public class Aggregation extends UnaryOperation {
     private void createPrototype() throws Exception {
 
         prototype = new Prototype();
-        prototype.addColumn(createColumn(groupByColumn));
+        prototype.addColumn(createColumn(groupByColumn, null));
         for (AggregationType aggregationType : aggregationTypes) {
             if (aggregationType.type == AggregationType.AVG) {
                 prototype.addColumn(new DoubleColumn(aggregationType.aggregateColumnName));
                 //prototype.addColumn(new DoubleColumn(aggregateColumn.getColumnName()));
-            } else {
+            } else if (aggregationType.type != AggregationType.FIRST && aggregationType.type != AggregationType.LAST){
                 prototype.addColumn(new IntegerColumn(aggregationType.aggregateColumnName));
                 //prototype.addColumn(new IntegerColumn(aggregateColumn.getColumnName()));
             }
+            else prototype.addColumn(createColumn(aggregationType.aggregateColumn,aggregationType.aggregateColumnName));
         }
 
         prototype.validateColumns();
     }
-
+    
     @Override
     public void prepare() throws Exception {
 
@@ -249,7 +254,7 @@ public class Aggregation extends UnaryOperation {
         //the iterator over the child operation
         Iterator<Tuple> tuples;
         Comparable prevGroupByValue;
-        List<Integer> groupedValues[];
+        List<Comparable> groupedValues[];
 
         public AggregationIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
@@ -268,10 +273,10 @@ public class Aggregation extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                //a tuple must satisfy the lookup filter 
-                if (!lookup.match(tp)) {
-                    continue;
-                }
+//                //a tuple must satisfy the lookup filter 
+//                if (!lookup.match(tp)) {
+//                    continue;
+//                }
                 Comparable groupByValue = getValue(tp, groupByColumn);
                 //Comparable aggregatedValue = getValue(tp, aggregateColumn);
 
@@ -280,14 +285,16 @@ public class Aggregation extends UnaryOperation {
                     for (int i = 0; i < aggregationTypes.size(); i++) {
                         AggregationType aggregationType = aggregationTypes.get(i);
                         Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
-                        groupedValues[i].add((Integer) aggregatedValue);
+                        if (aggregatedValue!=null)
+                            groupedValues[i].add(aggregatedValue);
                     }
 
                 } else if ((prevGroupByValue.equals(groupByValue))) {
                     for (int i = 0; i < aggregationTypes.size(); i++) {
                         AggregationType aggregationType = aggregationTypes.get(i);
                         Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
-                        groupedValues[i].add((Integer) aggregatedValue);
+                        if (aggregatedValue!=null)
+                            groupedValues[i].add(aggregatedValue);
                     }
                 } else //if ((!prevGroupByValue.equals(groupByValue))) 
                 {
@@ -305,7 +312,8 @@ public class Aggregation extends UnaryOperation {
                         AggregationType aggregationType = aggregationTypes.get(i);
                         Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
                         groupedValues[i].clear();
-                        groupedValues[i].add((Integer) aggregatedValue);
+                        if (aggregatedValue!=null)
+                            groupedValues[i].add(aggregatedValue);
                     }
                     
                     if (!lookup.match(tuple)) {
@@ -330,7 +338,7 @@ public class Aggregation extends UnaryOperation {
             return null;
         }
 
-        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Integer> list[]) {
+        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Comparable> list[]) {
             for (int i = 0; i < list.length; i++) {
 
                 switch (aggregationTypes.get(i).type) {
@@ -360,60 +368,60 @@ public class Aggregation extends UnaryOperation {
 
         }
 
-        private Double avg(List<Integer> list) {
+        private Double avg(List<Comparable> list) {
 
             if (list.isEmpty()) {
                 return 0.;
             }
             int sum = 0;
-            for (Integer integer : list) {
-                sum += integer;
+            for (Comparable integer : list) {
+                sum += (Integer)integer;
             }
             return Double.valueOf(sum / list.size());
         }
 
-        private Integer sum(List<Integer> list) {
+        private Integer sum(List<Comparable> list) {
 
             int sum = 0;
-            for (Integer integer : list) {
-                sum += integer;
+            for (Comparable integer : list) {
+                sum += (Integer)integer;
             }
             return sum;
         }
 
-        private Integer min(List<Integer> list) {
+        private Integer min(List<Comparable> list) {
 
             if (list.isEmpty()) {
                 return 0;
             }
             int min = Integer.MAX_VALUE;
-            for (Integer integer : list) {
-                if (integer < min) {
-                    min = integer;
+            for (Comparable integer : list) {
+                if ((Integer)integer < min) {
+                    min = (Integer)integer;
                 }
             }
             return min;
         }
 
-        private Integer max(List<Integer> list) {
+        private Integer max(List<Comparable> list) {
 
             if (list.isEmpty()) {
                 return 0;
             }
             int max = Integer.MIN_VALUE;
-            for (Integer integer : list) {
-                if (integer > max) {
-                    max = integer;
+            for (Comparable integer : list) {
+                if ((Integer)integer > max) {
+                    max = (Integer)integer;
                 }
             }
             return max;
         }
 
-        private Integer count(List<Integer> list) {
+        private Integer count(List<Comparable> list) {
             return list.size();
         }
 
-        private Integer first(List<Integer> list) {
+        private Comparable first(List<Comparable> list) {
 
             if (list.isEmpty()) {
                 return 0;
@@ -421,7 +429,7 @@ public class Aggregation extends UnaryOperation {
             return list.get(0);
         }
 
-        private Integer last(List<Integer> list) {
+        private Comparable last(List<Comparable> list) {
 
             if (list.isEmpty()) {
                 return 0;

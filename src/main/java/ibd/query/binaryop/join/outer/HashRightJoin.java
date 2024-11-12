@@ -5,13 +5,15 @@
  */
 package ibd.query.binaryop.join.outer;
 
-import ibd.query.binaryop.join.*;
 import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,9 +41,6 @@ public class HashRightJoin extends Join {
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
     Tuple nullLeftTuple;
 
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
-
     /**
      *
      * @param leftOperation the left side operation
@@ -67,7 +66,6 @@ public class HashRightJoin extends Join {
         //a new one is created when the first query is executed. 
         tuples = null;
 
-        memoryUsedDefined = false;
     }
 
     //sets the column indexes for the terms of the join predicate
@@ -95,7 +93,7 @@ public class HashRightJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Hash Right Join";
     }
 
@@ -141,7 +139,7 @@ public class HashRightJoin extends Join {
             if (tuples == null) {
                 tuples = new HashMap();
                 existingTuples = new HashMap();
-                memoryUsed = 0;
+                long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
@@ -168,7 +166,7 @@ public class HashRightJoin extends Join {
 
                 } catch (Exception ex) {
                 }
-
+                QueryStats.MEMORY_USED += memoryUsed;
             }
         }
 
@@ -188,11 +186,6 @@ public class HashRightJoin extends Join {
 
         @Override
         protected Tuple findNextTuple() {
-
-            if (!memoryUsedDefined) {
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED += memoryUsed;
-            }
 
             //the left side cursor only advances if the current left side tuple is done.
             //it means all corresponding tuples from the right side were processed

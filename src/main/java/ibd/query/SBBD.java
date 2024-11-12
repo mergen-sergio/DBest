@@ -5,6 +5,7 @@
  */
 package ibd.query;
 
+import dsl.DslParser;
 import ibd.query.binaryop.conditional.Exists;
 import ibd.query.binaryop.join.CrossJoinOld;
 import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
@@ -33,6 +34,7 @@ import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.IntegerColumn;
 import ibd.table.prototype.column.StringColumn;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,7 +50,8 @@ public class SBBD {
     public static int pageSize = 4096;
     public static int cacheSize = 99999999;
 
-    public static final String folder = "C:\\Users\\ferna\\Documents\\dbest\\oficina\\oficina-profs\\";
+    //public static final String folder = "C:\\Users\\ferna\\Documents\\dbest\\oficina\\oficina-profs\\";
+    public static final String folder = "C:\\Users\\ferna\\Documents\\dbest\\oficina\\testeConversao\\";
     //public static final String folder = "./";
 
     //8192, 16384, 32768
@@ -407,6 +410,17 @@ public class SBBD {
     /* *********** QUERIES CREATION ****************/
     public Operation createTest1(boolean hash) {
         try {
+            return DslParser.readQuery(new File("C:\\Users\\ferna\\Dropbox\\dbest\\query trees\\23 - union 4.txt"));
+            //return join2;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
+        }
+        return null;
+    }
+    
+    public Operation createTest1XXX(boolean hash) {
+        try {
 
             Table movieTable = Directory.getTable(folder, "movie", null, cacheSize, pageSize, false);
             Table movieCastTable = Directory.getTable(folder, "movieCast", null, cacheSize, pageSize, false);
@@ -443,6 +457,8 @@ public class SBBD {
              */
             //join2.setPageInfo(0, 10);
             //return new IndexScan("movie", movieTable);
+            
+            
             return join2;
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -947,7 +963,7 @@ public class SBBD {
         String action = "NONE";
 
         //args = new String[]{"EVAL", "8", "10","no_HASH"};
-        args = new String[]{"RUN", "5", "ALL_ROWS","NO_HASH"};
+        args = new String[]{"RUN", "1", "ALL_ROWS","NO_HASH"};
         //args = new String[]{"VIEW", "8", "no_HASH"};
         //args = new String[]{"CREATE"};
         for (int i = 0; i < args.length; i++) {

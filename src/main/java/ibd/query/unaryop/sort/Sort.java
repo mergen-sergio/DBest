@@ -140,7 +140,7 @@ public class Sort extends UnaryOperation {
                         //sorter.addTuple(tuple);
 
                     }
-                    QueryStats.MEMORY_USED+=tupleSize;
+                    QueryStats.MEMORY_USED+=tuples.size()*tupleSize;
                     //sort collection
                     Comparator comparator = createComparator();
                     if (!ascending)
@@ -198,7 +198,7 @@ public class Sort extends UnaryOperation {
 
     @Override
     public String toString() {
-        return "Sort:" + sortColumns;
+        return "Sort(" + sortColumns+")";
     }
 
 }

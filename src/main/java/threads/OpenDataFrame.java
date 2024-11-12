@@ -40,7 +40,7 @@ public class OpenDataFrame implements Runnable{
                 try {
                     new DataFrame(cell);
                 } catch (Exception ex) {
-                    Logger.getLogger(OpenDataFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);
                 }
             } else {
                 JOptionPane.showMessageDialog(null, ConstantController.getString("cell.operationCell.error"), ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);

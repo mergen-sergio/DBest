@@ -80,5 +80,28 @@ public abstract class Join extends BinaryOperation {
         }
 
     }
+    
+    public abstract String getJoinAlgorithm();
+    
+    @Override
+    public String toString(){
+        return getJoinAlgorithm()+"("+joinPredicate+")";
+    }
+    
+    public static JoinPredicate createJoinPredicate(List<String> arguments){
+        JoinPredicate joinPredicate = new JoinPredicate();
+       
+        for (String term : arguments) {
+            if (term.isBlank() || term.isEmpty()) continue;
+            int index = term.indexOf("=", 0);
+            String col1 = term.substring(0, index);
+            String col2 = term.substring(index+1, term.length());
+            try {
+                joinPredicate.addTerm(col1, col2);
+            } catch (Exception ex) {
+            }
+        }
+        return joinPredicate;
+    }
 
 }

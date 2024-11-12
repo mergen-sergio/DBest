@@ -435,10 +435,13 @@ public abstract class Operation {
             int rowIndex = getRowIndex(columnDescriptor.getTableName());
             if (rowIndex != -1) {
                 Column col = getDataSources()[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
+                if (col==null)
+                    throw new Exception("Error in operation "+getParentOperation()+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
                 colLoc.rowIndex = rowIndex;
                 colLoc.colIndex = col.index;
                 columnDescriptor.setColumnLocation(colLoc);
             }
+            else throw new Exception("Error in operation "+getParentOperation()+".\nTable " + columnDescriptor.getTableName()+" not found.");
         }
 
     }

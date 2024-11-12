@@ -439,7 +439,17 @@ public class ChainedBlocksTable1 extends Table {
     }
 
     @Override
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception {
+    public String getName() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public String getHeaderName() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 

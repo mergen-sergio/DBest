@@ -59,6 +59,10 @@ public class FullTableScan extends SourceOperation {
     public void close() throws Exception {
 
     }
+    
+    public String getDataSourceName(){
+        return table.getName();
+    }
 
     @Override
     public String toString() {

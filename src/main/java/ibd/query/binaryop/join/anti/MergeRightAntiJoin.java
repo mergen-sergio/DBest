@@ -83,7 +83,7 @@ public class MergeRightAntiJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Merge Right Anti Join";
     }
 

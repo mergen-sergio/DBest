@@ -17,9 +17,15 @@ import entities.cells.FYITableCell;
 import entities.cells.TableCell;
 import enums.CellType;
 import enums.FileType;
+import static enums.FileType.CSV;
+import static enums.FileType.EXCEL;
+import static enums.FileType.HEADER;
+import static enums.FileType.SQL;
+import static enums.FileType.TXT;
 import exceptions.dsl.InputException;
 import files.csv.CSVInfo;
 import gui.frames.ErrorFrame;
+import gui.frames.FileTransferHandler;
 import gui.frames.forms.importexport.CSVRecognizerForm;
 import gui.frames.main.MainFrame;
 import ibd.table.Table;
@@ -35,6 +41,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -71,8 +78,7 @@ public class ImportFile {
 
     private void importFile() throws Exception {
 
-        try
-        {
+        try {
             FileFilter filter = getFileNameExtensionFilter();
 
             this.fileUpload.setFileFilter(filter);
@@ -82,81 +88,68 @@ public class ImportFile {
 
                 switch (this.fileType) {
                     case CSV -> {
-                        CSVInfo info = this.csv();
 
                         if (!this.exitReference.get()) {
-                            assert info != null;
-                            try{
-
-                                this.tableCell = TableCreator.createCSVTable(
-                                    this.tableName.toString(), this.columns, info, false
-                                );
-                            }catch (Exception e){
+//                            CSVInfo info = this.csv(this.fileUpload.getSelectedFile());
+//                            assert info != null;
+//                            try {
+//
+//                                this.tableCell = TableCreator.createCSVTable(
+//                                        this.tableName.toString(), this.columns, info, false
+//                                );
+//                            } catch (Exception e) {
+//                                this.exitReference.set(true);
+//                                new ErrorFrame(e.getMessage());
+//                            }
+                        FileTransferHandler.openCSVFile(this.fileUpload.getSelectedFile());
+                        }
+                    }
+                    case EXCEL ->
+                        this.excel();
+                    case HEADER -> {
+                        if (!exitReference.get()) {
+                            if (!this.fileUpload.getSelectedFile().getName().toLowerCase().endsWith(FileType.HEADER.extension)) {
+                                JOptionPane.showMessageDialog(null, String.format("%s %s", ConstantController.getString("file.error.selectRightExtension"), FileType.HEADER.extension));
                                 this.exitReference.set(true);
-                                new ErrorFrame(e.getMessage());
+                            } else {
+
+                                
+                                FileTransferHandler.openHeadFile(this.fileUpload.getSelectedFile());
+                                
+                                //String file = this.fileUpload.getSelectedFile().getAbsolutePath();
+                                //Table table = TableCreator.loadFromHeader(file);
+                                //CellType cellType = getCellType(fileUpload.getSelectedFile());
+                                //this.tableCell = importHeaderFile(table, cellType, fileUpload.getSelectedFile());
                             }
                         }
                     }
-                    case EXCEL -> this.excel();
-                    case HEADER -> {
-
-                        AtomicReference<Table> table = new AtomicReference<>();
-
-                        header(table);
-
-                        this.tableCell = importHeaderFile(table, exitReference, fileUpload.getSelectedFile());
+                    case DAT -> {
+                        if (!exitReference.get()) {
+                            if (!this.fileUpload.getSelectedFile().getName().toLowerCase().endsWith(FileType.DAT.extension)) {
+                                JOptionPane.showMessageDialog(null, String.format("%s %s", ConstantController.getString("file.error.selectRightExtension"), FileType.DAT.extension));
+                                this.exitReference.set(true);
+                            } else {
+                                FileTransferHandler.openDataFile(this.fileUpload.getSelectedFile());
+                            }
+                        }
                     }
                     case TXT -> {
 
-                        StringBuilder content = new StringBuilder();
-
-                        try (BufferedReader reader = new BufferedReader(new FileReader(fileUpload.getSelectedFile()))) {
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                content.append(line).append("\n");
-                            }
-                        } catch (IOException e) {
-
-                            new ErrorFrame(e.getMessage());
-                            this.exitReference.set(true);
-                            return;
-                        }
-
-                        RelAlgebraParser parser = new RelAlgebraParser(new CommonTokenStream(new RelAlgebraLexer(CharStreams.fromString(content.toString()))));
-
-                        parser.removeErrorListeners();
-
-                        DslErrorListener errorListener = new DslErrorListener();
-                        parser.addErrorListener(errorListener);
-
-                        ParseTreeWalker walker = new ParseTreeWalker();
-
-                        AntlrController listener = new AntlrController();
-
-                        walker.walk(listener, parser.command());
-
-                        if (!DslErrorListener.getErrors().isEmpty()) {
-                            new ErrorFrame(DslErrorListener.getErrors().toString());
-                            return;
-                        }
-
-                        try {
-                            DslController.parser();
-                        } catch (InputException exception) {
-                            new ErrorFrame(exception.getMessage());
+                        File fileName = fileUpload.getSelectedFile();
+                        boolean status = importQuery(fileName);
+                        if (status) {
                             this.exitReference.set(true);
                         }
-
                     }
                     case SQL ->
-                            throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
-                    default -> throw new IllegalArgumentException(String.format("Unexpected value: %s", this.fileType));
+                        throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
+                    default ->
+                        throw new IllegalArgumentException(String.format("Unexpected value: %s", this.fileType));
                 }
             } else {
                 this.exitReference.set(true);
             }
-        }
-        catch (FileNotFoundException | IllegalArgumentException e){
+        } catch (FileNotFoundException | IllegalArgumentException e) {
 
             new ErrorFrame(e.getMessage());
             exitReference.set(true);
@@ -164,62 +157,130 @@ public class ImportFile {
         }
     }
 
-    public static TableCell importHeaderFile(AtomicReference<Table> table,
-                                        AtomicReference<Boolean> exitReference, File file) throws FileNotFoundException, Exception{
+    public static CellType getCellType(File file) throws FileNotFoundException {
 
-        if (!exitReference.get()) {
-            String selectedFileName = file.getName();
-
-            String fileName = selectedFileName.endsWith(FileType.HEADER.extension) ?
-                selectedFileName.substring(0, selectedFileName.indexOf(".")) :
-                selectedFileName;
-
-            JsonObject headerFile = new Gson().fromJson(new FileReader(file), JsonObject.class);
-            CellType cellType = headerFile.getAsJsonObject("information").get("file-path").getAsString()
+        JsonObject headerFile = new Gson().fromJson(new FileReader(file), JsonObject.class);
+        return headerFile.getAsJsonObject("information").get("file-path").getAsString()
                 .replaceAll("' | \"", "").endsWith(".dat")
                 ? CellType.FYI_TABLE : CellType.CSV_TABLE;
+    }
 
-            mxCell jCell = (mxCell) MainFrame
-                .getGraph()
-                .insertVertex(
-                    MainFrame.getGraph().getDefaultParent(), null,
-                    fileName, 0, 0, 80, 30, cellType.id
-                );
+    private static String readTXT1(File fileName) throws IOException {
+        StringBuilder content = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new FileReader(fileName));
+        String line;
 
-            table.get().open();
+        while ((line = reader.readLine()) != null) {
+            content.append(line).append("\n");
+        }
+        return content.toString();
+    }
 
-            return switch (cellType){
-                case CSV_TABLE -> new CSVTableCell(jCell, fileName, table.get(), file);
-                case FYI_TABLE -> new FYITableCell(jCell, fileName, table.get(), file);
-                default -> throw new IllegalStateException("Unexpected value: " + cellType);
-            };
+    private static String readQuery(File fileName) throws IOException {
+        StringBuilder content = new StringBuilder();
+        FileInputStream fis = new FileInputStream(fileName);
+        int ch;
+        while ((ch = fis.read()) != -1) {
+            content.append((char) ch);
+
+            // Add a newline character after each line
+            if (ch == '\n') {
+                content.append('\n');
+            }
+        }
+        return content.toString();
+    }
+
+    public static boolean importQuery(File fileName) {
+        String content = "";
+        try {
+            content = readQuery(fileName);
+        } catch (IOException e) {
+            new ErrorFrame(e.getMessage());
         }
 
-        return null;
+        RelAlgebraParser parser = new RelAlgebraParser(new CommonTokenStream(new RelAlgebraLexer(CharStreams.fromString(content))));
+
+        parser.removeErrorListeners();
+
+        DslErrorListener errorListener = new DslErrorListener();
+        parser.addErrorListener(errorListener);
+
+        ParseTreeWalker walker = new ParseTreeWalker();
+
+        AntlrController listener = new AntlrController();
+
+        walker.walk(listener, parser.command());
+//
+//                        if (!DslErrorListener.getErrors().isEmpty()) {
+//                            new ErrorFrame(DslErrorListener.getErrors().toString());
+//                            return;
+//                        }
+
+        try {
+            DslController.parser(content);
+        } catch (InputException exception) {
+            DslController.reset();
+            new ErrorFrame(exception.getMessage());
+            return true;
+        }
+        return false;
+    }
+
+    public static TableCell importHeaderFile(Table table,
+            CellType cellType, File file) throws FileNotFoundException, Exception {
+
+        String selectedFileName = file.getName();
+
+        String tableName = selectedFileName.substring(0, selectedFileName.indexOf("."));
+
+        mxCell jCell = (mxCell) MainFrame
+                .getGraph()
+                .insertVertex(
+                        MainFrame.getGraph().getDefaultParent(), null,
+                        tableName, 0, 0, 80, 30, cellType.id
+                );
+
+        table.open();
+
+        return switch (cellType) {
+            case CSV_TABLE ->
+                new CSVTableCell(jCell, tableName, table, file);
+            case FYI_TABLE ->
+                new FYITableCell(jCell, tableName, table, file);
+            default ->
+                throw new IllegalStateException("Unexpected value: " + cellType);
+        };
     }
 
     @NotNull
     private FileNameExtensionFilter getFileNameExtensionFilter() {
 
-        return switch (this.fileType) {
-            case CSV -> new FileNameExtensionFilter("CSV files", "csv");
-            case EXCEL -> new FileNameExtensionFilter("Sheets files", "xlsx", "xls", "ods");
-            case HEADER -> new FileNameExtensionFilter("Headers files", "head");
-            case SQL -> throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
-            case TXT -> new FileNameExtensionFilter("Txt files", "txt");
-            default -> throw new IllegalArgumentException(String.format("Unexpected value: %s", this.fileType));
+        return getFileNameExtensionFilter (this.fileType);
+    }
+    
+    public static FileNameExtensionFilter getFileNameExtensionFilter(FileType fileType) {
+
+        return switch (fileType) {
+            case CSV ->
+                new FileNameExtensionFilter("CSV files", "csv");
+            case EXCEL ->
+                new FileNameExtensionFilter("Sheets files", "xlsx", "xls", "ods");
+            case HEADER ->
+                new FileNameExtensionFilter("Headers files", "head");
+            case DAT ->
+                new FileNameExtensionFilter("Dat files", "dat");
+            case SQL -> null;
+                //throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
+            case TXT ->
+                new FileNameExtensionFilter("Query files", "txt");
+            default -> null;
+                //throw new IllegalArgumentException(String.format("Unexpected value: %s", this.fileType));
         };
     }
 
-    private void header(AtomicReference<Table> table) throws Exception {
-        if (!this.fileUpload.getSelectedFile().getName().toLowerCase().endsWith(FileType.HEADER.extension)) {
-            JOptionPane.showMessageDialog(null, String.format("%s %s", ConstantController.getString("file.error.selectRightExtension"), FileType.HEADER.extension));
-            this.exitReference.set(true);
-            return;
-        }
+    private void importTable(AtomicReference<Table> table) throws Exception {
 
-        String file = this.fileUpload.getSelectedFile().getAbsolutePath();
-        table.set(TableCreator.loadFromHeader(file));
     }
 
     private void excel() {
@@ -303,10 +364,10 @@ public class ImportFile {
 
     }
 
-    private CSVInfo csv() {
-        if (!this.fileUpload.getSelectedFile().getName().toLowerCase().endsWith(FileType.CSV.extension)) {
-            JOptionPane.showMessageDialog(null, ConstantController.getString("file.error.selectRightExtension")+" "
-                    +FileType.CSV.extension);
+    private CSVInfo csv(File file) {
+        if (!file.getName().toLowerCase().endsWith(FileType.CSV.extension)) {
+            JOptionPane.showMessageDialog(null, ConstantController.getString("file.error.selectRightExtension") + " "
+                    + FileType.CSV.extension);
 
             this.exitReference.set(true);
 
@@ -314,8 +375,8 @@ public class ImportFile {
         }
 
         return new CSVRecognizerForm(
-            Path.of(this.fileUpload.getSelectedFile().getAbsolutePath()), this.tableName,
-            this.columns, this.content, this.exitReference
+                Path.of(file.getAbsolutePath()), this.tableName,
+                this.columns, this.content, this.exitReference
         ).getCSVInfo();
     }
 

@@ -39,14 +39,16 @@ public class ComparatorFrame extends JFrame implements ActionListener {
     private final Map<Cell, Integer> totalTuplesLoaded = new HashMap<>();
 
     private final List<Cell> markedCells;
+    
+    CellStats emptyStats = CellStats.getEmptyStats();
 
     int tuplesLoaded = 0;
 
-    public ComparatorFrame(){
-        
+    public ComparatorFrame() {
+
         try {
             this.setIconImage(new ImageIcon(String.valueOf(FileUtils.getDBestLogo())).getImage());
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
         }
 
         this.markedCells = CellUtils
@@ -55,18 +57,32 @@ public class ComparatorFrame extends JFrame implements ActionListener {
                 .stream()
                 .filter(Cell::isMarked)
                 .filter(x -> {
-                    if(x instanceof OperationCell opCell)
+                    if (x instanceof OperationCell opCell) {
                         return opCell.hasBeenInitialized() && !opCell.hasError();
+                    }
                     return true;
                 }).toList();
 
-        markedCells.forEach(cell -> {
-            cell.openOperator();
+        CellStats.reset();
+        CellStats prevStats = null;
+        for (Cell cell : markedCells) {
+
+            try {
+                cell.openOperator();
+            } catch (Exception ex) {
+                Logger.getLogger(ComparatorFrame.class.getName()).log(Level.SEVERE, null, ex);
+            }
             tuplesDone.put(cell, false);
             totalTuplesLoaded.put(cell, 0);
-        });
+            CellStats stats = CellStats.getTotalCurrentStats();
+            if (prevStats != null) {
+                stats = CellStats.getTotalCurrentStats().getDiff(prevStats);
+            }
+            allCellStats.put(cell, stats);
+            prevStats = stats;
+        };
 
-        updateJTable();
+        updateJTable(true);
         initGUI();
 
     }
@@ -109,20 +125,20 @@ public class ComparatorFrame extends JFrame implements ActionListener {
         this.setVisible(true);
     }
 
-    private void updateLblText(){
-        lblTuplesLoaded.setText(ConstantController.getString("comparator.totalTuplesLoaded")+": " + tuplesLoaded);
+    private void updateLblText() {
+        lblTuplesLoaded.setText(ConstantController.getString("comparator.totalTuplesLoaded") + ": " + tuplesLoaded);
     }
 
-    private void verifyIfTuplesAreDone(){
+    private void verifyIfTuplesAreDone() {
 
-        if(tuplesDone.values().stream().allMatch(x->x)) {
+        if (tuplesDone.values().stream().allMatch(x -> x)) {
             btnNext.setEnabled(false);
             btnAllNext.setEnabled(false);
         }
 
     }
 
-    private void updateJTable(){
+    private void updateJTable(boolean first) {
 
         Vector<Vector<String>> data = new Vector<>();
         Vector<String> columnNames = new Vector<>();
@@ -133,28 +149,38 @@ public class ComparatorFrame extends JFrame implements ActionListener {
 
         Vector<String> totalTuplesPerCell = new Vector<>(List.of(ConstantController.getString("comparator.tuplesLoaded")));
 
-        for(Cell cell : markedCells){
+        int tuplesToRead = (int) spinner.getValue();
+        if (first) {
+            tuplesToRead = 0;
+        }
+
+        for (Cell cell : markedCells) {
 
             columnNames.add(cell.getName());
 
-            Pair<Integer, CellStats> currentStats = tuplesDone.get(cell) ? Pair.of(0, allCellStats.get(cell)) : cell.getCellStats((int)spinner.getValue(), CellStats.getTotalCurrentStats());
-
-            if(!tuplesDone.get(cell) && (int)spinner.getValue() != currentStats.getLeft())
-                tuplesDone.put(cell, true);
-
+            Pair<Integer, CellStats> currentStats = tuplesDone.get(cell) ? Pair.of(0, emptyStats) : cell.getCellStats(tuplesToRead, CellStats.getTotalCurrentStats());
+            if (!first) {
+                if (!tuplesDone.get(cell) && (int) spinner.getValue() != currentStats.getLeft()) {
+                    tuplesDone.put(cell, true);
+                }
+            }
             totalTuplesLoaded.put(cell, totalTuplesLoaded.get(cell) + currentStats.getLeft());
 
             totalTuplesPerCell.add(String.valueOf(totalTuplesLoaded.get(cell)));
 
             tuplesLoaded += currentStats.getLeft();
 
-            CellStats stats = allCellStats.containsKey(cell) ? currentStats.getRight().getSum(allCellStats.get(cell)) : currentStats.getRight();
+            CellStats stats = null;
+//            if (tuplesDone.get(cell))
+//                stats = currentStats.getRight();
+//            else
+                stats = allCellStats.containsKey(cell) ? currentStats.getRight().getSum(allCellStats.get(cell)) : currentStats.getRight();
 
             allCellStats.put(cell, stats);
 
-            for(Map.Entry<String, Long> c : stats.toMap().entrySet()){
+            for (Map.Entry<String, Long> c : stats.toMap().entrySet()) {
 
-                if(cellStats.containsKey(c.getKey())) {
+                if (cellStats.containsKey(c.getKey())) {
                     cellStats.get(c.getKey()).add(c.getValue());
                     continue;
                 }
@@ -167,14 +193,15 @@ public class ComparatorFrame extends JFrame implements ActionListener {
 
         data.add(totalTuplesPerCell);
 
-        for(String parameterName : cellStats.keySet()){
+        for (String parameterName : cellStats.keySet()) {
 
             Vector<String> row = new Vector<>();
 
             row.add(ConstantController.getString(parameterName));
 
-            for(Long l : cellStats.get(parameterName))
+            for (Long l : cellStats.get(parameterName)) {
                 row.add(String.valueOf(l));
+            }
 
             data.add(row);
 
@@ -203,9 +230,9 @@ public class ComparatorFrame extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
 
-        if(btnNext == e.getSource()){
+        if (btnNext == e.getSource()) {
             try {
-                updateJTable();
+                updateJTable(false);
             } catch (Exception ex) {
                 Logger.getLogger(ComparatorFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -213,10 +240,10 @@ public class ComparatorFrame extends JFrame implements ActionListener {
             updateLblText();
         }
 
-        if(btnAllNext == e.getSource()){
-            while (btnAllNext.isEnabled()){
+        if (btnAllNext == e.getSource()) {
+            while (btnAllNext.isEnabled()) {
                 try {
-                    updateJTable();
+                    updateJTable(false);
                 } catch (Exception ex) {
                     Logger.getLogger(ComparatorFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }

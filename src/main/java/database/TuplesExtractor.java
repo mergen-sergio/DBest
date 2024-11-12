@@ -84,7 +84,8 @@ public class TuplesExtractor {
     public static List<Map<String, String>> getRows(Operation operator, boolean sourceAndName, int amount) {
 
         if (amount <= 0) {
-            throw new IllegalArgumentException();
+            //throw new IllegalArgumentException();
+            return new ArrayList<>();
         }
 
         Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);

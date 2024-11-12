@@ -157,6 +157,6 @@ public class Filter extends UnaryOperation {
 
     @Override
     public String toString() {
-        return filter.toString();
+        return "Filter ("+filter+")";
     }
 }

@@ -5,11 +5,13 @@
  */
 package ibd.query.binaryop.join.outer;
 
-import ibd.query.binaryop.join.*;
 import ibd.query.Operation;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,7 +88,7 @@ public class MergeRightOuterJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Merge Right Outer Join";
     }
 

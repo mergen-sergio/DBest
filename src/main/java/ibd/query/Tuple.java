@@ -138,7 +138,7 @@ public class Tuple implements Comparable<Tuple> {
         for (int i = 0; i < rows.length; i++) {
             LinkedDataRow st1 = rows[i];
             LinkedDataRow st2 = t2.rows[i];
-            for (int j = 0; i < st1.getFieldsSize(); i++) {
+            for (int j = 0; j < st1.getFieldsSize(); j++) {
                 Field f1 = st1.getField(j);
                 Field f2 = st2.getField(j);
                 int comp = f1.compareTo(f2);

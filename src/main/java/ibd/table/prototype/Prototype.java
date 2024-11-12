@@ -339,7 +339,7 @@ public class Prototype implements Iterable<Column> {
     }
 
     /**
-     * calculate the header dize and the primairy key sizes. needs to be
+     * calculate the header dize and the primary key sizes. needs to be
      * calculcated only once, after all columns are defined
      */
     private void calculateSizes() {

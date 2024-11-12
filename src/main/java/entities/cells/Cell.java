@@ -179,12 +179,8 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         return null;
     }
 
-    public void openOperator(){
-        try {
+    public void openOperator() throws Exception{
             operator.open();
-        } catch (Exception ex) {
-            Logger.getLogger(Cell.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     public void closeOperator(){

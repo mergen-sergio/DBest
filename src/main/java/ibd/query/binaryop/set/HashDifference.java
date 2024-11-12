@@ -6,6 +6,7 @@
 package ibd.query.binaryop.set;
 
 import ibd.query.Operation;
+import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
@@ -13,6 +14,8 @@ import ibd.table.prototype.query.fields.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Performs a difference between the left and the right operations.
@@ -63,6 +66,7 @@ public class HashDifference extends Set {
         Iterator<Tuple> leftTuples;
         //the iterator over the operation on the left side
         Iterator<Tuple> rightTuples;
+        int tupleSize = 0;
 
         /**
          * @param processedTuples the tuples that come from operations already
@@ -77,6 +81,10 @@ public class HashDifference extends Set {
             tuples = new HashMap<>();
             leftTuples = leftOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
             rightTuples = rightOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
+            try {
+                tupleSize = rightOperation.getTupleSize();
+            } catch (Exception ex) {
+            }
         }
 
         private String getKey(Tuple tuple) {
@@ -103,6 +111,7 @@ public class HashDifference extends Set {
                 if (lookup.match(rightTuple)) {
                     String key = getKey(rightTuple);
                     tuples.put(key, rightTuple);
+                    QueryStats.MEMORY_USED += tupleSize;
                 }
             }
 

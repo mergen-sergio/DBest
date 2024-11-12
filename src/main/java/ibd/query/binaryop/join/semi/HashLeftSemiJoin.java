@@ -5,18 +5,15 @@
  */
 package ibd.query.binaryop.join.semi;
 
-import ibd.query.binaryop.join.*;
 import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
-import ibd.table.ComparisonTypes;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,9 +34,6 @@ public class HashLeftSemiJoin extends Join {
     This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
      */
     HashMap<String, List<Tuple>> tuples;
-
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
 
     /**
      *
@@ -64,7 +58,6 @@ public class HashLeftSemiJoin extends Join {
         //a new one is created when the first query is executed. 
         tuples = null;
 
-        memoryUsedDefined = false;
     }
 
     //sets the column indexes for the terms of the join predicate
@@ -74,7 +67,7 @@ public class HashLeftSemiJoin extends Join {
             rightOperation.setColumnLocation(term.getRightColumnDescriptor());
         }
     }
-    
+
     /**
      * {@inheritDoc }
      * the data sources array is a copy of the data sources that come from the
@@ -104,8 +97,8 @@ public class HashLeftSemiJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
-        return "Hash Semi Join";
+    public String getJoinAlgorithm() {
+        return "Hash Left Semi Join";
     }
 
     /**
@@ -142,7 +135,7 @@ public class HashLeftSemiJoin extends Join {
             //build hash, if one does not exist yet
             if (tuples == null) {
                 tuples = new HashMap();
-                memoryUsed = 0;
+                long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
@@ -169,7 +162,7 @@ public class HashLeftSemiJoin extends Join {
 
                 } catch (Exception ex) {
                 }
-
+                QueryStats.MEMORY_USED += memoryUsed;
             }
         }
 
@@ -189,11 +182,6 @@ public class HashLeftSemiJoin extends Join {
 
         @Override
         protected Tuple findNextTuple() {
-
-            if (!memoryUsedDefined) {
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED = memoryUsed;
-            }
 
             //the left side cursor only advances if the current left side tuple is done.
             //it means all corresponding tuples from the right side were processed

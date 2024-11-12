@@ -77,8 +77,8 @@ public class HashJoin extends Join {
      * @return the name of the operation
      */
     @Override
-    public String toString() {
-        return "Nested Loop Join";
+    public String getJoinAlgorithm() {
+        return "Hash Join";
     }
 
     /**
@@ -142,13 +142,14 @@ public class HashJoin extends Join {
                             tuples.put(key, tupleList);
                         }
                         tupleList.add(tuple);
-                        memoryUsed += tupleSize / 1024;
+                        memoryUsed += tupleSize;
                     }
 
                 } catch (Exception ex) {
                 }
-
+            QueryStats.MEMORY_USED += memoryUsed;
             }
+            
         }
 
         //set the key with the left-side values that are necessary to perform the lookup.
@@ -167,11 +168,6 @@ public class HashJoin extends Join {
 
         @Override
         protected Tuple findNextTuple() {
-
-            if (!memoryUsedDefined){
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED = memoryUsed;
-            }
 
             //the left side cursor only advances if the current left side tuple is done.
             //it means all corresponding tuples from the right side were processed

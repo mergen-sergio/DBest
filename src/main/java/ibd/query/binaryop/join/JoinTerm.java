@@ -138,5 +138,10 @@ public class JoinTerm {
     public int getRightTupleRowIndex() {
         return rightTupleRowIndex;
     }
+    
+    @Override
+    public String toString(){
+        return getLeftTableAlias()+"."+getLeftColumn()+"="+getRightTableAlias()+"."+getRightColumn();
+    }
 
 }

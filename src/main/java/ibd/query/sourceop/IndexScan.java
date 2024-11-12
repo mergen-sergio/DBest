@@ -63,6 +63,8 @@ public class IndexScan extends SourceOperation {
     The filter to be used for those columns that cannot be efficiently looked-up
      */
     RowLookupFilter slowLookupFilter;
+    
+    int compType;
 
     /**
      *
@@ -96,6 +98,10 @@ public class IndexScan extends SourceOperation {
     public void setDataSourcesInfo() throws Exception {
         super.setDataSourcesInfo();
         dataSources[0].prototype = table.getPrototype();
+    }
+    
+    public String getDataSourceName(){
+        return table.getName();
     }
 
     //separates filters into slow and fast, based on the tables hability to efficiently handle the search condition
@@ -154,7 +160,9 @@ public class IndexScan extends SourceOperation {
                 fillFastFilters(f);
             }
         } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter) {
-            if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) {
+            //if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) 
+            {
+                compType = singleColumnLookupFilter.getComparisonType();
                 fastFilters.add(singleColumnLookupFilter);
             }
         }
@@ -280,11 +288,11 @@ public class IndexScan extends SourceOperation {
                         //no slow filter needs to be satisfied
                         //iterator = table.getRecords(fastLookupRow).iterator();
                         //iterator = records.iterator();
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter);
+                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter,  compType);
                     } else {
                         //there are slow filters to be satisfied
                         //iterator = table.getRecords(fastLookupRow, slowLookupFilter).iterator;
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter);
+                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter,  compType);
                     }
 
                     return;

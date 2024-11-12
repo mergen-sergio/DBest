@@ -230,7 +230,8 @@ public class AllAggregation extends UnaryOperation {
                 for (int i = 0; i < aggregationTypes.size(); i++) {
                     AggregationType aggregationType = aggregationTypes.get(i);
                     Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
-                    groupedValues[i].add((Integer) aggregatedValue);
+                    if (aggregatedValue!=null)
+                        groupedValues[i].add((Integer) aggregatedValue);
                 }
             }
             if (groupedValues[0].isEmpty()) {

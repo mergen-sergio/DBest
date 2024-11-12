@@ -26,18 +26,23 @@ import java.util.stream.Collectors;
 
 public class CellUtils extends MainController {
 
-    public static int getCellWidth(mxCell jCell){
+    public static int getCellWidth(String text){
 
         JLabel label = new JLabel();
         Font font = new Font("Arial", Font.PLAIN, 12);
         label.setFont(font);
 
-        String text = (String) jCell.getValue();
         FontMetrics fontMetrics = label.getFontMetrics(font);
 
         if(text == null) throw new RuntimeException();
 
         return fontMetrics.stringWidth(text);
+
+    }
+    
+    public static int getCellWidth(mxCell jCell){
+        String text = (String) jCell.getValue();
+        return getCellWidth(text);
 
     }
 

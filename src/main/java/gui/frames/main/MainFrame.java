@@ -13,12 +13,11 @@ import entities.buttons.ToolBarButton;
 import enums.CellType;
 import enums.OperationType;
 import files.FileUtils;
+import gui.frames.CustomGraphComponent;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +28,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected static mxGraph graph;
 
-    protected static mxGraphComponent graphComponent;
+    protected static CustomGraphComponent graphComponent;
 
     protected JPanel  operationsPanel;
     
@@ -55,17 +54,17 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenu operationsMenuItem;
 
-    protected JMenuItem showMenuItem;
+    protected JMenuItem runQueryMenuItem;
 
     protected JMenuItem informationsMenuItem;
 
-    protected JMenuItem asOperatorMenuItem;
+    protected JMenuItem renameOperatorMenuItem;
 
     protected JMenuItem exportTableMenuItem;
 
-    protected JMenuItem generateFyiTableMenuItem;
+    //protected JMenuItem generateFyiTableMenuItem;
 
-    protected JMenuItem exportTreeMenuItem;
+    protected JMenuItem saveQueryMenuItem;
 
     protected JMenuItem editMenuItem;
 
@@ -107,15 +106,27 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     
     protected JMenuItem differenceMenuItem;
 
-    protected JMenuItem importTableMenuItem;
+    //protected JMenuItem importTableMenuItem;
+    
+    //protected JMenuItem openCSVTableMenuItem;
+    
+    //protected JMenuItem openHeadFileMenuItem;
+    
+    //protected JMenuItem openBTreeTableMenuItem;
 
-    protected JMenuItem importTreeMenuItem;
+    // protected JMenuItem importTreeMenuItem;
 
     protected JMenuBar topMenuBar = new JMenuBar();
 
     protected JMenuItem importTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
-
-    protected JMenuItem importTreeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.importTree"));
+    
+    protected JMenuItem openCSVTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openCSVTable"));
+    
+    protected JMenuItem openBTreeTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openBTreeTable"));
+    
+    protected JMenuItem openHeadFileTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openHeadFileTable"));
+    
+    protected JMenuItem openQueryTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openQuery"));
 
     protected JMenuItem nimbusThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.nimbus"));
 
@@ -123,9 +134,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem gtkThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.gtk"));
 
-    protected JMenuItem undoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.undo"), ConstantController.getString("menu.edit.undo.shortcut")));
+    //protected JMenuItem undoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.undo"), ConstantController.getString("menu.edit.undo.shortcut")));
 
-    protected JMenuItem redoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.redo"), ConstantController.getString("menu.edit.redo.shortcut")));
+    //protected JMenuItem redoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.redo"), ConstantController.getString("menu.edit.redo.shortcut")));
 
     protected MainFrame(Set<Button<?>> buttons) {
         super(ConstantController.APPLICATION_TITLE);
@@ -141,7 +152,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     private void initializeFields(Set<Button<?>> buttons) {
         graph = new mxGraph();
-        graphComponent = new mxGraphComponent(graph);
+        graphComponent = new CustomGraphComponent(graph);
         this.operationsPanel = new JPanel();
         this.indexOperatorsPanel = new JPanel();
         this.aggregationOperatorsPanel = new JPanel();
@@ -157,12 +168,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons = buttons;
         this.popupMenuJCell = new JPopupMenu();
         this.topMenuBar = new JMenuBar();
-        this.showMenuItem = new JMenuItem(ConstantController.getString("cell.show"));
+        this.runQueryMenuItem = new JMenuItem(ConstantController.getString("cell.runQuery"));
         this.informationsMenuItem = new JMenuItem(ConstantController.getString("cell.informations"));
-        this.asOperatorMenuItem = new JMenuItem(ConstantController.getString("cell.asOperator"));
+        this.renameOperatorMenuItem = new JMenuItem(ConstantController.getString("cell.rename"));
         this.exportTableMenuItem = new JMenuItem(ConstantController.getString("cell.exportTable"));
-        this.generateFyiTableMenuItem = new JMenuItem(ConstantController.getString("cell.generateFyiTable"));
-        this.exportTreeMenuItem = new JMenuItem(ConstantController.getString("cell.exportTree"));
+        //this.generateFyiTableMenuItem = new JMenuItem(ConstantController.getString("cell.generateFyiTable"));
+        this.saveQueryMenuItem = new JMenuItem(ConstantController.getString("cell.saveQuery"));
         this.editMenuItem = new JMenuItem(ConstantController.getString("cell.edit"));
         this.removeMenuItem = new JMenuItem(ConstantController.getString("cell.remove"));
         this.markCellMenuItem = new JMenuItem(ConstantController.getString("cell.mark"));
@@ -184,8 +195,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.unionMenuItem = new JMenuItem(OperationType.UNION.displayName);
         this.intersectionMenuItem = new JMenuItem(OperationType.INTERSECTION.displayName);
         this.differenceMenuItem = new JMenuItem(OperationType.DIFFERENCE.displayName);
-        this.importTableMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
-        this.importTreeMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTree"));
+//        this.importTableMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
+//        this.openCSVTableMenuItem = new JMenuItem(ConstantController.getString("menu.file.openCSVTable"));
+//        this.openBTreeTableMenuItem = new JMenuItem(ConstantController.getString("menu.file.openBTreeTable"));
+//        this.openHeadFileMenuItem = new JMenuItem(ConstantController.getString("menu.file.openHeadFile"));
+          //this.importTreeMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTree"));
     }
 
     protected void refreshAllComponents(){
@@ -216,7 +230,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.addBottomButtons();
         this.addTopMenuBarFileItems();
         this.addTopMenuBarAppearanceItems();
-        this.addTopMenuBarEditItems();
+        //this.addTopMenuBarEditItems();
 
         this.getContentPane().addKeyListener(this);
 
@@ -271,10 +285,17 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.topMenuBar.add(fileMenu);
 
         fileMenu.add(this.importTableTopMenuBarItem);
-        fileMenu.add(this.importTreeTopMenuBarItem);
+        fileMenu.add(this.openCSVTableTopMenuBarItem);
+        fileMenu.add(this.openBTreeTableTopMenuBarItem);
+        fileMenu.add(this.openHeadFileTableTopMenuBarItem);
+        
+        fileMenu.add(this.openQueryTopMenuBarItem);
 
         this.importTableTopMenuBarItem.addActionListener(this);
-        this.importTreeTopMenuBarItem.addActionListener(this);
+        this.openCSVTableTopMenuBarItem.addActionListener(this);
+        this.openBTreeTableTopMenuBarItem.addActionListener(this);
+        this.openHeadFileTableTopMenuBarItem.addActionListener(this);
+        this.openQueryTopMenuBarItem.addActionListener(this);
     }
 
     private void addTopMenuBarAppearanceItems() {
@@ -294,15 +315,15 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     }
 
     private void addTopMenuBarEditItems() {
-        JMenu editMenu = new JMenu(ConstantController.getString("menu.edit"));
-
-        editMenu.add(this.undoTopMenuBarItem);
-        editMenu.add(this.redoTopMenuBarItem);
-
-        this.undoTopMenuBarItem.addActionListener(this);
-        this.redoTopMenuBarItem.addActionListener(this);
-
-        this.topMenuBar.add(editMenu);
+//        JMenu editMenu = new JMenu(ConstantController.getString("menu.edit"));
+//
+//        editMenu.add(this.undoTopMenuBarItem);
+//        editMenu.add(this.redoTopMenuBarItem);
+//
+//        this.undoTopMenuBarItem.addActionListener(this);
+//        this.redoTopMenuBarItem.addActionListener(this);
+//
+//        this.topMenuBar.add(editMenu);
     }
 
     private void setJCellStyles() {
@@ -372,6 +393,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     private void addOperationButtons() {
         mxStylesheet stylesheet = graph.getStylesheet();
 
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.operationsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECTION, this, this.operationsPanel));
@@ -478,9 +500,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         graphComponent.getGraphControl().addMouseListener(this);
         graphComponent.addKeyListener(this);
         graphComponent.setFocusable(true);
-        graphComponent.setGridVisible(true);
+        //graphComponent.setGridVisible(true);
         graphComponent.setDragEnabled(true);
-        graphComponent.setGridStyle(1);
+        //graphComponent.setGridStyle(1);
         graphComponent.setAutoExtend(true);
         graphComponent.requestFocus();
         graphComponent.setComponentPopupMenu(this.popupMenuJCell);
@@ -499,11 +521,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     private void setMenuItemsListener() {
         this.informationsMenuItem.addActionListener(this);
-        this.asOperatorMenuItem.addActionListener(this);
+        this.renameOperatorMenuItem.addActionListener(this);
         this.exportTableMenuItem.addActionListener(this);
-        this.generateFyiTableMenuItem.addActionListener(this);
-        this.exportTreeMenuItem.addActionListener(this);
-        this.showMenuItem.addActionListener(this);
+        //this.generateFyiTableMenuItem.addActionListener(this);
+        this.saveQueryMenuItem.addActionListener(this);
+        this.runQueryMenuItem.addActionListener(this);
         this.editMenuItem.addActionListener(this);
         this.removeMenuItem.addActionListener(this);
         this.markCellMenuItem.addActionListener(this);

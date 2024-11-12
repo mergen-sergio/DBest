@@ -64,7 +64,7 @@ public class MergeJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Merge Join";
     }
 

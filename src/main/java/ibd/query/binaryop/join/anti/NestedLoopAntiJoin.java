@@ -108,8 +108,8 @@ public class NestedLoopAntiJoin extends Join {
     }
 
     @Override
-    public String toString() {
-        return "Anti Nested Loop Join";
+    public String getJoinAlgorithm() {
+        return "Nested Loop Anti Join";
     }
 
     /**

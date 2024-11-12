@@ -63,7 +63,7 @@ public abstract class JoinOperators implements IOperator {
 
         try {
             //BooleanExpression booleanExpression = new BooleanExpressionRecognizer(jCell).recognizer(arguments.get(0));
-            JoinPredicate joinPredicate = createJoinPredicate(arguments);
+            JoinPredicate joinPredicate = ibd.query.binaryop.join.Join.createJoinPredicate(arguments);
             ibd.query.Operation readyOperator = this.createJoinOperator(operator1, operator2, joinPredicate);
             //String operationName = String.format("%s   %s", cell.getType().symbol, new BooleanExpressionRecognizer(jCell).recognizer(booleanExpression));
             String operationName = String.format("%s   %s", cell.getType().symbol, getTextualJoinPredicate(arguments));
@@ -79,21 +79,7 @@ public abstract class JoinOperators implements IOperator {
         MainController.getGraph().getModel().setValue(edges[1], ConstantController.getString("right"));
     }
     
-    private JoinPredicate createJoinPredicate(List<String> arguments){
-        JoinPredicate joinPredicate = new JoinPredicate();
-       
-        for (String term : arguments) {
-            if (term.isBlank() || term.isEmpty()) continue;
-            int index = term.indexOf("=", 0);
-            String col1 = term.substring(0, index);
-            String col2 = term.substring(index+1, term.length());
-            try {
-                joinPredicate.addTerm(col1, col2);
-            } catch (Exception ex) {
-            }
-        }
-        return joinPredicate;
-    }
+    
     
     private String getTextualJoinPredicate(List<String> arguments) {
     if (arguments == null || arguments.isEmpty()) {

@@ -191,7 +191,7 @@ public class BlockNestedLoopJoin extends Join {
     }
 
     @Override
-    public String toString() {
+    public String getJoinAlgorithm() {
         return "Block Nested Loop Join";
     }
 }

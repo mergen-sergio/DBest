@@ -5,16 +5,15 @@
  */
 package ibd.query.binaryop.join.anti;
 
-import ibd.query.binaryop.join.semi.*;
-import ibd.query.binaryop.join.outer.*;
-import ibd.query.binaryop.join.*;
 import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.table.prototype.LinkedDataRow;
+import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.binaryop.join.JoinTerm;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,12 +35,6 @@ public class HashRightAntiJoin extends Join {
      */
     HashMap<String, List<Tuple>> tuples;
 
-    //a null tuple that is shared with all left side tuples that fail to join with right side tuples
-    Tuple nullLeftTuple;
-
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
-
     /**
      *
      * @param leftOperation the left side operation
@@ -61,13 +54,10 @@ public class HashRightAntiJoin extends Join {
         //sets the column indexes for the terms of the join predicate
         setJoinTermsIndexes();
 
-        setNullLeftTuple();
-
         //erases the previously built hash.
         //a new one is created when the first query is executed. 
         tuples = null;
 
-        memoryUsedDefined = false;
     }
 
     /**
@@ -102,25 +92,13 @@ public class HashRightAntiJoin extends Join {
         }
     }
 
-    protected void setNullLeftTuple() throws Exception {
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
-        nullLeftTuple = new Tuple();
-        nullLeftTuple.rows = new LinkedDataRow[left.length];
-        for (int i = 0; i < left.length; i++) {
-            LinkedDataRow row = new LinkedDataRow(left[i].prototype, false);
-            nullLeftTuple.rows[i] = new LinkedDataRow();
-            nullLeftTuple.rows[i] = row;
-        }
-
-    }
-
     /**
      *
      * @return the name of the operation
      */
     @Override
-    public String toString() {
-        return "Hash Right Join";
+    public String getJoinAlgorithm() {
+        return "Hash Right Anti Join";
     }
 
     /**
@@ -159,7 +137,7 @@ public class HashRightAntiJoin extends Join {
             //build hash, if one does not exist yet
             if (tuples == null) {
                 tuples = new HashMap();
-                memoryUsed = 0;
+                long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
@@ -186,7 +164,7 @@ public class HashRightAntiJoin extends Join {
 
                 } catch (Exception ex) {
                 }
-
+                QueryStats.MEMORY_USED += memoryUsed;
             }
         }
 
@@ -207,11 +185,6 @@ public class HashRightAntiJoin extends Join {
         @Override
         protected Tuple findNextTuple() {
 
-            if (!memoryUsedDefined) {
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED += memoryUsed;
-            }
-
             //the left side cursor only advances if the current left side tuple is done.
             //it means all corresponding tuples from the right side were processed
             while (leftTuples.hasNext()) {
@@ -222,8 +195,9 @@ public class HashRightAntiJoin extends Join {
                 tuples.remove(key);
             }
 
-            if (tupleTraverser==null)
+            if (tupleTraverser == null) {
                 tupleTraverser = new TupleTraverser(tuples);
+            }
             //iterate through the right side tuples that have no matches
             tupleTraverser = new TupleTraverser(tuples);
             while (tupleTraverser.hasNext()) {

@@ -91,6 +91,30 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
     private int beginIndex = this.defaultBeginIndex;
 
     public CSVRecognizerForm(
+        Path path,  AtomicReference<Boolean> exitReference
+    ) {
+        super(null);
+
+        this.setModal(true);
+
+        this.exitReference = exitReference;
+        this.path = path;
+        this.columns = new ArrayList();
+        this.content = new HashMap();
+        this.tableName = new StringBuilder();
+
+        this.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent event) {
+                exitReference.set(true);
+            }
+        });
+
+        this.initGUI();
+    }
+    
+    public CSVRecognizerForm(
         Path path, StringBuilder tableName, List<Column> columns,
         Map<Integer, Map<String, String>> content, AtomicReference<Boolean> exitReference
     ) {
@@ -473,6 +497,6 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
     }
 
     public CSVInfo getCSVInfo() {
-        return new CSVInfo(this.separator, this.stringDelimiter, this.beginIndex, this.path);
+        return new CSVInfo(this.separator, this.stringDelimiter, this.beginIndex, this.path, this.tableName.toString(), columns);
     }
 }

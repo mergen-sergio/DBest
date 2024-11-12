@@ -119,7 +119,7 @@ public class HashGroup implements IOperator {
         ibd.query.Operation readyOperator = null;
         try {
             //readyOperator = new ibd.query.unaryop.Aggregation(operator, "aggregate", groupBy, aggregateCol, aggregateType, false);
-            readyOperator = new ibd.query.unaryop.aggregation.HashAggregation(operator, "aggregate", groupBy, aggregations, false);
+            readyOperator = new ibd.query.unaryop.aggregation.HashAggregation(operator, "aggregate", groupBy, aggregations, true);
         } catch (Exception ex) {
             Logger.getLogger(HashGroup.class.getName()).log(Level.SEVERE, null, ex);
         }

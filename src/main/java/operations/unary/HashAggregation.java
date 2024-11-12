@@ -142,28 +142,7 @@ public class HashAggregation implements IOperator {
             .get(0)
             .substring(0, Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()) + Column.composeSourceAndName(parentCell.getSourceNameByColumnName(arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length())), arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()));
 
-        String sourceName = Column.removeName(fixedArgument).substring(Utils.getFirstMatchingPrefixIgnoreCase(fixedArgument, PREFIXES).length());
-        String columnName = Column.removeSource(fixedArgument);
-
-        List<AggregationType> aggregations = new ArrayList<>();
-        String aggregateCol = null;
-        int aggregateType = -1;
-
-        if (Utils.startsWithIgnoreCase(fixedArgument, "MAX:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.MAX));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "MIN:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.MIN));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "AVG:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.AVG));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "SUM:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.SUM));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "FIRST:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.FIRST));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "LAST:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.LAST));
-        } else if (Utils.startsWithIgnoreCase(fixedArgument, "COUNT:")) {
-            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT));
-        }
+        List<AggregationType> aggregations = AggregationType.getAggregationTypes(fixedArgument);
 
         //ibd.query.Operation readyOperator = new GroupOperator(operator, Column.removeName(groupBy), Column.removeSource(groupBy), aggregations);
         ibd.query.Operation readyOperator = null;

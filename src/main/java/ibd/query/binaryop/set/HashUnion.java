@@ -6,10 +6,13 @@
 package ibd.query.binaryop.set;
 
 import ibd.query.Operation;
+import ibd.query.QueryStats;
+import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
-import ibd.table.prototype.query.fields.Field;
+import ibd.table.prototype.Prototype;
+import ibd.table.prototype.column.Column;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +44,55 @@ public class HashUnion extends Set {
     public String toString() {
         return "Hash Union";
     }
+    
+    protected void setPrototype() throws Exception {
+        Prototype prototype = new Prototype();
+        int leftSize = getColumnsSize(leftOperation);
+        int rightSize = getColumnsSize(rightOperation);
+        int minSize = Math.min(leftSize, rightSize);
+
+        int currentColumn = 0;
+
+        for (ReferedDataSource dataSource : getLeftOperation().getDataSources()) {
+            List<Column> columns = dataSource.prototype.getColumns();
+            int columnsToCopy = Math.min(columns.size(), minSize - currentColumn);
+
+            for (int i = 0; i < columnsToCopy; i++) {
+                Column originalCol = columns.get(i);
+                Column newCol = Prototype.cloneColumn(originalCol);
+                prototype.addColumn(newCol);
+                currentColumn++;
+            }
+
+            if (currentColumn >= minSize) {
+                break;
+            }
+        }
+
+        dataSources[0].prototype = prototype;
+    }
+
+    protected int getColumnsSize(Operation op) throws Exception {
+        int colSize = 0;
+        for (ReferedDataSource dataSource : op.getDataSources()) {
+            colSize += dataSource.prototype.getColumns().size();
+        }
+        return colSize;
+    }
+
+    @Override
+    public void setDataSourcesInfo() throws Exception {
+
+        getLeftOperation().setDataSourcesInfo();
+        getRightOperation().setDataSourcesInfo();
+
+        dataSources = new ReferedDataSource[1];
+        dataSources[0] = new ReferedDataSource();
+        dataSources[0].alias = "union";
+
+        setPrototype();
+
+    }
 
     /**
      * {@inheritDoc }
@@ -63,6 +115,8 @@ public class HashUnion extends Set {
         Iterator<Tuple> leftTuples;
         //the iterator over the operation on the left side
         Iterator<Tuple> rightTuples;
+        
+        int tupleSize = 0;
 
         /**
          * @param processedTuples the tuples that come from operations already
@@ -77,6 +131,11 @@ public class HashUnion extends Set {
             tuples = new HashMap<>();
             leftTuples = leftOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
             rightTuples = rightOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
+        
+            try {
+                tupleSize = leftOperation.getTupleSize();
+            } catch (Exception ex) {
+            }
         }
         
         private String getKey(Tuple tuple){
@@ -103,7 +162,13 @@ public class HashUnion extends Set {
                         if (lookup.match(leftTuple)) {
                             String key = getKey(leftTuple);
                             tuples.put(key, leftTuple);
-                            return leftTuple;
+                            QueryStats.MEMORY_USED += tupleSize;
+                            
+                            Tuple returnTp = new Tuple();
+                            returnTp.rows = new LinkedDataRow[1];
+                            returnTp.rows[0] = buildRow(leftTuple);
+                            return returnTp;
+                            //return leftTuple;
                         }
                     }
                 
@@ -112,8 +177,13 @@ public class HashUnion extends Set {
                     Tuple rightTuple = rightTuples.next();
                     if (lookup.match(rightTuple)) {
                         String key = getKey(rightTuple);
-                        if (!(tuples.containsKey(key)))
-                            return rightTuple;
+                        if (!(tuples.containsKey(key))){
+                            Tuple returnTp = new Tuple();
+                            returnTp.rows = new LinkedDataRow[1];
+                            returnTp.rows[0] = buildRow(rightTuple);
+                            return returnTp;
+                            //return rightTuple;
+                        }
                     }
                 }
             return null;
@@ -121,6 +191,28 @@ public class HashUnion extends Set {
         }
 
 
+    }
+    
+    protected LinkedDataRow buildRow(Tuple tuple) {
+        List<Column> columns = dataSources[0].prototype.getColumns();
+        LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
+        int totalColumns = columns.size();
+        int currentIndex = 0;
+
+        outerLoop:
+        for (LinkedDataRow row1 : tuple.rows) {
+            int fieldSize = row1.getFieldsSize();
+            for (int i = 0; i < fieldSize; i++) {
+                Comparable value = row1.getValue(i);
+                row.setValue(currentIndex, value);
+                currentIndex++;
+                if (currentIndex == totalColumns) {
+                    break outerLoop;
+                }
+            }
+        }
+
+        return row;
     }
 
 }

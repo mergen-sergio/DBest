@@ -111,7 +111,7 @@ public class Materialization extends UnaryOperation {
                     }
 
                 memoryUsed+=tuples.size()*tupleSize;
-                
+                QueryStats.MEMORY_USED += memoryUsed;
             }
 
             
@@ -119,10 +119,6 @@ public class Materialization extends UnaryOperation {
 
         @Override
         protected Tuple findNextTuple() {
-            if (!memoryUsedDefined){
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED += memoryUsed;
-            }
             while (it.hasNext()) {
                 Tuple tp = it.next();
                 //a tuple must satisfy the lookup filter that comes from the parent operation

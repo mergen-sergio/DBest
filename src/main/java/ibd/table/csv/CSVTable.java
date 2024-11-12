@@ -13,6 +13,8 @@ import java.util.List;
 import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.Column;
 import ibd.table.prototype.column.LongColumn;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import sources.csv.CSVRecognizer;
 import sources.csv.InvalidCsvException;
@@ -22,6 +24,8 @@ public class CSVTable extends Table {
     public CSVRecognizer recognizer;
     public char separator, stringDelimiter;
     public int beginIndex;
+    
+    private String name;
 
 
     private static final String pkName = "__IDX__";
@@ -40,6 +44,12 @@ public CSVTable(Header header) {
         this.beginIndex = Integer.parseInt(header.get("beginIndex"));
         this.separator = header.get("separator").charAt(0);
         this.stringDelimiter = header.get("delimiter").charAt(0);
+        
+        String path = header.getTablePath();
+
+            Path filePath = Paths.get(path);
+            // Get the file name
+            this.name = filePath.getFileName().toString();
     }
     public CSVTable(Header header,char separator, char stringDelimiter, int beginIndex) {
         super(prepareStuff(header));
@@ -136,6 +146,8 @@ public CSVTable(Header header) {
         return rows;
     }
 
+    //defining a value for the null columns to prevent bugs.
+    //this should be fixed to allow nulls
     public LinkedDataRow convertRow(String[] columns, String[] data, long pk) {
         LinkedDataRow dataRow = new LinkedDataRow(prototype, false);
         for (Column c
@@ -154,37 +166,43 @@ public CSVTable(Header header) {
                 //dataRow.setField(c.getName(),new NullField(c),c);
 
                 switch (c.getType()) {
-                    case Column.STRING_TYPE:
-                        //if (!isNull) 
+                    case Column.STRING_TYPE -> {
+                        if (!isNull) 
                         {
                             dataRow.setString(c.getName(), val);
                         }
-                        break;
-                    case Column.INTEGER_TYPE:
+                        else dataRow.setString(c.getName(), "");
+                    }
+                    case Column.INTEGER_TYPE -> {
                         if (!isNull) {
-                            dataRow.setInt(c.getName(), Integer.valueOf(val));
+                            dataRow.setInt(c.getName(), Integer.parseInt(val));
                         }
-                        break;
-                    case Column.LONG_TYPE:
+                        else dataRow.setInt(c.getName(),Integer.MIN_VALUE);
+                    }
+                    case Column.LONG_TYPE -> {
                         if (!isNull) {
-                            dataRow.setLong(c.getName(), Long.valueOf(val));
+                            dataRow.setLong(c.getName(), Long.parseLong(val));
                         }
-                        break;
-                    case Column.DOUBLE_TYPE:
+                        else dataRow.setLong(c.getName(),Long.MIN_VALUE);
+                    }
+                    case Column.DOUBLE_TYPE -> {
                         if (!isNull) {
-                            dataRow.setDouble(c.getName(), Double.valueOf(val));
+                            dataRow.setDouble(c.getName(), Double.parseDouble(val));
                         }
-                        break;
-                    case Column.FLOAT_TYPE:
+                        else dataRow.setDouble(c.getName(),Double.MIN_VALUE);
+                    }
+                    case Column.FLOAT_TYPE -> {
                         if (!isNull) {
-                            dataRow.setFloat(c.getName(), Float.valueOf(val));
+                            dataRow.setFloat(c.getName(), Float.parseFloat(val));
                         }
-                        break;
-                    case Column.BOOLEAN_TYPE:
+                        else dataRow.setFloat(c.getName(),Float.MIN_VALUE);
+                    }
+                    case Column.BOOLEAN_TYPE -> {
                         if (!isNull) {
-                            dataRow.setBoolean(c.getName(), Boolean.valueOf(val));
+                            dataRow.setBoolean(c.getName(), Boolean.parseBoolean(val));
                         }
-                        break;
+                        else dataRow.setBoolean(c.getName(), false);
+                    }
                 }
 
             }
@@ -432,9 +450,22 @@ public CSVTable(Header header) {
         return prototype;
     }
 
-    @Override
     public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception {
         return new KeyFilteredCSVRowsIterator1(this, pkRow, rowFilter);
+    }
+
+    @Override
+    public String getName() {
+        return getName();
+    }
+
+    @Override
+    public String getHeaderName() {
+        return header.getFileName();
+    }
+    @Override
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+        throw new UnsupportedOperationException("Not supported yet."); 
     }
 
 }

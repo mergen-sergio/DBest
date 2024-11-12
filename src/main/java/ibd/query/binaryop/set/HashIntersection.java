@@ -6,6 +6,7 @@
 package ibd.query.binaryop.set;
 
 import ibd.query.Operation;
+import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
@@ -63,6 +64,8 @@ public class HashIntersection extends Set {
         Iterator<Tuple> leftTuples;
         //the iterator over the operation on the left side
         Iterator<Tuple> rightTuples;
+        
+        int tupleSize = 0;
 
         /**
          * @param processedTuples the tuples that come from operations already
@@ -77,6 +80,10 @@ public class HashIntersection extends Set {
             tuples = new HashMap<>();
             leftTuples = leftOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
             rightTuples = rightOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
+            try {
+                tupleSize = rightOperation.getTupleSize();
+            } catch (Exception ex) {
+            }
         }
 
         private String getKey(Tuple tuple) {
@@ -103,8 +110,10 @@ public class HashIntersection extends Set {
                 if (lookup.match(rightTuple)) {
                     String key = getKey(rightTuple);
                     tuples.put(key, rightTuple);
+                    QueryStats.MEMORY_USED += tupleSize;
                 }
             }
+            
 
             while (leftTuples.hasNext()) {
                 Tuple leftTuple = leftTuples.next();

@@ -6,7 +6,7 @@ package ibd.table.btree;
 
 import ibd.table.btree.RowsIterator;
 import ibd.index.btree.DictionaryPair;
-import ibd.index.btree.ValueIterator;
+import ibd.index.btree.AllKeysIterator;
 import ibd.index.btree.table.BPlusTreeFileTable;
 import ibd.index.btree.table.BinaryValue;
 import ibd.table.prototype.LinkedDataRow;

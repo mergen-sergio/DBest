@@ -97,6 +97,9 @@ public abstract class Table  {
     public Header getHeader(){
         return header;
     }
+    
+    public abstract String getName();
+    public abstract String getHeaderName();
 
     public abstract LinkedDataRow getRecord(BasicDataRow rowdata) throws Exception;
 
@@ -139,5 +142,5 @@ public abstract class Table  {
     public abstract Iterator getAllRecordsIterator() throws Exception;
     public abstract Iterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception;
     public abstract List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter)throws Exception;
-    public abstract Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception ;
+    public abstract Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception ;
 }

@@ -30,9 +30,11 @@ public class StringField extends Field<String>{
     public String getValue() {
         if (value!=null)
             return value;
-        else value = data.getString();
+        else if (data!=null)
+            return data.getString();
+        else 
         //return data.getInt();
-        return value;
+            return value;
     }
     
     @Override

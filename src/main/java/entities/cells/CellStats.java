@@ -24,6 +24,7 @@ public record CellStats(
 //        long IO_READ_TIME,
 //        long IO_SYNC_TIME,
 //        long IO_TOTAL_TIME,
+        long BLOCKS_ACCESSED,
         long BLOCKS_LOADED,
         long BLOCKS_SAVED
 //        long MEMORY_ALLOCATED_BY_BLOCKS,
@@ -52,6 +53,7 @@ public record CellStats(
 //                IO_READ_TIME - cellStats2.IO_READ_TIME,
 //                IO_SYNC_TIME - cellStats2.IO_SYNC_TIME,
 //                IO_TOTAL_TIME - cellStats2.IO_TOTAL_TIME,
+                BLOCKS_ACCESSED - cellStats2.BLOCKS_ACCESSED,
                 BLOCKS_LOADED - cellStats2.BLOCKS_LOADED,
                 BLOCKS_SAVED - cellStats2.BLOCKS_SAVED
 //                MEMORY_ALLOCATED_BY_BLOCKS - cellStats2.MEMORY_ALLOCATED_BY_BLOCKS,
@@ -80,6 +82,7 @@ public record CellStats(
 //                IO_READ_TIME + cellStats2.IO_READ_TIME,
 //                IO_SYNC_TIME + cellStats2.IO_SYNC_TIME,
 //                IO_TOTAL_TIME + cellStats2.IO_TOTAL_TIME,
+                BLOCKS_ACCESSED + cellStats2.BLOCKS_ACCESSED,
                 BLOCKS_LOADED + cellStats2.BLOCKS_LOADED,
                 BLOCKS_SAVED + cellStats2.BLOCKS_SAVED
 //                MEMORY_ALLOCATED_BY_BLOCKS + cellStats2.MEMORY_ALLOCATED_BY_BLOCKS,
@@ -108,6 +111,7 @@ public record CellStats(
 //                Parameters.IO_READ_TIME,
 //                Parameters.IO_SYNC_TIME,
 //                Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME,
+                Parameters.BLOCKS_ACCESSED,
                 Parameters.BLOCKS_LOADED,
                 Parameters.BLOCKS_SAVED
 //                Parameters.MEMORY_ALLOCATED_BY_BLOCKS,
@@ -117,6 +121,44 @@ public record CellStats(
 //                Parameters.MEMORY_ALLOCATED_BY_COMMITTABLE_BLOCKS,
 //                Parameters.MEMORY_ALLOCATED_BY_BYTE_ARRAY
         );
+    }
+    
+    public static CellStats getEmptyStats(){
+        return new CellStats(
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+        );
+    }
+    
+    public static void reset(){
+                QueryStats.PK_SEARCH = 0;
+                QueryStats.SORT_TUPLES = 0;
+                QueryStats.COMPARE_FILTER = 0;
+                Parameters.RECORDS_READ = 0;
+                QueryStats.NEXT_CALLS = 0;
+                QueryStats.MEMORY_USED = 0;
+//                Query.COMPARE_DISTINCT_TUPLE = 0;
+//                Parameters.IO_SEEK_WRITE_TIME = 0;
+//                Parameters.IO_WRITE_TIME = 0;
+//                Parameters.IO_SEEK_READ_TIME = 0;
+//                Parameters.IO_READ_TIME = 0;
+//                Parameters.IO_SYNC_TIME = 0;
+                Parameters.BLOCKS_ACCESSED = 0;
+                Parameters.BLOCKS_LOADED = 0;
+                Parameters.BLOCKS_SAVED = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_BLOCKS = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_DIRECT_BLOCKS = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_INDIRECT_BLOCKS = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_RECORDS = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_COMMITTABLE_BLOCKS = 0;
+//                Parameters.MEMORY_ALLOCATED_BY_BYTE_ARRAY = 0;
     }
 
     public Map<String, Long> toMap() {

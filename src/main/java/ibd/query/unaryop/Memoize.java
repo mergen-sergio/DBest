@@ -204,6 +204,7 @@ public class Memoize extends UnaryOperation {
 
             }
             memoryUsed += tupleList.size() * tupleSize;
+            QueryStats.MEMORY_USED += memoryUsed;
             tuples.put(key, tupleList);
             return tupleList.iterator();
 
@@ -211,10 +212,6 @@ public class Memoize extends UnaryOperation {
 
         @Override
         protected Tuple findNextTuple() {
-            if (!memoryUsedDefined) {
-                memoryUsedDefined = true;
-                QueryStats.MEMORY_USED += memoryUsed;
-            }
             while (it.hasNext()) {
                 QueryStats.NEXT_CALLS++;
                 Tuple tp = it.next();

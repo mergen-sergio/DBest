@@ -72,7 +72,7 @@ public class LinkedDataRow extends DataRow {
     private void setValue(Column col, Comparable data) {
         
         
-        if (col==null){
+        if (col==null || data ==null){
             return;
         }
         
@@ -110,6 +110,7 @@ public class LinkedDataRow extends DataRow {
         fields[col.index] = field;
     }
     
+    
     private void setInt(Column column, int data) {
         //BData bdata = new BData(UtilConversor.intToByteArray(data));
         //this.setField(column, Field.createField(IntegerMetadata.generic, bdata));
@@ -125,7 +126,9 @@ public class LinkedDataRow extends DataRow {
     private void setString(Column column, String data) {
         //BData bdata = new BData(UtilConversor.stringToByteArray(data));
         //this.setField(column, Field.createField(new StringMetadata((short) (data.length() + 1)), bdata));
-        this.setField(column, Field.createField(new StringMetadata((short) (data.length() + 1)), data));
+        if (data!=null)
+            this.setField(column, Field.createField(new StringMetadata((short) (data.length() + 1)), data));
+        else this.setField(column, Field.createField(new StringMetadata((short) 0), data));
     }
 
     private void setFloat(Column column, float data) {
@@ -185,6 +188,8 @@ public class LinkedDataRow extends DataRow {
         if (col == null) {
             return null;
         }
+        
+        if (fields[col.index]==null) return null;
 
         return fields[col.index].getComparable();
     }

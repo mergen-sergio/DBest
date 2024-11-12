@@ -13,21 +13,36 @@ import java.util.Iterator;
  *
  * @author Sergio
  */
-public class ValueIterator implements Iterator<DictionaryPair>{
+public class EqualKeyIterator implements Iterator<DictionaryPair>{
 
     //stores the next value to be returned by the next() function
     DictionaryPair nextValue = null;
     LeafNode curNode;
     DictionaryPair dps[];
     BPlusTreeFile btree;
-
+    Key key;
     int index;
     
-    public ValueIterator(BPlusTreeFile btree){
+    public EqualKeyIterator(BPlusTreeFile btree,Key key){
         this.btree = btree;
-        curNode = (LeafNode) btree.getNode(btree.getFirstLeafID());
+        this.key = key;
+        //performs the search over the b-tree
+        curNode = btree.getFirstPage(key);
         dps = curNode.dictionary;
-        index = 0;
+        // Perform binary search to find index of key within dictionary
+        index = Utils.binarySearch(dps, curNode.numPairs, key, btree);
+
+        // in this case, a negative index may simply mean that the key has less levels than the indexed keys.
+        // we need to access the largest value smaller than the key, and advance one position.
+        if (index < 0) {
+            index = ~index;
+        } //the bynary search might not retrieve the first matching value
+        //so we need to search back until the first matching position is found
+        else {
+            while (index > 0 && dps[index - 1].key.compareTo(key) == 0) {
+                index--;
+            }
+        }
     }
 
     /**
@@ -36,7 +51,6 @@ public class ValueIterator implements Iterator<DictionaryPair>{
      *
      * @return
      */
-    @Override
     public DictionaryPair next() {
 
         if (nextValue != null) {
@@ -55,7 +69,6 @@ public class ValueIterator implements Iterator<DictionaryPair>{
      *
      * @return true if there is a next value
      */
-    @Override
     public boolean hasNext() {
 
         if (nextValue != null) {
@@ -80,9 +93,12 @@ public class ValueIterator implements Iterator<DictionaryPair>{
                     break;
                 }
                 Parameters.RECORDS_READ++;
-                nextValue = dps[index];
-                index++;
-                return nextValue;
+                if (key.partialMatch(dps[index].key)) {
+                    nextValue = dps[index];
+                    index++;
+                    return nextValue;
+                } 
+                return null;
 
             }
 
