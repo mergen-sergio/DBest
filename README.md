@@ -11,24 +11,72 @@
 5. [Utilização](#utilização)
 6. [Dependências externas](#dependências-externas)
 7. [Contribuições](#contribuições)
+8. 
+# DBest: Visual Query Engine
 
-## Resumo
+**DBest** is a powerful, interactive tool for creating and visualizing database query execution plans. It allows users to design query plans by dragging and dropping operators, providing a user-friendly interface to understand query execution, optimize performance, and integrate heterogeneous data sources. It is suitable for teaching, data integration, and improving query performance.
 
-### Objetivo inicial
+---
 
-O DBest surge como um projeto que pretende ser um [Sistema Gerenciador de Banco de Dados][sgbd] (SGBD) que demonstra as operações da [álgebra relacional][algebra-relacional] de uma forma visual, de modo que fosse implementado de maneira extensível, assim facilitando a adição de novas operações.
+## Table of Contents
 
-### Objetivo atual
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+   - [Creating a Query Plan](#creating-a-query-plan)
+   - [Executing a Query Plan](#executing-a-query-plan)
+   - [Optimizing Query Performance](#optimizing-query-performance)
+5. [Contributing](#contributing)
+6. [License](#license)
+7. [Acknowledgments](#acknowledgments)
 
-O escopo atual visa construir um plano de execução de consulta em um nível mais baixo.
+---
 
-### Ferramentas
+## Overview
 
-O software é construído utilizando Java.
+**DBest** allows users to create query execution plans visually, which helps in understanding query execution, optimizing database performance, and integrating multiple data sources (e.g., relational, NoSQL, or external APIs).
 
-### Utilização
+With DBest, you can:
+- Create complex query execution plans through a drag-and-drop interface.
+- Visualize query execution trees and operators.
+- Optimize queries by adjusting execution paths.
+- Use DBest for educational purposes to teach students about query optimization.
+- Integrate data from heterogeneous data sources.
 
-Este software existe com a intenção de facilitar o aprendizado das operações envolvendo tabelas relacionais.
+---
+
+## Features
+
+- **Visual Query Plan Creation**: Drag and drop operators to build execution plans.
+- **Execution Trees**: View query execution steps and data flow.
+- **Query Optimization**: Experiment with different operators and execution paths for performance improvements.
+- **Educational Tool**: Ideal for teaching database concepts such as query planning and optimization.
+- **Data Integration**: Connect and query multiple data sources using a unified execution plan.
+
+---
+
+
+## Available Operators
+
+In DBest, you can build query execution plans by using a variety of operators. These operators are designed to help you manipulate and filter data as it flows through your query plan. They are similar to the operators you would find in a typical Database Management System (DBMS). Below is a list of the common operators available in DBest, with a special focus on **join** operators, as these play a critical role in most database queries.
+
+- **Selection (`SELECT`)**
+- **Projection (`PROJECT`)**
+- **Filter (`FILTER`)**
+- **Inner Join (`INNER JOIN`)**
+- **Left Join (`LEFT JOIN`)**
+- **Right Join (`RIGHT JOIN`)**
+- **Full Outer Join (`FULL OUTER JOIN`)**
+- **Cross Join (`CROSS JOIN`)**
+- **Self Join (`SELF JOIN`)**
+- **Aggregation (`AGGREGATE`)**
+- **Sorting (`SORT`)**
+- **Group By (`GROUP BY`)**
+- **Union (`UNION`)**
+- **Difference (`DIFFERENCE`)**
+- **Intersect (`INTERSECT`)**
+
 
 ## Dependências externas
 
