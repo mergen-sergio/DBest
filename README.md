@@ -46,6 +46,9 @@ With DBest, you can:
 
 ---
 
+[Working With CSV](tutorial/Working With CSV.md)
+
+
 ## Features
 
 - **Visual Query Plan Creation**: Drag and drop operators to build execution plans.
