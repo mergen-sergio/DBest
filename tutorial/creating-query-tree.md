@@ -54,7 +54,7 @@ The properties depend on the type of operator. For example:
 ### Example: Projection Properties
 The screenshot below illustrates the property window for a projection operator, showing the available columns from its child node’s schema:
 
-![Projection Operator Properties](assets/images/projection_properties.png)
+![Projection Operator Properties](assets/images/projection-properties.png)
 
 ## Summary
 - Operators derive their schema from their connected nodes, adapting dynamically based on the operation they perform.
