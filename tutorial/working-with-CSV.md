@@ -1,8 +1,38 @@
 
 
-DBest supports CSV files. To open a CSV, use the proper menu item and choose a CSV file. Optionally, drag and drop a CSV file into the tree editor panel. A wizzard pop ups asking the user to inform parsing properties, such as delimiter and starting line. The tool displays a view of the CSV in a tabular fashion, with the column type for each column. The column type ca be changed to a more generic type, if needed. For instamnce, the INT type can be changed into the STRING type. A snapshot of the tool is displayed below:
+# Working with CSV Files in DBest
 
+DBest provides robust support for working with CSV files. Follow these steps to import and manage CSV files in the tool:
 
-![Imagem de exemplo](assets/images/csv.png)
+## Opening a CSV File
+- Use the **"Open CSV"** option in the menu and select the desired CSV file.
+- Alternatively, drag and drop a CSV file directly into the **tree editor panel**.
 
-**DBest** is a powerful, interactive tool for creating and visualizing database query execution plans. It allows users to design query plans by dragging and dropping operators, providing a user-friendly interface to understand query execution, optimize performance, and integrate heterogeneous data sources. It is suitable for teaching, data integration, and improving query performance.
+When a file is selected, a wizard will appear, prompting you to specify parsing properties, such as:
+- **Delimiter** (e.g., `,`, `;`, or `\t`)
+- **Starting Line** (indicating where the data begins)
+
+Once the properties are set, the tool will display the CSV in a tabular format. Each column will be assigned a type, which you can adjust to a more generic type if necessary.
+
+## Viewing the CSV
+The table view provides a clear representation of the CSV data, along with the inferred column types. A snapshot of the tool in action is shown below:
+
+![CSV Table View](assets/images/csv.png)
+
+## Creating a Header File
+Upon completing the importation process, DBest generates a **header file** in the same directory as the CSV file. The header file:
+- Is named after the CSV file, with a `.head` extension (e.g., `data.csv` creates `data.head`).
+- Stores metadata such as the delimiter and column types used during import.
+
+This header file allows for faster re-importation of the CSV file. You can reopen it using the **"Open Header"** menu option or by dragging and dropping it into the tree editor panel.
+
+## Using the CSV Node in the Tree Editor
+Once imported, the CSV node will appear in the **left-side panel**. To work with it:
+1. Drag the CSV node to the **editor panel** to create your first execution tree.
+2. Open the node using one of these methods:
+   - **Double-click** the node.
+   - **Right-click** the node and select **"Run Query"**.
+
+Both methods allow you to navigate through the records efficiently.
+
+With these steps, you’re ready to efficiently import and query your CSV files in DBest!
