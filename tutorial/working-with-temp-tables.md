@@ -23,7 +23,7 @@ DBest provides support for **temporary tables**, offering a quick way to generat
 ### Example: Defining Data for the "Age" Column
 The screenshot below illustrates data generation for the `Age` column:
 
-![Data Generation Example](assets/images/temp_table.png)
+![Data Generation Example](assets/images/temp-table.png)
 
 Repeat the **Generate Data** process for all columns to complete the table's content.
 
