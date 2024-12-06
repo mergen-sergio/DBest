@@ -9,17 +9,20 @@ A B+ tree index:
 - Supports **efficient lookups** using the key columns.
 - Provides **ordered access** to the key columns.
 
+An index can be unique or non-unique. A non-unique index accepts duplicate values for its key part. It is designed for column whose value may appear multiple times in a data node. 
+
 ### How B+ Tree Indexes Work
 The nodes of a B+ tree are stored on disk in a persistent data format called a **page**. Pages are designed to minimize the effort of loading data from disk into memory by aligning with the size of typical virtual memory pages (e.g., 4 KB). 
 
 Since each node in a B+ tree can store a large number of children, the tree's height is reduced. This high degree ensures that searches require loading only a few pages, optimizing performance.
 
+
 ---
 
-## Creating an Index
-To create an index for a data node:
+## Creating a Non-unique Index
+To create a non-unique index for a data node:
 1. **Right-click** on the node whose tuples you wish to index.
-2. Select the **"Export Table"** menu item and click **"Indexed Data"**.
+2. Select the **"Export Table"** menu item and click **"Non-Unique Index"**.
 3. A window will display:
    - All columns returned by the node.
    - Sample tuples for reference.
@@ -27,7 +30,7 @@ To create an index for a data node:
 5. **Specify the index name** and its **location on disk**.
    - The index will be saved with a `.dat` extension.
 
-### Example: Creating a Year Index
+### Example: Creating a Year non-unique Index
 The image below shows an example where the `movies` data node contains the columns `movie_id`, `title`, and `year`. Here, the `year` column is selected as the key for indexing.
 
 After creating the index:
