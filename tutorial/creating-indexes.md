@@ -116,7 +116,7 @@ The image below shows the configuration window for defining the key/value parts 
 
 ![Index Example](assets/images/fk-index-creation.png)
 
-The `year` column becomes the key, and `movie_id` becomes the value. Running a query on this index displays only these two columns, ordered by `year`. To access other columns (e.g., `title`), **join the secondary index** with the primary index using `movie_id` as the join predicate.
+The `year` column becomes the key, and `movie_id` becomes the value. Running a query on this index(`fk_year`) displays only these two columns, ordered by `year`. To access other columns (e.g., `title`), **join the secondary index** with the primary index using `movie_id` as the join predicate.
 
 The image below shows an example query tree where:
 - The filter on `year` efficiently retrieves movies from the secondary index.
