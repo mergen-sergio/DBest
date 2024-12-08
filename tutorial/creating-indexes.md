@@ -50,7 +50,7 @@ The index is saved as idx_year.dat. If a non-unique index was chosen instead, th
 
 To use the index, drag and drop the idx_year.dat file into the query editor or load it using the top menu. The index node will appear in the left panel and can be draged into the query tree for querying. The image below shows a query tree where a filter over the year column is connected to the index node. 
 
-![Index Example](assets/images/first-index.png)
+![Index Example](assets/images/querying-year-index.png)
 
 The Filter is resolved  by the B+tree key search.  If the query is selective, the number of page access on disk will be much lower than if a sequentil access was performed.  To see this, run the query and go the the Cost panel, where you can see the number of pages loaded from disk.
 
@@ -66,14 +66,18 @@ A **composite index** allows indexing using multiple key columns:
 
 ## Primary and Secondary Indexes
 
-To enable efficient access, it is recommended that all data nodes are indexed.  Also, you can structure the indexes as primary and secondary indexes. The primary index is built on the primary key column(s)(the column(s) that uniquely identify tuples of a data node). A secondary index is built on non-primary key columns. There is only one primary index per data node. All other indexes are secondary. 
+You can structure the indexes as clustered and non-clustered indexes. The main difference lies in the value part. A clustered index stores all tuple information in the value part. A non-clustered index stores a pointer to where the tuple information is located. 
+
+Usually we need a single clustered index per data node. It is created over the primary key column(s)(the column(s) that uniquely identify tuples of a data node). For this reason, it is also refered to as the primary index. 
+
+After creating a primary clustered index, we can add non-clustered indexes as needed, to columns otehr than the primary key. Those are called secondary indexes.  Since the primary index provides access to the full tuple, the primary key can be used as the pointer. During querying, the secondary index needs to be joined with the primary index to gain access to the full tuple.
 
 
 
 ### Steps to Create a Primary Index
 
 1. Load a data node into the query editor.
-2. Use the **Indexed Data** option over the node.
+2. Use the **Unique Index** option over the node.
 3. Check the radio buttons for the primary key column(s). 
 
 The image below shows an example of primary index creation for a movie data node. During index creation, check only the `movie_id` column. The remaining columns will be part of the value. 
