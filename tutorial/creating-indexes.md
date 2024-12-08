@@ -1,6 +1,6 @@
 # Working with Indexes in DBest
 
-In DBest, **data nodes** provide **sequential access** to their tuples. When performing a lookup, all tuples must be traversed to find matching results. To improve performance, DBest supports **B+ tree-based indexing**, enabling **efficient lookups** and **ordered access** over key columns.
+In DBest, **data nodes** can be indexed or non-indexed. Non-indexed data nodes, such as memory tables or CSV files, provide **sequential access** to their tuples. When performing a lookup, all tuples must be traversed to find matching results. To improve performance, DBest supports indexed data nodes in the form of **B+ trees**, enabling **efficient lookups** and **ordered access** over key columns.
 
 ## Overview of B+ Tree Indexes
 
@@ -9,7 +9,10 @@ A B+ tree index:
 - Supports **efficient lookups** using the key columns.
 - Provides **ordered access** to the key columns.
 
-An index can be unique or non-unique. A non-unique index accepts duplicate values for its key part. It is designed for column whose value may appear multiple times in a data node. 
+An index can be:
+- **Unique**, ensuring no duplicate values in the key part.
+- **Non-unique**, allowing duplicate values for the key part (useful for columns with repeated values).
+
 
 ### How B+ Tree Indexes Work
 The nodes of a B+ tree are stored on disk in a persistent data format called a **page**. Pages are designed to minimize the effort of loading data from disk into memory by aligning with the size of typical virtual memory pages (e.g., 4 KB). 
@@ -18,97 +21,114 @@ Since each node in a B+ tree can store a large number of children, the tree's he
 
 
 ---
+## Creating and Using an Index
 
-## Creating an Index
-To create an index for a data node:
-1. **Right-click** on the node whose tuples you wish to index.
+### Steps to Create an Index:
+
+1. **Right-click** on the node whose tuples you want to index.
 2. Select the **"Export Table"** menu item and chose **"Unique Index"** or **"Non-Unique Index"**.
-3. A window will display:
+3. A configuration window appears, displaying:
    - All columns returned by the node.
    - Sample tuples for reference.
-4. Select the key column using radio buttons
+4. Select the key column(s) using radio buttons
 5. **Specify the index name** and its **location on disk**.
    - The index will be saved with a `.dat` extension.
 
-### Using an Index
-After creating the index:
+When selecting multiple columns for the key, their order in the index is determined by the order in which the radio buttons are checked. This is called a **composite index**. Efficient lookups are possible only if the filter includes the **prefix of the key**. For a composite index with `n` key columns, the first `n-1` keys must have equality conditions.
+
+When creating composite indexes:
+  - Prioritize frequently filtered columns in the prefix.
+  - Use equality conditions for all but the last key column.
+
+---
+
+### Using the Index:
 1. **Load the index**:
    - Use the appropriate menu item in the **top menu**, or
    - Drag and drop the index file into the query editor.
 2. The node will appear in the left panel.
-3. **Use the index**:
-   - Drag the node from the left panel into the query editor.
-   - Double-click the node to view the tuples, which are now ordered by the key column.
+3. **Query the index**:
+   - Drag the indexed node into the query editor.
+   - Double-click the node to view tuples ordered by the key column(s).
 ---
 
-## Example: Creating an Index over Year 
-The image below exemplifies the creation of an non-unique index for the year column. The `movies` data node contains the columns `movie_id`, `title`, and `year`. The year column becomes the key part. The ramaining columns become the value part. 
+### Example: Creating and Using an Index over Year 
+
+The image below illustrates the creation of a **non-unique index** for the `year` column in the `movies` data node. The node contains the columns `movie_id`, `title`, and `year`. Only the `year` column is selected as the key, while the remaining columns become the value part.
 
 ![Index Example](assets/images/first-index.png)
 
-The index is saved as idx_year.dat. If a non-unique index was chosen instead, the records with duplicated values for the year column would be ignored during index creation. 
+If a **unique index** were created instead, any records with duplicate `year` values would be excluded.
 
-To use the index, drag and drop the idx_year.dat file into the query editor or load it using the top menu. The index node will appear in the left panel and can be draged into the query tree for querying. The image below shows a query tree where a filter over the year column is connected to the index node. 
+After saving the index (e.g., `idx_year.dat`):
+- Load the index into the tool.
+- Drag it into the query editor for filtering or querying.
+
+The image below shows a query tree where a filter on the `year` column is connected to the index node.
 
 ![Index Example](assets/images/querying-year-index.png)
 
-The Filter is resolved  by the B+tree key search.  If the query is selective, the number of page access on disk will be much lower than if a sequentil access was performed.  To see this, run the query and go the the Cost panel, where you can see the number of pages loaded from disk.
+The filter uses the B+ tree to perform efficient key searches. For selective queries, the number of disk page accesses is significantly lower compared to sequential access. To analyze this, run the query and view the **Cost panel**, which displays the number of disk pages loaded.
+
+---
 
 
-## Composite Index
+## Clustered and Non-clustered Indexes
 
-A **composite index** allows indexing using multiple key columns:
-- The order of columns in the index is determined by the order in which the radio buttons are checked.
-- **Efficient lookups** are possible only if the filter includes the **prefix of the key**.
-- For an index with `n` key columns, the first `n-1` keys must be filtered with equality conditions.
 
-3. Ensure the indexed column(s) are the **first levels** and the primary key column(s) are the **last levels**.
+Indexes in DBest can be **clustered** or **non-clustered**, differing in how the value part is structured:
+- A **clustered index** stores the entire tuple as the value part, effectively replacing the original data node.
+- A **non-clustered index** stores pointers to the tuple location, requiring access to the original data node for complete information.
 
-## Primary and Secondary Indexes
+### Primary Index (Clustered)
+A clustered index is typically built on the **primary key** column(s), which uniquely identify tuples. For this reason, it is also referred to as the **primary index**. A data node usually have only one clustered index.
 
-You can structure the indexes as clustered and non-clustered indexes. The main difference lies in the value part. A clustered index stores all tuple information in the value part. A non-clustered index stores a pointer to where the tuple information is located. 
+### Secondary Index (Non-Clustered)
+Non-clustered indexes, or **secondary indexes**, are built on columns other than the primary key. During querying, the secondary index is typically joined with the primary index to retrieve full tuple information.
 
-Usually we need a single clustered index per data node. It is created over the primary key column(s)(the column(s) that uniquely identify tuples of a data node). For this reason, it is also refered to as the primary index. 
-
-After creating a primary clustered index, we can add non-clustered indexes as needed, to columns otehr than the primary key. Those are called secondary indexes.  Since the primary index provides access to the full tuple, the primary key can be used as the pointer. During querying, the secondary index needs to be joined with the primary index to gain access to the full tuple.
+---
 
 
 
-## Example: Creating a primary index 
 
-This example shows how to create a primary index for the movie data node.
+## Example: Creating a Clustered Primary Index and a Non-Clustered Secondary Index
 
-1. Load the movie data node into the query editor.
-2. Use the **Unique Index** option over the node.
-3. Check the radio buttons for the movie_id column. 
+### Creating a Clustered Primary Index:
+1. Load the `movies` data node into the query editor.
+2. Use the **Unique Index** option.
+3. Select `movie_id` as the key column.
 
-The image below shows the window where the key/value part is defined. While the movie_id is indexed, the remaining columns becomes accessible from the value part. This index was called pk_movie. Running a query over it displayes all movie columns, only that they are ordered by movie_id. 
+The image below shows the configuration window for defining the key/value parts of the index.
 
-### Steps to Create a Secondary Index
+![Index Example](assets/images/pk-index-creation.png)
 
-Now lets create a secondary index over the year column. 
+The `movie_id` column becomes the key, while the remaining columns are stored in the value part. This index (`pk_movie`) allows querying the `movies` data, sorted by `movie_id`.
 
-1. Load the movie data node into the query editor.
-2. Build a query tree to project the year and the movie_id columns
+---
+
+### Creating a Non-Clustered Secondary Index:
+1. Load the `movies` data node into the query editor.
+2. Build a query tree to project the `year` and `movie_id` columns.
 3. Export the projection node as an index using the **"Non-Unique Index"** option.
-4.  Check the radio button for the year column.
+4. Select `year` as the key column.
+
+The image below shows the configuration window for defining the key/value parts of the secondary index.
+
+![Index Example](assets/images/fk-index-creation.png)
+
+The `year` column becomes the key, and `movie_id` becomes the value. Running a query on this index displays only these two columns, ordered by `year`. To access other columns (e.g., `title`), **join the secondary index** with the primary index using `movie_id` as the join predicate.
+
+The image below shows an example query tree where:
+- The filter on `year` efficiently retrieves movies from the secondary index.
+- The join operator accesses additional information from the primary index.
 
 
-The image below shows the window where the key/value part is defined. The year is the key and the movie_id is the value. Running a query over it displayes only these two columns, ordered by movie_id. To have access to other movie columns (e.g. title), you need to **Join the secondary index** with the primary index using the primary key as the join predicate.
-
-The image below shows an example. The filter over the secondary index efficiently finds movies released in 1950. For those movies, the join operator finds the corresponding entry on the primary index on the right side, which gives access to the title column. 
-The join lookup over movie_id is efficiently resolved, since the primary key is indexed by movie_id. 
-
-To avoid the join, we can create a secondary clustered index, it is , a index over a non-primary key column that stores all movie information as value columns, as demonstrated in our first example. This is an option that need to be carefully decided, since it duplicate the contents of a data node. This speeds up search, since no primary index joins are required. However, it leads to a high memory consumption. Also, it the columns are updated, all indexes need to be updated as well. 
-
-An alternative is to add to a secondary index the most important columns to the value part, instead of adding all of the columns. This reduces redundancy and update costs, and it speeds up queries that focus on the included columns. 
+![Index Example](assets/images/fk-index-join.png)
 
 
-## Best Practices for Indexing in DBest
-- Index all data nodes used in lookups.
-- When creating composite indexes:
-  - Prioritize frequently filtered columns in the prefix.
-  - Use equality conditions for all but the last key column.
-- Avoid excessive redundancy in secondary indexes to balance query performance and storage overhead.
+To avoid joins, you can create a **clustered secondary index**, where all tuple information is stored in the value part. This eliminates the need for a primary index join but duplicates the data node content, increasing memory usage. Carefully decide based on redundancy, query performance, and update costs.
 
-By leveraging **B+ tree indexes** and carefully defining key levels, DBest achieves efficient data access, significantly improving query performance.
+An alternative is to include only the most important columns in the value part of a secondary index. This reduces redundancy and update costs while improving query performance for those specific columns. Indexes that store all columns required for a query in the key/value part are called **Covering indexes**.
+
+
+
