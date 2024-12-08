@@ -19,10 +19,10 @@ Since each node in a B+ tree can store a large number of children, the tree's he
 
 ---
 
-## Creating a Non-unique Index
-To create a non-unique index for a data node:
+## Creating an Index
+To create an index for a data node:
 1. **Right-click** on the node whose tuples you wish to index.
-2. Select the **"Export Table"** menu item and click **"Non-Unique Index"**.
+2. Select the **"Export Table"** menu item and chose **"Unique Index"** or **"Non-Unique Index"**.
 3. A window will display:
    - All columns returned by the node.
    - Sample tuples for reference.
@@ -30,9 +30,7 @@ To create a non-unique index for a data node:
 5. **Specify the index name** and its **location on disk**.
    - The index will be saved with a `.dat` extension.
 
-### Example: Creating a Year non-unique Index
-The image below shows an example where the `movies` data node contains the columns `movie_id`, `title`, and `year`. Here, the `year` column is selected as the key for indexing.
-
+### Using an Index
 After creating the index:
 1. **Load the index**:
    - Use the appropriate menu item in the **top menu**, or
@@ -41,10 +39,13 @@ After creating the index:
 3. **Use the index**:
    - Drag the node from the left panel into the query editor.
    - Double-click the node to view the tuples, which are now ordered by the key column.
-
 ---
 
-### Example: Using the Year Index
+## Example: Creating an Index over Year 
+The `movies` data node contains the columns `movie_id`, `title`, and `year`. In this first example we will create an index over the year column.  Right click the data node, select the **"Export Table"** menu item and chose **"Non-Unique Index"**.
+ON the data frame, only the year radio button is checked. The image below shows an example where 
+
+
 
 The image below shows a query tree where a filter over the year column is connected to the index node. The Filter is resolved  by the B+tree key search.  If the query is selective, the number of page access on disk will be much lower than if a sequentil access was performed.  To see this, run the query and go the the Cost panel, where you can see the number of pages loaded from disk.
 
