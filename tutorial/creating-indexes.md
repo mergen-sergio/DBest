@@ -42,12 +42,17 @@ After creating the index:
 ---
 
 ## Example: Creating an Index over Year 
-The `movies` data node contains the columns `movie_id`, `title`, and `year`. In this first example we will create an index over the year column.  Right click the data node, select the **"Export Table"** menu item and chose **"Non-Unique Index"**.
-ON the data frame, only the year radio button is checked. The image below shows an example where 
+The image below exemplifies the creation of an non-unique index for the year column. The `movies` data node contains the columns `movie_id`, `title`, and `year`. The year column becomes the key part. The ramaining columns become the value part. 
 
+![Index Example](assets/images/first-index.png)
 
+The index is saved as idx_year.dat. If a non-unique index was chosen instead, the records with duplicated values for the year column would be ignored during index creation. 
 
-The image below shows a query tree where a filter over the year column is connected to the index node. The Filter is resolved  by the B+tree key search.  If the query is selective, the number of page access on disk will be much lower than if a sequentil access was performed.  To see this, run the query and go the the Cost panel, where you can see the number of pages loaded from disk.
+To use the index, drag and drop the idx_year.dat file into the query editor or load it using the top menu. The index node will appear in the left panel and can be draged into the query tree for querying. The image below shows a query tree where a filter over the year column is connected to the index node. 
+
+![Index Example](assets/images/first-index.png)
+
+The Filter is resolved  by the B+tree key search.  If the query is selective, the number of page access on disk will be much lower than if a sequentil access was performed.  To see this, run the query and go the the Cost panel, where you can see the number of pages loaded from disk.
 
 
 ## Composite Index
