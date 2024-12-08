@@ -62,7 +62,7 @@ A **composite index** allows indexing using multiple key columns:
 - **Efficient lookups** are possible only if the filter includes the **prefix of the key**.
 - For an index with `n` key columns, the first `n-1` keys must be filtered with equality conditions.
 
-
+3. Ensure the indexed column(s) are the **first levels** and the primary key column(s) are the **last levels**.
 
 ## Primary and Secondary Indexes
 
@@ -74,37 +74,32 @@ After creating a primary clustered index, we can add non-clustered indexes as ne
 
 
 
-### Steps to Create a Primary Index
+## Example: Creating a primary index 
 
-1. Load a data node into the query editor.
+This example shows how to create a primary index for the movie data node.
+
+1. Load the movie data node into the query editor.
 2. Use the **Unique Index** option over the node.
-3. Check the radio buttons for the primary key column(s). 
+3. Check the radio buttons for the movie_id column. 
 
-The image below shows an example of primary index creation for a movie data node. During index creation, check only the `movie_id` column. The remaining columns will be part of the value. 
-
-After index creation, load the index into the editor and run a query over it. All columns are displayed, only that they are ordered by movie_id. 
+The image below shows the window where the key/value part is defined. While the movie_id is indexed, the remaining columns becomes accessible from the value part. This index was called pk_movie. Running a query over it displayes all movie columns, only that they are ordered by movie_id. 
 
 ### Steps to Create a Secondary Index
 
-1. Build a query tree to project the indexed column(s) and primary key column(s).
-2. Export the projection node as an index using the **"Indexed Data"** option.
-3. Ensure the indexed column(s) are the **first levels** and the primary key column(s) are the **last levels**.
+Now lets create a secondary index over the year column. 
+
+1. Load the movie data node into the query editor.
+2. Build a query tree to project the year and the movie_id columns
+3. Export the projection node as an index using the **"Non-Unique Index"** option.
+4.  Check the radio button for the year column.
 
 
-
-
-The image below shows an example of the tree used to index the year column. During index creation, the indexed column `year` needs to be selected as the first level and the movie_id as the second level. 
-
-
-## Using Secondary Indexes
-
-Secondary indexes store only the **key column(s)**, leaving the value part empty. To retrieve additional columns:
-- **Join the secondary index** with the primary index using the primary key as the join predicate.
+The image below shows the window where the key/value part is defined. The year is the key and the movie_id is the value. Running a query over it displayes only these two columns, ordered by movie_id. To have access to other movie columns (e.g. title), you need to **Join the secondary index** with the primary index using the primary key as the join predicate.
 
 The image below shows an example. The filter over the secondary index efficiently finds movies released in 1950. For those movies, the join operator finds the corresponding entry on the primary index on the right side, which gives access to the title column. 
 The join lookup over movie_id is efficiently resolved, since the primary key is indexed by movie_id. 
 
-To avoid the join, we can create a secondary index that stores all movie information as value columns. This is an option that need to be carefully decided, since it duplicate the contents of a data node for all indexes created. This speeds up search, since no primary index joins are required. However, it leads to a high memory consumption. Also, it the columns are updated, all indexes need to be updated as well. 
+To avoid the join, we can create a secondary clustered index, it is , a index over a non-primary key column that stores all movie information as value columns, as demonstrated in our first example. This is an option that need to be carefully decided, since it duplicate the contents of a data node. This speeds up search, since no primary index joins are required. However, it leads to a high memory consumption. Also, it the columns are updated, all indexes need to be updated as well. 
 
 An alternative is to add to a secondary index the most important columns to the value part, instead of adding all of the columns. This reduces redundancy and update costs, and it speeds up queries that focus on the included columns. 
 
