@@ -12,7 +12,7 @@ In DBest, join operators support **equi-joins only**. When the join configuratio
 
 ### **Example: Equi-join**
 
-The image below demonstrates an equi-join between the `movie` and `movie_cast` data nodes using the **Nested Loop Join** algorithm. In this example, a single term is defined, comparing the `movie_id` column from both sides. However, more terms could be added if necessary.
+The image below demonstrates an equi-join between the `movie` and `movie_cast` data nodes using the **Nested Loop Join** algorithm. In this example, the configuration window defines a single term, comparing the `movie_id` column from both sides. More terms could be added if necessary.
 
 ![Equi-join Example](assets/images/equi-join.png)
 
@@ -49,4 +49,3 @@ The query below demonstrates finding matches between the `movie_cast` and `movie
 
 ---
 
-By understanding and applying these concepts, you can effectively use both equi-joins and non-equi joins in DBest to connect and query relational tables.
