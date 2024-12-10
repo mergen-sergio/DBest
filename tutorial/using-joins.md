@@ -14,13 +14,13 @@ In DBest, join operators support **equi-joins only**. When the join configuratio
 
 The image below demonstrates an equi-join between the `movie` and `movie_cast` data nodes using the **Nested Loop Join** algorithm. In this example, a single term is defined, comparing the `movie_id` column from both sides. However, more terms could be added if necessary.
 
-![Equi-join Example](path/to/image.png)
+![Equi-join Example](assets/images/equi-join.png)
 
 ### **Join Algorithms for Equi-joins**
-When performing equi-joins, several algorithms can be used, including:
+When performing equi-joins, several algorithms (in their pure form or their variations) can be used, including:
 - **Nested Loop Join** (used in the example above).
 - **Hash Join**.
-- **Merge Join**, along with their variations.
+- **Merge Join**.
 
 ---
 
@@ -39,7 +39,7 @@ In DBest, a non-equi join can be implemented using:
 The query below demonstrates finding matches between the `movie_cast` and `movie_crew` tuples if they share the same `movie_id` or `person_id`. The **filter operator** contains the join terms:  
 `movie_cast.movie_id = movie_crew.movie_id OR movie_cast.person_id = movie_crew.person_id`.
 
-![Non-equi Join Example](path/to/image.png)
+![Non-equi Join Example](assets/images/non-equi-join.png)
 
 ### **Referenced Columns in Non-equi Joins**
 - Some columns in the filter refer to **outer side** columns of the join (e.g., `movie_cast.movie_id` and `movie_cast.person_id`). These are called **referenced columns**.
