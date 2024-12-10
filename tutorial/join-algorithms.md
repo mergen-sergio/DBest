@@ -1,46 +1,52 @@
-
-# Join Algorithms and Their Variations
+# Join Algorithms 
 
 ## 1. **Nested Loop Join**
-The **Nested Loop Join** algorithm processes each tuple on the outer side and looks for matching tuples on the inner side. 
+The **Nested Loop Join** algorithm evaluates each tuple from the outer side by searching for matching tuples on the inner side.
 
 ### **Key Points:**
-- **Naive Strategy:** Scans all inner-side tuples for every outer-side tuple. This approach is highly inefficient.
+- **Naive Strategy:** Scans all tuples on the inner side for each tuple on the outer side, which is highly inefficient.
 - **Optimized Usage:**  
-  - Place an operator on the inner side of the join to efficiently handle lookups.  
-  - For example, use a data node indexed by the lookup column or a materialized operation that uses the lookup column as the search key.
+  - Use an operator on the inner side to improve lookup performance.  
+  - Examples:
+    - A data node indexed by the lookup column.
+    - A materialized operation using the lookup column as the search key.
 
 ---
 
 ## 2. **Hash Join**
-The **Hash Join** algorithm processes the inner side once to build a hash table containing all inner-side tuples. The hash table uses the **lookup column(s)** as the key. For each outer-side tuple, the hash is queried to find matching inner-side tuples.
+The **Hash Join** algorithm builds a hash table by scanning the inner side once, storing all inner-side tuples using the **lookup column(s)** as the key. Matches for outer-side tuples are then quickly found by querying the hash table.
 
 ### **Key Points:**
 - **Efficiency:** More efficient than the Nested Loop Join.
 - **Memory Usage:** Requires memory to store the hash table.
-- **Equivalent Process:** The Hash Join algorithm has the same effect as combining:
+- **Equivalent Process:** Functions similarly to a combination of:
   - A **Nested Loop Join**.
   - A **Hash operator**.
-  - A **Projection operator**.  
+  - A **Projection operator**.
 
-The image below illustrates this equivalence.
+The image below demonstrates this equivalence.
 
-![Hash Join Illustration](path/to/image.png)
+![Hash Join Illustration](assets/images/hash-join.png)
 
 ---
 
 ## 3. **Merge Join**
-The **Merge Join** algorithm processes both sides of the join by traversing them in a forward-only direction, identifying matches as tuples are read.
+The **Merge Join** algorithm traverses both sides of the join in a forward-only direction, identifying matches as tuples are read.
 
 ### **Key Points:**
-- **Prerequisite:** Both sides must be ordered by the join condition columns.
+- **Prerequisite:** Both sides must be sorted by the join condition columns.
   - A **Sort operator** can be added to ensure the required order.
-- **Pitfalls:** If tuples are not properly ordered, some matches may be missed.
+- **Pitfalls:** If tuples are unsorted, matches may be missed.
 - **Efficiency:** 
-  - When tuples are already ordered, this is the **most efficient algorithm**:
-    - Consumes no memory.
+  - When tuples are already ordered:
+    - It is the **most efficient algorithm**.
+    - Consumes no additional memory.
     - Scans each side only once.
+
+The image below illustrates a query tree where the inner side required a **Sort operator** because tuples were not sorted by the join column (`person_id`). If a **Sort operator** is necessary, it may be better to use a different join algorithm.
+
+![Merge Join Illustration]((assets/images/merge-join.png)
 
 ---
 
-By understanding these join algorithms, their trade-offs, and how to optimize their use, you can improve the performance of relational table queries.
+By understanding these join algorithms, their strengths, limitations, and optimization opportunities, you can enhance the performance of relational table queries.
