@@ -15,7 +15,7 @@ The **Nested Loop Join** algorithm evaluates each tuple from the outer side by s
 The illustration below demonstrates two query trees.  
 - **Left Tree:** The `movie_cast` data node is on the outer side, while the `person` data node, indexed by `person_id`, is on the inner side. This setup is efficient since the index facilitates fast lookups for each tuple.  
 
-![Nested Loop Join Illustration](assets/images/nested-loop-join.png)
+<img src="assets/images/nested-loop-join.png" alt="Nested Loop Join Illustration" width="500"/>
 
 - **Right Tree:** The sides are reversed, with `movie_cast` as the inner side. This is inefficient because:
   - The `movie_cast` node is indexed by both `movie_id` and `person_id`, but `person_id` is the secondary key.
@@ -41,7 +41,7 @@ The **Hash Join** algorithm builds a hash table from the inner side using the jo
 The figure below compares two equivalent approaches to Hash Join:  
 - **Left Tree:** Directly builds a hash table from the inner side and uses it to match tuples from the outer side, avoiding repeated scans.  
 
-![Hash Join Illustration](assets/images/hash-join.png)
+<img src="assets/images/hash-join.png" alt="Hash Join Illustration" width="500"/>
 
 - **Right Tree:** Projects relevant columns from the inner side, builds a hash table using these columns, and uses a Nested Loop Join for lookups. The **Hash operator** dynamically aligns its keys with the parent node (the join operator). Both trees achieve the same result, but the left tree is a simplified representation.
 
@@ -64,7 +64,7 @@ The **Merge Join** algorithm processes both sides of the join simultaneously in 
 The image below compares two query trees using Merge Join:  
 - **Left Tree:** Joins `movie` and `movie_cast` nodes, both already sorted by the join column (`movie_id`). This is an optimal setup for Merge Join.  
 
-![Merge Join Illustration](assets/images/merge-join.png)
+<img src="assets/images/merge-join.png" alt="Merge Join Illustration" width="500"/>
 
 - **Right Tree:** Joins `movie_cast` and `person` nodes, but requires a **Sort operator** for the inner side (`person`) to align tuples by the join column (`person_id`). When sorting is needed, alternative join strategies may offer better performance.
 
