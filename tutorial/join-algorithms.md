@@ -64,7 +64,7 @@ The **Merge Join** algorithm processes both sides of the join simultaneously in 
 The image below compares two query trees using Merge Join:  
 - **Left Tree:** Joins `movie` and `movie_cast` nodes, both already sorted by the join column (`movie_id`). This is an optimal setup for Merge Join.  
 
-<img src="assets/images/merge-join.png" alt="Merge Join Illustration" width="500"/>
+<img src="assets/images/merge-join.png" alt="Merge Join Illustration" width="700"/>
 
 - **Right Tree:** Joins `movie_cast` and `person` nodes, but requires a **Sort operator** for the inner side (`person`) to align tuples by the join column (`person_id`). When sorting is needed, alternative join strategies may offer better performance.
 
