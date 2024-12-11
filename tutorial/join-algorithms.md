@@ -1,66 +1,73 @@
 # Join Algorithms 
 
 ## 1. **Nested Loop Join**
-The **Nested Loop Join** algorithm processes each tuple from the outer side by searching for matching tuples on the inner side.
+The **Nested Loop Join** algorithm evaluates each tuple from the outer side by searching for matching tuples on the inner side.
 
 ### **Key Points:**
-- **Naive Strategy:** Scans all tuples on the inner side for each outer-side tuple, which is highly inefficient.
+- **Naive Strategy:** Scans all tuples on the inner side for each outer-side tuple, making it inefficient.
 - **Optimized Usage:**  
-  - Use an operator on the inner side to improve lookup performance.  
-  - Examples include:
-    - A data node indexed by the lookup column.
-    - A materialized operation that uses the lookup column as the search key.
+  - Leverage an operator on the inner side to enhance lookup performance.  
+  - Examples:
+    - Using a data node indexed by the lookup column.
+    - Applying a materialized operation that reorders data for efficient access.
 
 ### **Example:**
-In the example below, the outer side is the `movie_cast` data node, and the inner side is the `person` data node indexed by `person_id`. This setup is efficient because the index on `person_id` allows quick lookups for each `movie_cast` tuple.
+The illustration below demonstrates two query trees.  
+- **Left Tree:** The `movie_cast` data node is on the outer side, while the `person` data node, indexed by `person_id`, is on the inner side. This setup is efficient since the index facilitates fast lookups for each tuple.  
 
 ![Nested Loop Join Illustration](assets/images/nested-loop-join.png)
 
-If the sides are switched, making `movie_cast` the inner side, inefficiencies arise:
-- The `movie_cast` node is indexed by both `movie_id` and `person_id`, with `person_id` being the secondary key.
-- As a result, the index would need to scan all tuples to locate matches for each outer-side tuple, leading to significant overhead.
+- **Right Tree:** The sides are reversed, with `movie_cast` as the inner side. This is inefficient because:
+  - The `movie_cast` node is indexed by both `movie_id` and `person_id`, but `person_id` is the secondary key.
+  - Each lookup requires scanning the entire index for matches, resulting in high overhead.
 
 ### **Solutions for Inefficiency:**
-1. **Switch the Sides:** Use the `person` data node as the inner side to leverage its index.
-2. **Add a Materialized Operation:** Create a materialized view or structure that reorders `movie_cast` for efficient lookups.
-3. **Use a Hash Join:** Replace the Nested Loop Join with a Hash Join for better performance.
+1. **Switch the Sides:** Configure the `person` data node as the inner side to leverage its index (as in the left tree).  
+2. **Add a Materialized Operation:** Reorganize `movie_cast` data for efficient lookups.  
+3. **Use a Hash Join:** Replace the Nested Loop Join with a Hash Join for improved performance.
 
 ---
 
 ## 2. **Hash Join**
-The **Hash Join** algorithm builds a hash table from the inner side of the join, using the join column(s) as the key. The outer side tuples are then processed by querying the hash table for matches.
+The **Hash Join** algorithm builds a hash table from the inner side using the join column(s) as the key. The outer side tuples are then matched against this hash table.
 
 ### **Key Points:**
-- **Efficiency:** Faster than the Nested Loop Join, especially for large datasets.
+- **Efficiency:** Performs better than Nested Loop Join for larger datasets.
 - **Memory Usage:** Requires memory to store the hash table.
-- **Equivalent Process:** 
-  - Combines a **Nested Loop Join** with a **Hash operator** and a **Projection operator**.
-  
+- **Equivalent Process:**  
+  - Combines elements of a **Nested Loop Join**, **Hash operator**, and **Projection operator**.
+
 ### **Example:**
-In the illustration below, the hash join builds a hash table from the inner side and matches tuples from the outer side using the hash keys. This avoids the repeated scanning of the inner side seen in a naive Nested Loop Join.
+The figure below compares two equivalent approaches to Hash Join:  
+- **Left Tree:** Directly builds a hash table from the inner side and uses it to match tuples from the outer side, avoiding repeated scans.  
 
 ![Hash Join Illustration](assets/images/hash-join.png)
+
+- **Right Tree:** Projects relevant columns from the inner side, builds a hash table using these columns, and uses a Nested Loop Join for lookups. The **Hash operator** dynamically aligns its keys with the parent node (the join operator). Both trees achieve the same result, but the left tree is a simplified representation.
 
 ---
 
 ## 3. **Merge Join**
-The **Merge Join** algorithm works by scanning both sides of the join in a single, forward-only pass. Matches are identified as tuples are read.
+The **Merge Join** algorithm processes both sides of the join simultaneously in a single, forward-only scan, identifying matches as they are encountered.
 
 ### **Key Points:**
-- **Prerequisite:** Both sides must be sorted by the join column(s).
-  - A **Sort operator** can be added to enforce the required order.
-- **Pitfalls:** If tuples are not ordered properly, some matches may be missed.
+- **Prerequisite:** Both sides must be sorted by the join column(s).  
+  - A **Sort operator** can be added to ensure the correct order.  
+- **Pitfalls:** Unsuitable for unsorted data, as matches may be missed.
 - **Efficiency:**
-  - When tuples are pre-sorted:
-    - This is the **most efficient join algorithm**.
-    - Consumes no additional memory.
-    - Processes each side only once.
+  - When pre-sorted:
+    - It is the **most efficient join algorithm**.
+    - Requires no additional memory.
+    - Processes each side exactly once.
 
 ### **Example:**
-The image below shows a query tree where the inner side required a **Sort operator** to ensure the tuples were sorted by the join column (`person_id`). When a sort is necessary, it might be better to use an alternative join algorithm due to the overhead introduced by sorting.
+The image below compares two query trees using Merge Join:  
+- **Left Tree:** Joins `movie` and `movie_cast` nodes, both already sorted by the join column (`movie_id`). This is an optimal setup for Merge Join.  
 
 ![Merge Join Illustration](assets/images/merge-join.png)
 
+- **Right Tree:** Joins `movie_cast` and `person` nodes, but requires a **Sort operator** for the inner side (`person`) to align tuples by the join column (`person_id`). When sorting is needed, alternative join strategies may offer better performance.
+
 ---
 
-By understanding these join algorithms, their strengths, and the trade-offs involved, you can make informed decisions to optimize the performance of relational table queries.
+By understanding the nuances of these join algorithms, their optimal scenarios, and trade-offs, you can design efficient query plans to maximize relational query performance.
