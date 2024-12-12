@@ -15,6 +15,8 @@ The inner join can be implemented using three different algorithms:
 ### Example:
 The example below shows the **Nested Loop Inner Join** between `movie` and `movie_cast`. A projection is used to reduce the number of returned columns to just `title` from `movie` and `character_name` from `movie_cast`. Without this projection, all columns from both data nodes would be returned.
 
+<img src="assets/images/inner-join.png" alt="Nested Loop Inner Join Illustration" width="600"/>
+
 ---
 
 ## 2. **Outer Join**
@@ -31,6 +33,8 @@ The **Outer Join** operates similarly to the Inner Join but includes unmatched t
 ### Example:
 The example below shows the **Nested Loop Left Outer Join** between `movie` and `movie_cast`. Movies without corresponding `movie_casts` are complemented with `NULL` values for the `character_name` column.
 
+<img src="assets/images/outer-join.png" alt="Nested Loop Left Outer Join Illustration" width="600"/>
+
 ---
 
 ## 3. **Semi Join**
@@ -45,7 +49,9 @@ The **Semi Join** retrieves a tuple from one side only if at least one match exi
 - **Right Semi Join:** Can be implemented using **Merge Join** or **Hash Join**.
 
 ### Example:
-The example below shows the **Nested Loop Semi Join** between `movie` and `movie_cast`. Only movies with cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
+The example below shows the **Nested Loop Left Semi Join** between `movie` and `movie_cast`. Only movies with cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
+
+<img src="assets/images/semi-join.png" alt="Nested Loop Left Semi Join Illustration" width="600"/>
 
 ---
 
@@ -62,3 +68,5 @@ The **Anti Join** retrieves tuples from one side when no matches exist on the ot
 
 ### Example:
 The example below shows the **Nested Loop Anti Join** between `movie` and `movie_cast`. Only movies without cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
+
+<img src="assets/images/anti-join.png" alt="Nested Loop Left Anti Join Illustration" width="600"/>
