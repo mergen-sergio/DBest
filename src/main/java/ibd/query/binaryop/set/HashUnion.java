@@ -159,31 +159,27 @@ public class HashUnion extends Set {
 
                     while (leftTuples.hasNext()) {
                         Tuple leftTuple = leftTuples.next();
-                        if (lookup.match(leftTuple)) {
-                            String key = getKey(leftTuple);
-                            tuples.put(key, leftTuple);
-                            QueryStats.MEMORY_USED += tupleSize;
-                            
-                            Tuple returnTp = new Tuple();
-                            returnTp.rows = new LinkedDataRow[1];
-                            returnTp.rows[0] = buildRow(leftTuple);
-                            return returnTp;
-                            //return leftTuple;
-                        }
+                        String key = getKey(leftTuple);
+                        tuples.put(key, leftTuple);
+                        QueryStats.MEMORY_USED += tupleSize;
+
+                        Tuple returnTp = new Tuple();
+                        returnTp.rows = new LinkedDataRow[1];
+                        returnTp.rows[0] = buildRow(leftTuple);
+                        return returnTp;
+                        //return leftTuple;
                     }
                 
        
                 while (rightTuples.hasNext()) {
                     Tuple rightTuple = rightTuples.next();
-                    if (lookup.match(rightTuple)) {
-                        String key = getKey(rightTuple);
-                        if (!(tuples.containsKey(key))){
-                            Tuple returnTp = new Tuple();
-                            returnTp.rows = new LinkedDataRow[1];
-                            returnTp.rows[0] = buildRow(rightTuple);
-                            return returnTp;
-                            //return rightTuple;
-                        }
+                    String key = getKey(rightTuple);
+                    if (!(tuples.containsKey(key))){
+                        Tuple returnTp = new Tuple();
+                        returnTp.rows = new LinkedDataRow[1];
+                        returnTp.rows[0] = buildRow(rightTuple);
+                        return returnTp;
+                        //return rightTuple;
                     }
                 }
             return null;

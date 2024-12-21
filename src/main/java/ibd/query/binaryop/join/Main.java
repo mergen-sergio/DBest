@@ -64,28 +64,28 @@ public class Main {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", id);
         row.setString("name", name);
-        funcTable.addRecord(row);
+        funcTable.addRecord(row, true);
     }
 
     private void addPhone(Table phoneTable, int id, String phone) throws Exception {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", id);
         row.setString("phone", phone);
-        phoneTable.addRecord(row);
+        phoneTable.addRecord(row, true);
     }
 
     private void addAddress(Table addressTable, int id, String address) throws Exception {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", id);
         row.setString("address", address);
-        addressTable.addRecord(row);
+        addressTable.addRecord(row, true);
     }
 
     private void addSocialInfo(Table socialInfoTable, int id, String socialInfo) throws Exception {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", id);
         row.setString("socialInfo", socialInfo);
-        socialInfoTable.addRecord(row);
+        socialInfoTable.addRecord(row, true);
     }
 
     public void prepareTables(String folder, int pageSize, int size, boolean override) throws Exception {

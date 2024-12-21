@@ -22,7 +22,7 @@ public class Test {
         Value value = tree.createValue();
         value.set(0, "record:" + (value1 + "-" + value2 + "-" + value3));
 
-        return tree.insert(key, value);
+        return tree.insert(key, value, true);
 
     }
 

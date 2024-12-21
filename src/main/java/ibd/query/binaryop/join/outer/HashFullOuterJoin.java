@@ -5,15 +5,12 @@
  */
 package ibd.query.binaryop.join.outer;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
-import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.HashJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.JoinTerm;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,20 +19,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Performs a nested loop join between the left and the right operations using
+ * Performs a Hash Full Outer Join between the left and the right operations using
  * the terms provided by the join predicate.
+ * Left and right side tuples that have no matches are also returned, complemented with null values.
  *
  * @author Sergio
  */
-public class HashFullOuterJoin extends Join {
+public class HashFullOuterJoin extends HashJoin {
 
 
-    /*
-    materialized hash of tuples, using as key the columns from the join predicate.
-    This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
-     */
-    HashMap<String, List<Tuple>> tuples;
-
+    //the table that keeps the matched tuples from the right side
     HashMap<String, List<Tuple>> existingTuples;
 
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
@@ -44,13 +37,6 @@ public class HashFullOuterJoin extends Join {
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
     Tuple nullLeftTuple;
 
-    /**
-     *
-     * @param leftOperation the left side operation
-     * @param rightOperation the right side operation
-     * @param joinPredicate the join predicate
-     * @throws Exception
-     */
     public HashFullOuterJoin(Operation leftOperation, Operation rightOperation, JoinPredicate joinPredicate) throws Exception {
         super(leftOperation, rightOperation, joinPredicate);
     }
@@ -60,72 +46,60 @@ public class HashFullOuterJoin extends Join {
 
         super.prepare();
 
-        //sets the column indexes for the terms of the join predicate
-        setJoinTermsIndexes();
-
+        //creates the null tuples
         setNullLeftTuple();
         setNullRightTuple();
 
-        //erases the previously built hash.
-        //a new one is created when the first query is executed. 
-        tuples = null;
-
     }
 
-    //sets the column indexes for the terms of the join predicate
-    private void setJoinTermsIndexes() throws Exception {
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
-    }
-
+    /**
+     * Creates a null tuple that contains null rows for all data sources that comes
+     * from the left side
+     * 
+     * @throws java.lang.Exception
+     */
     protected void setNullLeftTuple() throws Exception {
         ReferedDataSource left[] = getLeftOperation().getDataSources();
         nullLeftTuple = new Tuple();
         nullLeftTuple.rows = new LinkedDataRow[left.length];
         for (int i = 0; i < left.length; i++) {
             LinkedDataRow row = new LinkedDataRow(left[i].prototype, false);
-            nullLeftTuple.rows[i] = new LinkedDataRow();
+            //nullLeftTuple.rows[i] = new LinkedDataRow();
             nullLeftTuple.rows[i] = row;
         }
 
     }
 
+    /**
+     * Creates a null tuple that contains null rows for all data sources that comes
+     * from the right side  
+     * 
+     * @throws java.lang.Exception
+     */
     protected void setNullRightTuple() throws Exception {
         ReferedDataSource right[] = getRightOperation().getDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {
             LinkedDataRow row = new LinkedDataRow(right[i].prototype, false);
-            nullRightTuple.rows[i] = new LinkedDataRow();
+            //nullRightTuple.rows[i] = new LinkedDataRow();
             nullRightTuple.rows[i] = row;
         }
 
     }
 
-    /**
-     *
-     * @return the name of the operation
-     */
     @Override
     public String getJoinAlgorithm() {
         return "Hash Full Outer Join";
     }
 
-    /**
-     * {@inheritDoc }
-     *
-     * @return an iterator that performs a simple nested loop join over the
-     * tuples from the left and right sides
-     */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
         return new HashJoinIterator(processedTuples, withFilterDelegation);
     }
 
     /**
-     * the class that produces resulting tuples from the nested loop join
+     * the class that produces resulting tuples from the Hash Full Outer  Join
      * between the two underlying operations.
      */
     private class HashJoinIterator extends UnpagedOperationIterator {
@@ -139,68 +113,27 @@ public class HashFullOuterJoin extends Join {
 
         boolean foundJoin = false;
 
+        //the class that traverses the tuples stored in the hash table
         TupleTraverser tupleTraverser = null;
 
         public HashJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
 
             currentLeftTuple = null;
+            
             //scan all tuples that comes from the left side
             leftTuples = leftOperation.lookUp(processedTuples, false);
-
-            buildHash();
-
-        }
-
-        private void buildHash() {
-            //build hash, if one does not exist yet
+            
             if (tuples == null) {
-                tuples = new HashMap();
                 existingTuples = new HashMap();
-                long memoryUsed = 0;
-                try {
-                    //accesses and indexes all tuples that come from the child operation
-                    Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
-                    int tupleSize = rightOperation.getTupleSize();
-                    while (it.hasNext()) {
-                        Tuple tuple = (Tuple) it.next();
-                        String key = "";
-                        for (JoinTerm term : joinPredicate.getTerms()) //for (SingleColumnLookupFilter lookupFilter : hashedFilters) 
-                        {
-                            //ColumnDescriptor col = lookupFilter.getColumnDescriptor();
-                            ColumnDescriptor col = term.getRightColumnDescriptor();
-                            key += tuple.rows[col.getColumnLocation().rowIndex].getValue(col.getColumnLocation().colIndex).toString();
-                        }
-
-                        //String key = tuple.rows[hashColumn.getColumnLocation().rowIndex].getValue(hashColumn.getColumnName()).toString();
-                        List tupleList = tuples.get(key);
-                        if (tupleList == null) {
-                            tupleList = new ArrayList();
-                            tuples.put(key, tupleList);
-                        }
-                        tupleList.add(tuple);
-                        memoryUsed += tupleSize;
-                    }
-
-                } catch (Exception ex) {
-                }
-                QueryStats.MEMORY_USED += memoryUsed;
             }
+            
+            //builds a hash for the right side tuples
+            buildHash(processedTuples);
+
         }
 
-        //set the key with the left-side values that are necessary to perform the lookup.
-        private String fillKey() {
-            String key = "";
-            List<JoinTerm> joinTerms = joinPredicate.getTerms();
-            //List<LookupFilter> filters = joinFilter.getFilters();
-            for (int i = 0; i < joinTerms.size(); i++) {
-                JoinTerm joinTerm = joinTerms.get(i);
-                Comparable value = currentLeftTuple.rows[joinTerm.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(joinTerm.getLeftColumnDescriptor().getColumnLocation().colIndex);
-                key += value;
-
-            }
-            return key;
-        }
+       
 
         @Override
         protected Tuple findNextTuple() {
@@ -212,7 +145,9 @@ public class HashFullOuterJoin extends Join {
                     currentLeftTuple = leftTuples.next();
                     foundJoin = false;
                     //the lookup conditions are filled with values taken from the computed rows from the current left side
-                    String key = fillKey();
+                    String key = fillKey(currentLeftTuple);
+                    
+                    //moves tuples from the hash table into the existingTuples table
                     List<Tuple> result = existingTuples.get(key);
                     if (result == null) {
                         result = tuples.get(key);
@@ -221,6 +156,8 @@ public class HashFullOuterJoin extends Join {
                             tuples.remove(key);
                         }
                     }
+                    
+                    //sets the iterator over the matched tuples from the right side
                     if (result != null) {
                         rightTuples = result.iterator();
                     } else {
@@ -238,10 +175,7 @@ public class HashFullOuterJoin extends Join {
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
 
                     foundJoin = true;
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        return tuple;
-                    }
+                    return tuple;
 
                 }
 
@@ -249,10 +183,8 @@ public class HashFullOuterJoin extends Join {
                 if (!foundJoin) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple, nullRightTuple);
-                    if (lookup.match(tuple)) {
-                        currentLeftTuple = null;
-                        return tuple;
-                    }
+                    currentLeftTuple = null;
+                    return tuple;
                 }
 
                 //All corresponding tuples from the right side processed. 
@@ -260,7 +192,13 @@ public class HashFullOuterJoin extends Join {
                 currentLeftTuple = null;
 
             }
+            
+            //all left side tuples were processed.
+            //it is time to return the right side tuples that have no matches
+            //these tuples are the ones that remained in the hash table after the
+            //found tuples were removed
 
+            //the tuple traversed is created only once
             if (tupleTraverser == null) {
                 tupleTraverser = new TupleTraverser(tuples);
             }
@@ -269,9 +207,7 @@ public class HashFullOuterJoin extends Join {
                 Tuple rightTuple = tupleTraverser.nextTuple();
                 Tuple tuple = new Tuple();
                 tuple.setSourceRows(nullLeftTuple, rightTuple);
-                if (lookup.match(tuple)) {
-                    return tuple;
-                }
+                return tuple;
             }
 
             //no more tuples to be joined

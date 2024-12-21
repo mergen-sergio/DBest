@@ -48,7 +48,12 @@ public class BlockNestedLoopJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
+        
+    }
+    
+    //sets the column indexes for the terms of the join predicate
+    @Override
+    protected void setJoinTermsIndexes() throws Exception {
         for (JoinTerm term : joinPredicate.getTerms()) {
             leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
             rightOperation.setColumnLocation(term.getRightColumnDescriptor());
@@ -173,11 +178,9 @@ public class BlockNestedLoopJoin extends Join {
                         continue;
                     }
 
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        return tuple;
-                    }
-
+                    
+                    return tuple;
+                    
                 }
 
                 //All corresponding tuples from the right side processed. 

@@ -32,7 +32,7 @@ public class Main {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", pk);
         row.setString("nome", pk + "added record");
-        table.addRecord(row);
+        table.addRecord(row, true);
         table.flushDB();
 
     }
@@ -172,7 +172,7 @@ public class Main {
             row.setInt("id", pks[i]);
             row.setString("nome", DataFaker.pad(text, len));
 
-            table.addRecord(row);
+            table.addRecord(row, true);
         }
 
         table.flushDB();

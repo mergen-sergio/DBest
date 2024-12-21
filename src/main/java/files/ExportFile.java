@@ -210,7 +210,7 @@ public class ExportFile extends JPanel {
         }
     }
 
-    public void exportToFYI(Cell cell, List<Column> primaryKeyColumns) {
+    public void exportToFYI(Cell cell, List<Column> primaryKeyColumns, boolean unique) {
         if (primaryKeyColumns == null || primaryKeyColumns.isEmpty()) {
             return;
         }
@@ -238,7 +238,7 @@ public class ExportFile extends JPanel {
                 int result = JOptionPane.showConfirmDialog(null, ConstantController.getString("file.substitution"), ConstantController.getString("file.substitutionConfirmation"), JOptionPane.YES_NO_OPTION);
 
                 if (result == JOptionPane.NO_OPTION) {
-                    this.exportToFYI(cell, primaryKeyColumns);
+                    this.exportToFYI(cell, primaryKeyColumns, unique);
                     return;
                 }
             }
@@ -292,7 +292,7 @@ public class ExportFile extends JPanel {
 
             try {
 
-                TableCell createdCell = TableCreator.createFYITable(fileName, columnsWithPrimaryKey, rows, fileToSave, true);
+                TableCell createdCell = TableCreator.createIndex(fileName, columnsWithPrimaryKey, rows, fileToSave, true, unique);
 //                createdCell.getTable().saveHeader(headFileName);
 //                createdCell.getTable().close();
 

@@ -23,13 +23,12 @@ public class Exists extends BinaryOperation {
 
     //indicates if both sides should contain results in order for the operation to be effective
     boolean conjunctive = true;
-    
+
     //a null tuple that is used when no left side tuple exists
     Tuple nullLeftTuple;
-    
+
     //a null tuple that is used when no right side tuple exists
     Tuple nullRightTuple;
-    
 
     /**
      *
@@ -43,9 +42,9 @@ public class Exists extends BinaryOperation {
         super(leftOperation, rightOperation);
         this.conjunctive = conjunctive;
     }
-    
+
     @Override
-    public void prepare() throws Exception{
+    public void prepare() throws Exception {
         super.prepare();
         setNullLeftTuple();
         setNullRightTuple();
@@ -55,43 +54,43 @@ public class Exists extends BinaryOperation {
     public String toString() {
         return "Exists";
     }
-    
+
     protected void setNullLeftTuple() throws Exception {
-        
+
         ReferedDataSource left[] = getLeftOperation().getDataSources();
         nullLeftTuple = new Tuple();
         nullLeftTuple.rows = new LinkedDataRow[left.length];
         for (int i = 0; i < left.length; i++) {
             LinkedDataRow row = new LinkedDataRow(left[i].prototype, false);
             nullLeftTuple.rows[i] = new LinkedDataRow();
-            nullLeftTuple.rows[i]= row;
+            nullLeftTuple.rows[i] = row;
         }
 
     }
-    
+
     protected void setNullRightTuple() throws Exception {
-        
+
         ReferedDataSource right[] = getRightOperation().getDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {
             LinkedDataRow row = new LinkedDataRow(right[i].prototype, false);
             nullRightTuple.rows[i] = new LinkedDataRow();
-            nullRightTuple.rows[i]= row;
+            nullRightTuple.rows[i] = row;
         }
 
     }
-    
+
     /**
      * {@inheritDoc }
-     * the data sources array  is a concatenation of the data sources
-     * that come from the left and the right subtrees
+     * the data sources array is a concatenation of the data sources that come
+     * from the left and the right subtrees
      *
      * @throws Exception
      */
     @Override
     public void setDataSourcesInfo() throws Exception {
-        
+
         getLeftOperation().setDataSourcesInfo();
         getRightOperation().setDataSourcesInfo();
 
@@ -110,7 +109,6 @@ public class Exists extends BinaryOperation {
 
     }
 
-
     /**
      * {@inheritDoc }
      *
@@ -119,9 +117,9 @@ public class Exists extends BinaryOperation {
      */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new ExistsIterator(processedTuples,  withFilterDelegation);
+        return new ExistsIterator(processedTuples, withFilterDelegation);
     }
-    
+
 //    @Override
 //    public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
 //        
@@ -135,7 +133,6 @@ public class Exists extends BinaryOperation {
 //            return true;
 //        return false;
 //    }
-
     /**
      * the class that produces resulting tuples checking if there exists results
      * coming from the underlying operations.
@@ -156,7 +153,7 @@ public class Exists extends BinaryOperation {
         public ExistsIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             leftTuple = null;
-            
+
         }
 
         @Override
@@ -168,45 +165,41 @@ public class Exists extends BinaryOperation {
 
             finished = true;
             //iterate over all tuples from the left side
-            leftTuples = leftOperation.lookUp(processedTuples,  false); 
+            leftTuples = leftOperation.lookUp(processedTuples, false);
             //boolean leftExists = leftOperation.exists(processedTuples, new NoLookupFilter());
-            
+
             if (leftTuple == null) {
                 if (leftTuples.hasNext()) {
                     while (leftTuples.hasNext()) {
                         leftTuple = leftTuples.next();
-                        if (lookup.match(leftTuple)) {
-                            if (!conjunctive) {
-                                Tuple tuple = new Tuple();
-                                tuple.setSourceRows(leftTuple, nullRightTuple);
-                                return tuple;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
-            //iterate over all tuples from the right side
-            rightTuples = rightOperation.lookUp(processedTuples, false); 
-            
-            if (rightTuple == null) {
-                while (rightTuples.hasNext()) {
-                    rightTuple = rightTuples.next();
-                    if (lookup.match(rightTuple)) {
                         if (!conjunctive) {
                             Tuple tuple = new Tuple();
-                            tuple.setSourceRows(nullLeftTuple, rightTuple);
+                            tuple.setSourceRows(leftTuple, nullRightTuple);
                             return tuple;
                         }
                         break;
                     }
                 }
             }
+            //iterate over all tuples from the right side
+            rightTuples = rightOperation.lookUp(processedTuples, false);
+
+            if (rightTuple == null) {
+                while (rightTuples.hasNext()) {
+                    rightTuple = rightTuples.next();
+                    if (!conjunctive) {
+                        Tuple tuple = new Tuple();
+                        tuple.setSourceRows(nullLeftTuple, rightTuple);
+                        return tuple;
+                    }
+                    break;
+                }
+            }
 
             if (leftTuple == null && rightTuple == null) {
                 return null;
             }
-            
+
             if ((leftTuple == null || rightTuple == null) && conjunctive) {
                 return null;
             }

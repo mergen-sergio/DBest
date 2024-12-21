@@ -6,6 +6,7 @@
 package ibd.query.lookup;
 
 import ibd.query.ColumnDescriptor;
+import ibd.query.Tuple;
 import ibd.table.ComparisonTypes;
 
 
@@ -13,8 +14,9 @@ import ibd.table.ComparisonTypes;
  * this filter finds tuples based on a single column comparison against a literal value. 
  * @author Sergio
  */
-public class SingleColumnLookupFilterByValue extends SingleColumnLookupFilter{
+public class SingleColumnLookupFilterByValueX extends SingleColumnLookupFilter{
 
+    
     
     /**
      *
@@ -23,9 +25,9 @@ public class SingleColumnLookupFilterByValue extends SingleColumnLookupFilter{
      * @param comparisonType the comparison type
      * @throws java.lang.Exception
      */
-    public SingleColumnLookupFilterByValue(String col, int comparisonType, Comparable value) throws Exception{
+    public SingleColumnLookupFilterByValueX(String col, int comparisonType, Comparable value) throws Exception{
         super(col, comparisonType);
-        this.value = value; 
+        this.elem = new LiteralElement(value); 
     }
     
     /**
@@ -35,24 +37,22 @@ public class SingleColumnLookupFilterByValue extends SingleColumnLookupFilter{
      * @param value the literal value to be placed at the right side of the comparison.
      * @param comparisonType the comparison type
      */
-    public SingleColumnLookupFilterByValue(String table, String col, int comparisonType, Comparable value){
+    public SingleColumnLookupFilterByValueX(String table, String col, int comparisonType, Comparable value){
         super(table, col, comparisonType);
-        this.value = value;
+        this.elem = new LiteralElement(value); 
     }
     
-    public SingleColumnLookupFilterByValue(ColumnDescriptor col, int comparisonType, Comparable value){
+    public SingleColumnLookupFilterByValueX(ColumnDescriptor col, int comparisonType, Comparable value){
         super(col, comparisonType);
-        this.value = value;
+        this.elem = new LiteralElement(value); 
+    }
+    
+    public void setValue(Comparable v){
+        this.elem = new LiteralElement(v); 
     }
     
     
     
     
-    @Override
-    public String toString() {
-        String col = column.getTableName()+"."+column.getColumnName();
-        String compType = ComparisonTypes.getComparisonOperation(comparisonType);
-        return col+compType+value;
-    }
     
 }

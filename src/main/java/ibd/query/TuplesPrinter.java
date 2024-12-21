@@ -43,7 +43,7 @@ public class TuplesPrinter {
 //                printLine(lineSize);
 //                printSchema(tuple);
 //            }
-//            printRow(tuple);
+            printRow(tuple);
 //            firstTime = false;
             //System.out.println(count+":"+tuple);
             count++;

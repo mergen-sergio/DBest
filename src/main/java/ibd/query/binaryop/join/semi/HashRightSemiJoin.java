@@ -5,74 +5,39 @@
  */
 package ibd.query.binaryop.join.semi;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
-import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.binaryop.join.Join;
+import ibd.query.binaryop.join.HashJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.JoinTerm;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Performs a nested loop join between the left and the right operations using
+ * Performs a Hash Right Semi Join between the left and the right operations using
  * the terms provided by the join predicate.
+ * Only tuples from the right side are returned, and only if they match at least
+ * one tuple from the left side
  *
  * @author Sergio
  */
-public class HashRightSemiJoin extends Join {
+public class HashRightSemiJoin extends HashJoin {
 
 
-    /*
-    materialized hash of tuples, using as key the columns from the join predicate.
-    This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
-     */
-    HashMap<String, List<Tuple>> tuples;
-
-    /**
-     *
-     * @param leftOperation the left side operation
-     * @param rightOperation the right side operation
-     * @param joinPredicate the join predicate
-     * @throws Exception
-     */
     public HashRightSemiJoin(Operation leftOperation, Operation rightOperation, JoinPredicate joinPredicate) throws Exception {
         super(leftOperation, rightOperation, joinPredicate);
     }
 
-    @Override
-    public void prepare() throws Exception {
-
-        super.prepare();
-
-        //sets the column indexes for the terms of the join predicate
-        setJoinTermsIndexes();
-
-        //erases the previously built hash.
-        //a new one is created when the first query is executed. 
-        tuples = null;
-
-    }
-
-    /**
-     * {@inheritDoc }
-     * the data sources array is a copy of the data sources that come from the
-     * left subtree
-     *
-     * @throws Exception
-     */
     @Override
     public void setDataSourcesInfo() throws Exception {
 
         getLeftOperation().setDataSourcesInfo();
         getRightOperation().setDataSourcesInfo();
 
+        //only data sources from the right side are used to produce returning tuples
         ReferedDataSource right[] = getRightOperation().getDataSources();
         dataSources = new ReferedDataSource[right.length];
         System.arraycopy(right, 0, dataSources, 0, right.length);
@@ -81,39 +46,22 @@ public class HashRightSemiJoin extends Join {
 
     @Override
     public Map<String, List<String>> getContentInfo() {
+        //only data sources from the right side are used to produce returning tuples
         return getRightOperation().getContentInfo();
     }
 
-    //sets the column indexes for the terms of the join predicate
-    private void setJoinTermsIndexes() throws Exception {
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
-    }
-
-    /**
-     *
-     * @return the name of the operation
-     */
     @Override
     public String getJoinAlgorithm() {
         return "Hash Right Semi Join";
     }
 
-    /**
-     * {@inheritDoc }
-     *
-     * @return an iterator that performs a simple nested loop join over the
-     * tuples from the left and right sides
-     */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
         return new HashJoinIterator(processedTuples, withFilterDelegation);
     }
 
     /**
-     * the class that produces resulting tuples from the nested loop join
+     * the class that produces resulting tuples from the Hash Right Semi Join
      * between the two underlying operations.
      */
     private class HashJoinIterator extends UnpagedOperationIterator {
@@ -132,58 +80,12 @@ public class HashRightSemiJoin extends Join {
             //scan all tuples that comes from the left side
             leftTuples = leftOperation.lookUp(processedTuples, false);
 
-            buildHash();
+            //builds a hash for the right side tuples
+            buildHash(processedTuples);
 
         }
 
-        private void buildHash() {
-            //build hash, if one does not exist yet
-            if (tuples == null) {
-                tuples = new HashMap();
-                long memoryUsed = 0;
-                try {
-                    //accesses and indexes all tuples that come from the child operation
-                    Iterator<Tuple> it = rightOperation.lookUp(processedTuples, false);
-                    int tupleSize = rightOperation.getTupleSize();
-                    while (it.hasNext()) {
-                        Tuple tuple = (Tuple) it.next();
-                        String key = "";
-                        for (JoinTerm term : joinPredicate.getTerms()) //for (SingleColumnLookupFilter lookupFilter : hashedFilters) 
-                        {
-                            //ColumnDescriptor col = lookupFilter.getColumnDescriptor();
-                            ColumnDescriptor col = term.getRightColumnDescriptor();
-                            key += tuple.rows[col.getColumnLocation().rowIndex].getValue(col.getColumnLocation().colIndex).toString();
-                        }
-
-                        //String key = tuple.rows[hashColumn.getColumnLocation().rowIndex].getValue(hashColumn.getColumnName()).toString();
-                        List tupleList = tuples.get(key);
-                        if (tupleList == null) {
-                            tupleList = new ArrayList();
-                            tuples.put(key, tupleList);
-                        }
-                        tupleList.add(tuple);
-                        memoryUsed += tupleSize;
-                    }
-
-                } catch (Exception ex) {
-                }
-                QueryStats.MEMORY_USED += memoryUsed;
-            }
-        }
-
-        //set the key with the left-side values that are necessary to perform the lookup.
-        private String fillKey() {
-            String key = "";
-            List<JoinTerm> joinTerms = joinPredicate.getTerms();
-            //List<LookupFilter> filters = joinFilter.getFilters();
-            for (int i = 0; i < joinTerms.size(); i++) {
-                JoinTerm joinTerm = joinTerms.get(i);
-                Comparable value = currentLeftTuple.rows[joinTerm.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(joinTerm.getLeftColumnDescriptor().getColumnLocation().colIndex);
-                key += value;
-
-            }
-            return key;
-        }
+        
 
         @Override
         protected Tuple findNextTuple() {
@@ -195,11 +97,17 @@ public class HashRightSemiJoin extends Join {
                     currentLeftTuple = leftTuples.next();
 
                     //the lookup conditions are filled with values taken from the computed rows from the current left side
-                    String key = fillKey();
+                    String key = fillKey(currentLeftTuple);
+                    
+                    //uses the hash table to find the matched right side tuples that will be returned
                     List<Tuple> result = tuples.get(key);
+                    
+                    //the matched tuples are removed from the hash to assure that they are returned only once
                     if (result != null) {
                         tuples.remove(key);
                     }
+                    
+                    //sets the iterator over the matched right side tuples
                     if (result != null) {
                         rightTuples = result.iterator();
                     } else {
@@ -215,10 +123,7 @@ public class HashRightSemiJoin extends Join {
                     //create a returning tuple and add the joined tuples
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(curTuple2);
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        return tuple;
-                    }
+                    return tuple;
 
                 }
                 //All corresponding tuples from the right side processed. 

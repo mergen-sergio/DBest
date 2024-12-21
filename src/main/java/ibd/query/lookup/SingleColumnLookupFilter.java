@@ -8,6 +8,7 @@ package ibd.query.lookup;
 import ibd.query.ColumnDescriptor;
 import ibd.query.Tuple;
 import ibd.table.ComparisonTypes;
+import ibd.table.prototype.LinkedDataRow;
 
 
 /**
@@ -16,23 +17,14 @@ import ibd.table.ComparisonTypes;
  */
 public class SingleColumnLookupFilter implements LookupFilter{
 
-    /*
-    * the column to be compared with
-    */
-    ColumnDescriptor column = null; 
-    
-    
-    /*
-    * the literal value to be compared with
-    */
-    Comparable value;
+   Element elem1;
     
     /*
     * the comparison type
     */
     protected int comparisonType;
     
-    
+    Element elem2;
     
     /**
      *
@@ -40,33 +32,34 @@ public class SingleColumnLookupFilter implements LookupFilter{
      * @param comparisonType the comparison type
      * @throws java.lang.Exception
      */
-    public SingleColumnLookupFilter(String col, int comparisonType) throws Exception{
+    public SingleColumnLookupFilter(Element element1, int comparisonType, Element element2) throws Exception{
         this.comparisonType = comparisonType;
-        column = new ColumnDescriptor(col);
+        this.elem1 = element1;
+        this.elem2 = element2;
     }
     
-    /**
-     *
-     * @param table the name of the table to be placed at the left side of the comparison.
-     * @param col the name of the column to be placed at the left side of the comparison. 
-     * @param comparisonType the comparison type
-     */
-    public SingleColumnLookupFilter(String table, String col, int comparisonType){
-        this.comparisonType = comparisonType;
-        column = new ColumnDescriptor(table, col);
-        
-    }
     
-    public SingleColumnLookupFilter(ColumnDescriptor column, int comparisonType){
-        this.comparisonType = comparisonType;
-        this.column = column;
-        
-    }
     
     public ColumnDescriptor getColumnDescriptor(){
-        return column;
+        return ((ColumnElement)elem1).getColumnDescriptor();
     }
-            
+    
+    public Element getFirstElement(){
+        return elem1;
+    }
+    
+    public Element getSecondElement(){
+        return elem2;
+    }
+         
+    
+    public void setFirstElement(Element elem){
+        this.elem1 = elem;
+    }
+    
+    public void setSecondElement(Element elem){
+        this.elem2 = elem;
+    }
     
     /**
      * @return the comparisonType
@@ -75,39 +68,35 @@ public class SingleColumnLookupFilter implements LookupFilter{
         return comparisonType;
     }
     
-    
-    
-    
-    
-    public void setValue(Comparable v){
-        this.value = v;
+    public Element getComparedElement(){
+        return elem2;
     }
     
-    /**
-     *
-     * @return the literal value placed at the right side of the comparison.
-     */
-    public Comparable getValue(){
-        return value;
+    public Comparable getValue(Tuple tuple){
+        return elem2.getValue(tuple);
     }
     
-    /**
-     * {@inheritDoc }
-     */
+    public Comparable getValueFromRow(LinkedDataRow row){
+        return elem2.getValueFromRow(row);
+    }
+    
     @Override
     public boolean match(Tuple tuple) {
         ibd.query.QueryStats.COMPARE_FILTER++;
         //compares the left side column against a right side value
         //return ComparisonTypes.match(tuple.rows[tupleIndex].getValue(column.getColumnName()), value, comparisonType);
         //System.out.println(tuple.rows[tupleIndex].getValue(colIndex));
-        return ComparisonTypes.match(tuple.rows[column.getColumnLocation().rowIndex].getValue(column.getColumnLocation().colIndex), value, comparisonType);
+        return ComparisonTypes.match(elem1.getValue(tuple), elem2.getValue(tuple), comparisonType);
+    }
+    
+   @Override
+    public boolean match(LinkedDataRow row){
+        return ComparisonTypes.match(elem1.getValueFromRow(row), elem2.getValueFromRow(row), comparisonType);
     }
     
     @Override
     public String toString() {
-        String col = column.getTableName()+"."+column.getColumnName();
         String compType = ComparisonTypes.getComparisonOperation(comparisonType);
-        return col+compType+value;
+        return elem1+compType+elem2;
     }
-    
 }

@@ -67,7 +67,7 @@ public class MainTrabalho {
             BasicDataRow row = new BasicDataRow();
             row.setInt("id", list1.get(i));
             row.setString("nome", "person with id = "+list1.get(i));
-            table.addRecord(row);
+            table.addRecord(row, true);
             
         }
 
@@ -77,7 +77,7 @@ public class MainTrabalho {
             BasicDataRow row = new BasicDataRow();
             row.setInt("id", list2.get(i));
             row.setString("nome", "person with id = "+list2.get(i));
-            table.addRecord(row);
+            table.addRecord(row, true);
         }
         
         /*the pks are put in blocks of ten elements each.
@@ -205,7 +205,7 @@ public class MainTrabalho {
             BasicDataRow row = new BasicDataRow();
             row.setInt("id", pk);
             row.setString("nome", "person with id = "+pk);
-            table.addRecord(row);
+            table.addRecord(row, true);
             addedPks.add(pk);
         }
 
@@ -286,7 +286,7 @@ public class MainTrabalho {
             BasicDataRow row = new BasicDataRow();
             row.setInt("id", pk);
             row.setString("nome", "person with id = "+pk);
-            table.addRecord(row);
+            table.addRecord(row, true);
             addedPks.add(pk);
         }
 
@@ -367,7 +367,7 @@ public class MainTrabalho {
             BasicDataRow row = new BasicDataRow();
             row.setInt("id", pk);
             row.setString("nome", "person with id = "+pk);
-            table.addRecord(row);
+            table.addRecord(row, true);
             addedPks.add(pk);
         }
 

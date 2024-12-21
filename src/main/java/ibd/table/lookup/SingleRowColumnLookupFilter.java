@@ -15,10 +15,7 @@ import ibd.table.prototype.LinkedDataRow;
  */
 public abstract class SingleRowColumnLookupFilter implements RowLookupFilter{
 
-    /*
-    * the column to be compared with
-    */
-    int colIndex = -1; 
+    RowColumnElement elem1;
     
     /*
     * the comparison type
@@ -35,7 +32,7 @@ public abstract class SingleRowColumnLookupFilter implements RowLookupFilter{
      */
     public SingleRowColumnLookupFilter(int colIndex, int comparisonType) throws Exception{
         this.comparisonType = comparisonType;
-        this.colIndex = colIndex; 
+        this.elem1 = new RowColumnElement(colIndex); 
     }
     
     /**
@@ -57,7 +54,7 @@ public abstract class SingleRowColumnLookupFilter implements RowLookupFilter{
         //compares the left side column against a right side value
         //return ComparisonTypes.match(tuple.rows[tupleIndex].getValue(column.getColumnName()), value, comparisonType);
         //System.out.println(tuple.rows[tupleIndex].getValue(colIndex));
-        return ComparisonTypes.match(row.getValue(colIndex), getValue(), comparisonType);
+        return ComparisonTypes.match(elem1.getValue(row), getValue(), comparisonType);
     }
     
     @Override

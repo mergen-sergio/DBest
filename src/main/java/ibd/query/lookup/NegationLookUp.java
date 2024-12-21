@@ -5,6 +5,7 @@
 package ibd.query.lookup;
 
 import ibd.query.Tuple;
+import ibd.table.prototype.LinkedDataRow;
 
 /**
  * This filter negates another filter
@@ -31,6 +32,11 @@ public class NegationLookUp implements LookupFilter{
     @Override
     public boolean match(Tuple tuple) {
         return !(filter.match(tuple));
+    }
+    
+    @Override
+    public boolean match(LinkedDataRow row) {
+        return !(filter.match(row));
     }
     
     @Override

@@ -34,7 +34,7 @@ public class MainFuncSolved {
         rowData.setInt("salary", salary);
         rowData.setString("name", name);
         rowData.setString("dept", dept);
-        table.addRecord(rowData);
+        table.addRecord(rowData, true);
         
     }
 

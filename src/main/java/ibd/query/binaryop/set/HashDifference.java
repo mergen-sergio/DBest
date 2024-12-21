@@ -108,20 +108,16 @@ public class HashDifference extends Set {
 
             while (rightTuples.hasNext()) {
                 Tuple rightTuple = rightTuples.next();
-                if (lookup.match(rightTuple)) {
-                    String key = getKey(rightTuple);
-                    tuples.put(key, rightTuple);
-                    QueryStats.MEMORY_USED += tupleSize;
-                }
+                String key = getKey(rightTuple);
+                tuples.put(key, rightTuple);
+                QueryStats.MEMORY_USED += tupleSize;
             }
 
             while (leftTuples.hasNext()) {
                 Tuple leftTuple = leftTuples.next();
-                if (lookup.match(leftTuple)) {
-                    String key = getKey(leftTuple);
-                    if (!(tuples.containsKey(key))) {
-                        return leftTuple;
-                    }
+                String key = getKey(leftTuple);
+                if (!(tuples.containsKey(key))) {
+                    return leftTuple;
                 }
             }
 

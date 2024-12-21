@@ -162,11 +162,12 @@ public class AllAggregation extends UnaryOperation {
      */
     @Override
     public void setDataSourcesInfo() throws Exception {
+        
+        childOperation.setDataSourcesInfo();
+        
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
-
-        childOperation.setDataSourcesInfo();
 
         createPrototype();
         dataSources[0].prototype = prototype;
@@ -244,12 +245,8 @@ public class AllAggregation extends UnaryOperation {
             tuple.setSingleSourceRow(alias, dataRow);
             groupedValues[0].clear();
 
-            //a tuple must satisfy the lookup filter 
-            if (lookup.match(tuple)) {
-                return tuple;
-            }
+            return tuple;
 
-            return null;
 
         }
 

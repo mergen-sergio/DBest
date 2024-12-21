@@ -36,6 +36,14 @@ public class LinkedDataRow extends DataRow {
         }
     }
     
+    public LinkedDataRow(LinkedDataRow row) {
+        this.prototype = row.prototype;
+        fields = new Field[prototype.getColumns().size()];
+        for (int i = 0; i < row.getFieldsSize(); i++) {
+            this.setValue(i, row.getValue(i));
+        }
+    }
+    
     public void setData(byte data[]){
         this.data = data;
     }

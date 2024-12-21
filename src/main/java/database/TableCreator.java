@@ -152,14 +152,14 @@ public class TableCreator {
         return new CSVTableCell(jCell, tableName, columns, table, prototype, headerFile);
     }
 
-    public static FYITableCell createFYITable(
-            String tableName, List<entities.Column> columns, Cell tableCell) {
+    public static FYITableCell createIndex(
+            String tableName, List<entities.Column> columns, Cell tableCell, boolean unique) {
         File file = new File(tableName + FileType.HEADER.extension);
-        return TableCreator.createFYITable(tableName,columns,TuplesExtractor.getAllRowsMap(tableCell.getOperator(),false),file,false);
+        return TableCreator.createIndex(tableName,columns,TuplesExtractor.getAllRowsMap(tableCell.getOperator(),false),file,false, unique);
     }
 
-    public static FYITableCell createFYITable(
-            String tableName, List<entities.Column> columns, Map<Integer, Map<String, String>> data, File headerFile, boolean mustExport
+    public static FYITableCell createIndex(
+            String tableName, List<entities.Column> columns, Map<Integer, Map<String, String>> data, File headerFile, boolean mustExport, boolean unique
     ) {
         List<BasicDataRow> rows = new ArrayList<>(getRowData(columns, data));
 
@@ -204,7 +204,7 @@ public class TableCreator {
             RowConverter converter = new RowConverter();
             for (BasicDataRow row : rows) {
                 //BasicDataRow dataRow = converter.convertRow(row);
-                table.addRecord(row);
+                table.addRecord(row, unique);
             }
             table.flushDB();
 
@@ -278,7 +278,7 @@ public class TableCreator {
             for (BasicDataRow row : rows) {
                 //BasicDataRow dataRow = converter.convertRow(row);
                 //row.setLong("__IDX__", pk); //only needed if we were to create a pk column
-                table.addRecord(row);
+                table.addRecord(row, true);
                 pk++;
             }
 

@@ -4,7 +4,7 @@
  */
 package ibd.table.csv;
 
-import ibd.table.lookup.RowLookupFilter;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.prototype.LinkedDataRow;
 import sources.csv.InvalidCsvException;
 
@@ -16,10 +16,10 @@ import sources.csv.InvalidCsvException;
  */
 public class KeyFilteredCSVRowsIterator1 extends CSVRowsIterator {
 
-    RowLookupFilter filter;
+    LookupFilter filter;
     LinkedDataRow pkRow;
 
-    public KeyFilteredCSVRowsIterator1(CSVTable csvTable, LinkedDataRow pkRow, RowLookupFilter filter) throws InvalidCsvException {
+    public KeyFilteredCSVRowsIterator1(CSVTable csvTable, LinkedDataRow pkRow, LookupFilter filter) throws InvalidCsvException {
         super(csvTable);
         this.filter = filter;
         this.pkRow = pkRow;

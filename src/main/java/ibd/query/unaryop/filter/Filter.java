@@ -9,9 +9,10 @@ import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
+import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByReference;
 import ibd.query.lookup.TwoColumnsLookupFilter;
 import ibd.query.unaryop.UnaryOperation;
 import java.util.Iterator;
@@ -44,69 +45,45 @@ public class Filter extends UnaryOperation {
     @Override
     public void prepare() throws Exception {
         super.prepare();
-        
+
         //sets the tuple index of the column based filters
         //setTupleIndex(filter);
-        
     }
-    
-    @Override
-    public LookupFilter getFilters(){
-        return filter;
-    };
 
-    /*
-    * Some filters refer to colum value comparisons. For those filters a tuple index is required to 
-    * locate the tuple whose column will be compared.
-    * The tuple index is set based on the table name information retrieved from the filter.
-     */
-    private void setTupleIndex(LookupFilter filter) {
+    @Override
+    public LookupFilter getFilters() {
+        return filter;
+    }
+
+    ;
+
+    
+    private void setFilterValue(LookupFilter filter, List<Tuple> processedTuples) {
         if (filter instanceof CompositeLookupFilter) {
-            setTupleIndex((CompositeLookupFilter) filter);
+            setFilterValue((CompositeLookupFilter) filter, processedTuples);
 
         } else if (filter instanceof SingleColumnLookupFilter) {
-            setTupleIndex((SingleColumnLookupFilter) filter);
-        } else if (filter instanceof TwoColumnsLookupFilter) {
-            setTupleIndex((TwoColumnsLookupFilter) filter);
+            setFilterValue((SingleColumnLookupFilter) filter, processedTuples);
         }
     }
 
     //sets the tuple indexes for all parts of this composite filter
-    private void setTupleIndex(CompositeLookupFilter filter) {
+    private void setFilterValue(CompositeLookupFilter filter, List<Tuple> processedTuples) {
         for (LookupFilter filter1 : filter.getFilters()) {
-            setTupleIndex(filter1);
+            setFilterValue(filter1, processedTuples);
         }
     }
 
     //sets the tuple index for this single column filter
-    private void setTupleIndex(SingleColumnLookupFilter filter) {
-        try {
-
-            //sets  the tuple index of the column to be filtered.
-            childOperation.setColumnLocation(filter.getColumnDescriptor());
-
-            //sets the tuple location of the column to be used as a reference value, if necessary
-            if (filter instanceof SingleColumnLookupFilterByReference) {
-                SingleColumnLookupFilterByReference f1 = (SingleColumnLookupFilterByReference) filter;
-                f1.setTupleLocation(this);
-            }
-
-        } catch (Exception ex) {
+    private void setFilterValue(SingleColumnLookupFilter filter, List<Tuple> processedTuples) {
+        Element elem = filter.getFirstElement();
+        if (elem instanceof ReferencedElement) {
+            ((ReferencedElement) elem).setValue(processedTuples);
         }
-    }
 
-    private void setTupleIndex(TwoColumnsLookupFilter filter) {
-        try {
-
-            //sets the tuple index of the left-side comparison column 
-            childOperation.setColumnLocation(filter.getLeftColumn());
-            //filter.setLeftTupleIndex(tupleIndex);
-
-            //sets the tuple index of the right-side comparison column
-            childOperation.setColumnLocation(filter.getRightColumn());
-            //filter.setRightTupleIndex(tupleIndex);
-
-        } catch (Exception ex) {
+        elem = filter.getSecondElement();
+        if (elem instanceof ReferencedElement) {
+            ((ReferencedElement) elem).setValue(processedTuples);
         }
     }
 
@@ -117,7 +94,7 @@ public class Filter extends UnaryOperation {
      */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new FilterOperationIterator(processedTuples,  withFilterDelegation);
+        return new FilterOperationIterator(processedTuples, withFilterDelegation);
     }
 
     /**
@@ -129,15 +106,16 @@ public class Filter extends UnaryOperation {
         //the iterator over the child operation
         Iterator<Tuple> tuples;
 
-        public FilterOperationIterator(List<Tuple> processedTuples,  boolean withFilterDelegation) {
-            super(processedTuples, withFilterDelegation, getDelegatedFilters());   
+        public FilterOperationIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+            super(processedTuples, withFilterDelegation, getDelegatedFilters());
 
-            if (filter instanceof SingleColumnLookupFilterByReference) {
-                SingleColumnLookupFilterByReference f1 = (SingleColumnLookupFilterByReference) filter;
-                f1.setValue(processedTuples);
-            }
+            setFilterValue(filter, processedTuples);
 
-            tuples = childOperation.lookUp(processedTuples,  true);//pushes filter down to the child operation
+//            if (filter instanceof SingleColumnLookupFilterByReference) {
+//                SingleColumnLookupFilterByReference f1 = (SingleColumnLookupFilterByReference) filter;
+//                f1.setValue(processedTuples);
+//            }
+            tuples = childOperation.lookUp(processedTuples, true);//pushes filter down to the child operation
         }
 
         @Override
@@ -145,7 +123,7 @@ public class Filter extends UnaryOperation {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
                 //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (lookup.match(tp)) {
+                if (childOperation.canProcessDelegatedFilters() || filter.match(tp)) {
                     return tp;
                 }
 
@@ -157,6 +135,6 @@ public class Filter extends UnaryOperation {
 
     @Override
     public String toString() {
-        return "Filter ("+filter+")";
+        return "Filter (" + filter + ")";
     }
 }

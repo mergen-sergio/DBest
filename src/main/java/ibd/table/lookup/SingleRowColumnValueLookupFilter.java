@@ -12,26 +12,22 @@ package ibd.table.lookup;
  */
 public class SingleRowColumnValueLookupFilter extends SingleRowColumnLookupFilter{
 
-    /*
-    * the literal value to be compared with
-    */
-    Comparable value;
+    RowValueElement elem2;
 
-    public SingleRowColumnValueLookupFilter(int colIndex, int comparisonType) throws Exception {
+    public SingleRowColumnValueLookupFilter(int colIndex, int comparisonType, Comparable value) throws Exception {
         super(colIndex, comparisonType);
+        elem2 = new RowValueElement(value);
     }
     
     
-    public void setValue(Comparable v){
-        this.value = v;
-    }
     
     /**
      *
      * @return the literal value placed at the right side of the comparison.
      */
+    @Override
     public Comparable getValue(){
-        return value;
+        return elem2.getValue(null);
     }
     
     

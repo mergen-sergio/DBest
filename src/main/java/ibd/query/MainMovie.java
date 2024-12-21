@@ -6,7 +6,7 @@
 package ibd.query;
 
 import ibd.query.binaryop.conditional.Exists;
-import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
+import ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin;
 import ibd.query.binaryop.set.Union;
 import ibd.query.binaryop.join.BlockNestedLoopJoin;
 import ibd.query.binaryop.join.CrossJoin;
@@ -14,10 +14,13 @@ import ibd.table.*;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.binaryop.join.semi.NestedLoopSemiJoin;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.LiteralElement;
 import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
-import ibd.query.lookup.SingleColumnLookupFilterByReference;
+import ibd.query.lookup.ReferencedElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.aggregation.Aggregation;
 import ibd.query.unaryop.HashIndex;
@@ -70,7 +73,7 @@ public class MainMovie {
                 }
                 row.setString("title", title);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -102,7 +105,7 @@ public class MainMovie {
                 row.setInt("person_id", Integer.parseInt(cod));
                 row.setString("person_name", name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -161,7 +164,7 @@ public class MainMovie {
                 row.setInt("gender_id", Integer.parseInt(gender_id));
                 row.setString("character_name", character_name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -220,7 +223,7 @@ public class MainMovie {
                 row.setInt("gender_id", Integer.parseInt(gender_id));
                 row.setString("character_name", character_name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -263,7 +266,7 @@ public class MainMovie {
                 row.setInt("person_id", Integer.parseInt(person_id));
                 row.setInt("movie_id", Integer.parseInt(movie_id));
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -308,7 +311,7 @@ public class MainMovie {
                 row.setInt("department_id", Integer.parseInt(department_id));
                 row.setString("job", job);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -357,7 +360,7 @@ public class MainMovie {
                 row.setInt("department_id", Integer.parseInt(department_id));
                 row.setString("job", job);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -399,7 +402,7 @@ public class MainMovie {
                 BasicDataRow row = new BasicDataRow();
                 row.setInt("person_id", Integer.parseInt(person_id));
                 row.setInt("movie_id", Integer.parseInt(movie_id));
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -501,7 +504,7 @@ public class MainMovie {
         IndexScan scanMovie = new IndexScan("movie", movieTable);
         IndexScan scanMovieCast = new IndexScan("movie_cast", movieCastTable);
 
-        LookupFilter lup = new SingleColumnLookupFilterByValue("movie.movie_id", 100, ComparisonTypes.LOWER_THAN);
+        LookupFilter lup = new SingleColumnLookupFilter(new ColumnElement("movie.movie_id"),  ComparisonTypes.LOWER_THAN, new LiteralElement(100));
         Filter filter = new Filter(scanMovie, lup);
 
         JoinPredicate terms = new JoinPredicate();
@@ -549,8 +552,8 @@ public class MainMovie {
 
         CompositeLookupFilter compositeFilter = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         compositeFilter.addFilter(filter1);
         compositeFilter.addFilter(filter2);
 
@@ -577,14 +580,14 @@ public class MainMovie {
         IndexScan scanPersonCast = new IndexScan("person_cast", personTable);
         IndexScan scanPersonCrew = new IndexScan("person_crew", personTable);
 
-        SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie_cast.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie_cast.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCast = new Filter(scanMovieCast, lookupCast);
 
         JoinPredicate terms1 = new JoinPredicate();
         terms1.addTerm("movie_cast.person_id", "person_cast.person_id");
         NestedLoopJoin join1 = new NestedLoopJoin(filterCast, scanPersonCast, terms1);
 
-        SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie_crew.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie_crew.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCrew = new Filter(scanMovieCrew, lookupCrew);
 
         JoinPredicate terms2 = new JoinPredicate();
@@ -600,8 +603,8 @@ public class MainMovie {
         //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person_crew.person_name", "person_cast.person_name", ComparisonTypes.EQUAL);
         CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-        SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
+        SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         filter1.addFilter(singleFilter1);
         filter1.addFilter(singleFilter2);
 
@@ -629,7 +632,7 @@ public class MainMovie {
         IndexScan scanPersonCast = new IndexScan("person_cast", personTable);
         IndexScan scanPersonCrew = new IndexScan("person_crew", personTable);
 
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCast = new Filter(scanPersonCast, filter1);
 
         JoinPredicate terms1 = new JoinPredicate();
@@ -640,9 +643,9 @@ public class MainMovie {
         terms2.addTerm("movie_cast.movie_id", "movie1.movie_id");
         NestedLoopJoin join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"}, false);
+        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
 
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCrew = new Filter(scanPersonCrew, filter2);
 
         JoinPredicate terms3 = new JoinPredicate();
@@ -653,7 +656,7 @@ public class MainMovie {
         terms4.addTerm("movie_crew.movie_id", "movie2.movie_id");
         NestedLoopJoin join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"}, false);
+        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
 
         Union union = new Union(proj1, proj2);
 
@@ -672,7 +675,7 @@ public class MainMovie {
         IndexScan scanMovieCast = new IndexScan("movie_cast", movieCastTable);
         IndexScan scanPersonCast = new IndexScan("person", personTable);
 
-        LookupFilter lup = new SingleColumnLookupFilterByValue("person.person_id", ComparisonTypes.LOWER_EQUAL_THAN, 10000);
+        LookupFilter lup = new SingleColumnLookupFilter(new ColumnElement("person.person_id"), ComparisonTypes.LOWER_EQUAL_THAN, new LiteralElement(10000));
         Filter filter = new Filter(scanPersonCast, lup);
 
         JoinPredicate terms = new JoinPredicate();
@@ -705,8 +708,8 @@ public class MainMovie {
         /*
         CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.EQUAL, "a");
-        SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person.person_name", ComparisonTypes.EQUAL, "b");
+        SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter("movie.title", ComparisonTypes.EQUAL, "a");
+        SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter("person.person_name", ComparisonTypes.EQUAL, "b");
         filter1.addFilter(singleFilter1);
         filter1.addFilter(singleFilter2);
 
@@ -726,7 +729,7 @@ public class MainMovie {
         IndexScan scanMovieCast = new IndexScan("movie_cast", movieCastTable);
         IndexScan scanPerson = new IndexScan("person", personTable);
 
-        LookupFilter lup = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_THAN, "L");
+        LookupFilter lup = new SingleColumnLookupFilter(new ColumnElement("movie.title"), ComparisonTypes.GREATER_THAN, new LiteralElement("L"));
         Filter filter = new Filter(scanMovie, lup);
 
         JoinPredicate terms = new JoinPredicate();
@@ -765,7 +768,7 @@ public class MainMovie {
 
         JoinPredicate terms = new JoinPredicate();
         terms.addTerm("person.person_id", "movie_castIndex.person_id");
-        NestedLoopAntiJoin join1 = new NestedLoopAntiJoin(scanPerson, scanMovieCrewIndex, terms);
+        NestedLoopLeftAntiJoin join1 = new NestedLoopLeftAntiJoin(scanPerson, scanMovieCrewIndex, terms);
         //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
         
         return join1;
@@ -791,10 +794,10 @@ public class MainMovie {
 
         
         
-        SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie1.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie1.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCast = new Filter(scanMovie1, lookupCast);
 
-        SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie2.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie2.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCrew = new Filter(scanMovie2, lookupCrew);
         
         JoinPredicate termsSemiJoinCast = new JoinPredicate();
@@ -837,7 +840,7 @@ public class MainMovie {
         JoinPredicate terms1 = new JoinPredicate();
         terms1.addTerm("gr.person_id", "person.person_id");
         NestedLoopJoin join1 = new NestedLoopJoin(groupBy, scanPerson, terms1);
-        SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter(new ColumnElement("person.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filter = new Filter(join1, singleFilter1);
         return join1;
     }
@@ -865,7 +868,7 @@ public class MainMovie {
         IndexScan scanPersonCast = new IndexScan("person_cast", personTable);
         IndexScan scanPersonCrew = new IndexScan("person_crew", personTable);
 
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCast = new Filter(scanPersonCast, filter1);
 
         JoinPredicate terms1 = new JoinPredicate();
@@ -876,9 +879,9 @@ public class MainMovie {
         terms2.addTerm("movie_cast_index.movie_id", "movie1.movie_id");
         NestedLoopJoin join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"}, false);
+        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
 
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCrew = new Filter(scanPersonCrew, filter2);
 
         JoinPredicate terms3 = new JoinPredicate();
@@ -889,7 +892,7 @@ public class MainMovie {
         terms4.addTerm("movie_crew_index.movie_id", "movie2.movie_id");
         NestedLoopJoin join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"}, false);
+        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
 
         Union union = new Union(proj1, proj2);
 
@@ -937,8 +940,8 @@ public class MainMovie {
 
         CompositeLookupFilter compositeFilter = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         compositeFilter.addFilter(filter1);
         compositeFilter.addFilter(filter2);
 
@@ -966,14 +969,14 @@ public class MainMovie {
         IndexScan scanPersonCast = new IndexScan("person_cast", personTable);
         IndexScan scanPersonCrew = new IndexScan("person_crew", personTable);
 
-        SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie_cast.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie_cast.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCast = new Filter(scanMovieCast, lookupCast);
 
         JoinPredicate terms1 = new JoinPredicate();
         terms1.addTerm("movie_cast.person_id", "person_cast.person_id");
         NestedLoopJoin join1 = new NestedLoopJoin(filterCast, scanPersonCast, terms1);
 
-        SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie_crew.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+        SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie_crew.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
         Filter filterCrew = new Filter(scanMovieCrew, lookupCrew);
 
         JoinPredicate terms2 = new JoinPredicate();
@@ -989,8 +992,8 @@ public class MainMovie {
         //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person_crew.person_name", "person_cast.person_name", ComparisonTypes.EQUAL);
         CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-        SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+        SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
+        SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         filter1.addFilter(singleFilter1);
         filter1.addFilter(singleFilter2);
 

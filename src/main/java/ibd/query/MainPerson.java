@@ -13,8 +13,10 @@ import ibd.query.unaryop.HashIndex;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.binaryop.join.outer.NestedLoopLeftJoin;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.aggregation.Aggregation;
 import ibd.query.unaryop.Projection;
@@ -58,7 +60,7 @@ public class MainPerson {
         //Table table1 = Directory.getTable("c:\\teste\\ibd", "tab1", Table.DEFULT_PAGE_SIZE,  false);
         Operation scan1 = new IndexScan("t1", table1);
 
-        SingleColumnLookupFilterByValue filter = new SingleColumnLookupFilterByValue(col, compType, value);
+        SingleColumnLookupFilter filter = new SingleColumnLookupFilter(new ColumnElement(col), compType, new LiteralElement(value));
 
         Filter scan = new Filter(scan1, filter);
         return scan;
@@ -73,8 +75,8 @@ public class MainPerson {
 
         CompositeLookupFilter compositeFilter = new CompositeLookupFilter(CompositeLookupFilter.AND);
 
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue(col1, comparisonType1, value1);
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue(col2, comparisonType2, value2);
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement(col1), comparisonType1, new LiteralElement(value1));
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement(col2), comparisonType2, new LiteralElement(value2));
         compositeFilter.addFilter(filter1);
         compositeFilter.addFilter(filter2);
 
@@ -120,15 +122,15 @@ public class MainPerson {
         //Table table1 = Directory.getTable("c:\\teste\\ibd", "tab1", Table.DEFULT_PAGE_SIZE,  false);
         Table table1 = Directory.getTable("c:\\teste\\ibd", "tab1", null, 99999, Table.DEFULT_PAGE_SIZE, false);
         Operation scan1 = new IndexScan("t1", table1);
-        SingleColumnLookupFilterByValue lookupFilter1 = new SingleColumnLookupFilterByValue(col, LOWER_EQUAL_THAN, value1);
+        SingleColumnLookupFilter lookupFilter1 = new SingleColumnLookupFilter(new ColumnElement(col), LOWER_EQUAL_THAN, new LiteralElement(value1));
         Filter filter1 = new Filter(scan1, lookupFilter1);
 
         Operation scan2 = new IndexScan("t2", table1);
-        SingleColumnLookupFilterByValue lookupFilter2 = new SingleColumnLookupFilterByValue(col, LOWER_EQUAL_THAN, value2);
+        SingleColumnLookupFilter lookupFilter2 = new SingleColumnLookupFilter(new ColumnElement(col), LOWER_EQUAL_THAN, new LiteralElement(value2));
         Filter filter2 = new Filter(scan2, lookupFilter2);
 
-        Projection proj1 = new Projection(filter1, "p1", new String[]{col}, false);
-        Projection proj2 = new Projection(filter2, "p2", new String[]{col}, false);
+        Projection proj1 = new Projection(filter1, "p1", new String[]{col});
+        Projection proj2 = new Projection(filter2, "p2", new String[]{col});
         Difference dif = new Difference(proj1, proj2);
 
 //        SingleColumnLookupFilterByValue lookupFilter3 = new SingleColumnLookupFilterByValue(col, EQUAL, 46);
@@ -192,7 +194,7 @@ public class MainPerson {
         Operation scan1 = new FullTableScan("t1", table1);
         Operation scan2 = new FullTableScan("t2", table2);
 
-        SingleColumnLookupFilterByValue filter_ = new SingleColumnLookupFilterByValue(col, EQUAL, pk);
+        SingleColumnLookupFilter filter_ = new SingleColumnLookupFilter(new ColumnElement(col), EQUAL, new LiteralElement(pk));
 
         Filter filter = new Filter(scan2, filter_);
 
@@ -292,7 +294,7 @@ public class MainPerson {
             row.setString("nome", text);
             row.setInt("idade", idades[i]);
             row.setString("cidade", cidades[i]);
-            table.addRecord(row);
+            table.addRecord(row, true);
 
             //table.addRecord(array1[i], String.valueOf(array1[i]));
             //table.addRecord(array1[i], "0");

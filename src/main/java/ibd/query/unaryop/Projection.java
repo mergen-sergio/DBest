@@ -28,10 +28,7 @@ import java.util.Map;
  */
 public class Projection extends UnaryOperation {
 
-    boolean isOrdered;
-
     String alias;
-    String[] projectionColumns_;
     List<ColumnDescriptor> projectionColumns;
 
     /**
@@ -40,26 +37,16 @@ public class Projection extends UnaryOperation {
      * @param alias the name used to refer to tuples produced by this operation
      * @param columns the list of columns that will form the non-duplicated
      * tuples. The name can be prefixed by the table name (e.g. tab.col)
-     * @param isOrdered indicates if the incoming tuples from the connected
-     * operation are already ordered by the referenceColumn column
      * @throws Exception
      */
-    public Projection(Operation op, String alias, String[] columns, boolean isOrdered) throws Exception {
+    public Projection(Operation op, String alias, String[] columns) throws Exception {
         super(op);
         this.alias = alias;
-        this.isOrdered = isOrdered;
-        projectionColumns_ = columns;
         projectionColumns = new ArrayList();
         for (String col : columns) {
             ColumnDescriptor sortColumn = new ColumnDescriptor(col);
             projectionColumns.add(sortColumn);
         }
-
-        //If the incoming tupled are not already sorted, an intermediary sort operation is added
-//        if (!isOrdered) {
-//            Sort cs = new Sort(childOperation, projectionColumns_, true);
-//            childOperation = cs;
-//        }
 
     }
 
@@ -71,6 +58,9 @@ public class Projection extends UnaryOperation {
         setColumnsIndexes();
     }
 
+    /**
+     * defines the index information required to locate the content of the projected columns
+     */
     private void setColumnsIndexes() throws Exception {
         for (ColumnDescriptor col : projectionColumns) {
             //int index = childOperation.getRowIndex(col.getTableName());
@@ -79,6 +69,11 @@ public class Projection extends UnaryOperation {
         }
     }
 
+    /**
+     * 
+     * The tuples produced by a this operation contains a single schema, which contains all the projected columns.This function sets this schema.
+     * @throws java.lang.Exception
+     */
     protected void setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         for (ColumnDescriptor col : projectionColumns) {
@@ -104,17 +99,21 @@ public class Projection extends UnaryOperation {
 
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new DuplicateRemovalIterator(processedTuples, withFilterDelegation);
+        return new ProjectionIterator(processedTuples, withFilterDelegation);
     }
 
     @Override
     public void setDataSourcesInfo() throws Exception {
+        //the data sources are not copied from the child operation.
+        //instead, the operation itself is considered a data source that provides tuples that conform to the 
+        //list of projected columns
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
 
         childOperation.setDataSourcesInfo();
         
+        //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
         setPrototype();
     }
 
@@ -127,13 +126,13 @@ public class Projection extends UnaryOperation {
      * this class produces resulting tuples by removing duplicates from the
      * child operation
      */
-    private class DuplicateRemovalIterator extends UnpagedOperationIterator {
+    private class ProjectionIterator extends UnpagedOperationIterator {
 
         //the iterator over the child operation
         Iterator<Tuple> tuples;
 
         
-        public DuplicateRemovalIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        public ProjectionIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             tuples = childOperation.lookUp(processedTuples, false);//accesses all tuples produced by the child operation 
         }
@@ -144,21 +143,19 @@ public class Projection extends UnaryOperation {
                 Tuple tp = tuples.next();
                 
                 LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
+                //find the column from the accessed tuple and add it to the resulting row
                 for (int i = 0; i < projectionColumns.size(); i++) {
                     ColumnDescriptor col = projectionColumns.get(i);
                     Comparable value = tp.rows[col.getColumnLocation().rowIndex].getValue(col.getColumnLocation().colIndex);
                     row.setValue(i, value);
                 }
 
+                //the row is added to the resulting tuple
                 Tuple returnTp = new Tuple();
                 returnTp.rows = new LinkedDataRow[1];
                 returnTp.rows[0] = new LinkedDataRow();
                 returnTp.rows[0] = row;
                 
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (!lookup.match(returnTp)) {
-                    continue;
-                }
                 return returnTp;
 
             }

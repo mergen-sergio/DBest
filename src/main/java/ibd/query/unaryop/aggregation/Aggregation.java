@@ -207,11 +207,12 @@ public class Aggregation extends UnaryOperation {
      */
     @Override
     public void setDataSourcesInfo() throws Exception {
+        
+        childOperation.setDataSourcesInfo();
+        
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
-
-        childOperation.setDataSourcesInfo();
 
         createPrototype();
         dataSources[0].prototype = prototype;
@@ -316,9 +317,6 @@ public class Aggregation extends UnaryOperation {
                             groupedValues[i].add(aggregatedValue);
                     }
                     
-                    if (!lookup.match(tuple)) {
-                    continue;
-                }
                     return tuple;
                 }
 
@@ -331,8 +329,7 @@ public class Aggregation extends UnaryOperation {
                 //dataRow.setMetadata(prototype);
                 tuple.setSingleSourceRow(alias, dataRow);
                 prevGroupByValue = null;
-                if (lookup.match(tuple)) 
-                    return tuple;
+                return tuple;
             }
 
             return null;

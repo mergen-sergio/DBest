@@ -62,7 +62,7 @@ public class Intersection extends Set {
 
             while (leftTuples.hasNext()) {
                 Tuple leftTuple = leftTuples.next();
-                if (lookup.match(leftTuple) && hasEqual(leftTuple)) {
+                if (hasEqual(leftTuple)) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(leftTuple);
                     return tuple;

@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This operation removes tuples whose value of an specified column is already
- * part of another accepted tuple.
+ * This operation remove a tuple whose rows are equal to the rows of the previously accessed tuple.
+ * If tuples are sorted, this operation removes all duplicated tuples
  *
  * @author Sergio
  */
@@ -23,21 +23,12 @@ public class DuplicateRemoval extends UnaryOperation {
     /**
      *
      * @param op the operation to be connected into this unary operation
-     * @param referenceColumn the name of the column to be used to remove
-     * duplicates. The name can be prefixed by the table name (e.g. tab.col)
-     * @param isOrdered indicates if the incoming tuples from the connected
-     * operation are already ordered by the referenceColumn column
      * @throws Exception
      */
     public DuplicateRemoval(Operation op) throws Exception {
         super(op);
     }
 
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
-    }
-    
     /**
      *
      * @return the name of the operation
@@ -71,10 +62,8 @@ public class DuplicateRemoval extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (!lookup.match(tp)) {
-                    continue;
-                }
+                
+                //the tuple is returned only if it differs from the previous tuple
                 if (prevTuple == null || (!tp.equals(prevTuple))) {
                     prevTuple = tp;
                     return tp;

@@ -22,8 +22,9 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import static booleanexpression.Utils.*;
+import entities.Column;
 import entities.cells.OperationCell;
-import ibd.query.Operation;
+import java.util.ArrayList;
 
 public class AtomicExpressionForm extends OperationForm implements ActionListener, IOperationForm, IFormCondition {
 
@@ -32,7 +33,7 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
     private AtomicExpression atomicExpression = null;
     private ValueType valueType1 = ValueType.NONE;
     private ValueType valueType2 = ValueType.NONE;
-    private Cell parent2;
+    //private Cell rightChild;
     private final JTextField txtFieldValue1 = new JTextField();
     private final JComboBox<String> comboBoxOperator = new JComboBox<>(Arrays.stream(RelationalOperator
             .values()).map(x -> x.symbols[0]).toArray(String[]::new));
@@ -107,47 +108,16 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
 //				.forEach(comboBoxSource2::addItem);
 //
 //		setColumns(comboBoxColumn2, comboBoxSource2, parent1);
-        parent2 = null;
-
-        if (CellUtils.getActiveCell(jCell).get().getParents().size() == 2) {
-            OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
-            this.parent2 = CellUtils.getActiveCell(jCell).get().getParents().get(1);
-//			parent2.getColumns().stream()
-//					.map(column -> column.SOURCE).distinct()
-//					.forEach(comboBoxSource::addItem);
-
-            java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell);
-
-            parent2.getColumns().stream()
-                    .map(column -> column.SOURCE).distinct()
-                    .forEach(comboBoxSource2::addItem);
-
-            leftSideCorrelationCols.stream()
-                    .map(column -> column.SOURCE).distinct()
-                    .forEach(comboBoxSource2::addItem);
-
-            setColumns2(comboBoxColumn2, comboBoxSource2, parent2, leftSideCorrelationCols);
-
-        } else if (CellUtils.getActiveCell(jCell).get().getChild() != null) {
-            OperationCell cell = CellUtils.getActiveCell(jCell).get().getChild();
-
-            this.parent2 = cell;
-//			parent2.getColumns().stream()
-//					.map(column -> column.SOURCE).distinct()
-//					.forEach(comboBoxSource::addItem);
-
-            java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell.getOperator());
-
-//			parent2.getColumns().stream()
-//					.map(column -> column.SOURCE).distinct()
-//					.forEach(comboBoxSource2::addItem);
-            leftSideCorrelationCols.stream()
-                    .map(column -> column.SOURCE).distinct()
-                    .forEach(comboBoxSource2::addItem);
-
-            setColumns2(comboBoxColumn2, comboBoxSource2, parent2, leftSideCorrelationCols);
-
-        }
+        //rightChild = null;
+        
+        Cell cell = CellUtils.getActiveCell(jCell).get().getParents().get(0);
+        java.util.List<Column> allColumns = getColumnsAndReferences(cell);
+        
+        allColumns.stream()
+                .map(column -> column.SOURCE).distinct()
+                .forEach(comboBoxSource2::addItem);
+        
+        setColumnsComboBox(comboBoxColumn2, comboBoxSource2, allColumns);
 
         for (ActionListener actionListener : comboBoxSource.getActionListeners()) {
             comboBoxSource.removeActionListener(actionListener);
@@ -164,6 +134,20 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
 
     }
 
+    protected java.util.List<Column> setLeftComboBoxColumns(Cell cell){
+        java.util.List<Column> allColumns = new ArrayList(cell.getColumns());
+
+        //OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
+        if (cell.getChild() != null) {
+            OperationCell childCell = cell.getChild();
+            java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(childCell.getOperator());
+            allColumns.addAll(leftSideCorrelationCols);
+        }
+        
+        return allColumns;
+        
+    }
+    
     public void initGUI() {
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -295,35 +279,10 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
         checkBtnReady();
 
         if (e.getSource() == comboBoxSource) {
-            if (parent1.getColumns().stream().anyMatch(column -> column.SOURCE.
-                    equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))) {
-
-                setColumns(comboBoxColumn, comboBoxSource, parent1);
-
-//			}else if(parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
-//					equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))){
-//
-//				setColumns(comboBoxColumn, comboBoxSource, parent2);
-//
-//			}
-            }
-            if (e.getSource() == comboBoxSource2) {
-//			if(parent1.getColumns().stream().anyMatch(column -> column.SOURCE.
-//							equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))){
-//
-//				setColumns(comboBoxColumn2, comboBoxSource2, parent1);
-//
-            
-            //else
-            OperationCell cell = CellUtils.getActiveCell(jCell).get().getChild();
-            java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell.getOperator());
-            if (parent2 != null && parent2.getColumns().stream().anyMatch(column -> column.SOURCE.
-                    equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))) {
-
-                setColumns2(comboBoxColumn2, comboBoxSource2, parent2,leftSideCorrelationCols);
-
-            }
+            sourceBox1Selected(comboBoxSource, comboBoxColumn, leftChild);
         }
+        if (e.getSource() == comboBoxSource2) {
+            sourceBox1Selected(comboBoxSource2, comboBoxColumn2, leftChild);
         }
 
         if (e.getSource() == btnColumnSet1) {
@@ -405,6 +364,34 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
 
         checkBtnReady();
 
+    }
+
+    protected void sourceBox1Selected(JComboBox<String> comboBoxSources, JComboBox<String> comboBoxColumns, Cell cell) {
+        java.util.List<Column> allColumns = getColumnsAndReferences(cell);
+       
+        if (hasMatch(allColumns, comboBoxSources)) {
+            setColumnsComboBox(comboBoxColumns, comboBoxSources, allColumns);
+
+        }
+    }
+
+//    protected void sourceBox2Selected() {
+//        if (leftChild != null && hasMatch(leftChild.getColumns(), comboBoxSource2)) {
+//            setColumnsComboBox(comboBoxColumn2, comboBoxSource2, leftChild.getColumns());
+//        } else {
+//            OperationCell cell = CellUtils.getActiveCell(jCell).get().getChild();
+//            java.util.List<entities.Column> leftSideCorrelationCols = this.getLeftSideCorrelationColumns(cell.getOperator());
+//
+//            if (hasMatch(leftSideCorrelationCols, comboBoxSource2)) {
+//                setColumnsComboBox(comboBoxColumn2, comboBoxSource2, leftSideCorrelationCols);
+//            }
+//
+//        }
+//    }
+
+    private boolean hasMatch(java.util.List<Column> columns, JComboBox<String> comboBox) {
+        return (leftChild != null && columns.stream().anyMatch(column -> column.SOURCE.
+                equals(Objects.requireNonNull(comboBox.getSelectedItem()).toString())));
     }
 
     public AtomicExpression getResult() {

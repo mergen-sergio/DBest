@@ -60,8 +60,14 @@ public class FullTableScan extends SourceOperation {
 
     }
     
+    @Override
     public String getDataSourceName(){
         return table.getName();
+    }
+    
+    @Override
+    public boolean canProcessDelegatedFilters() {
+        return true;
     }
 
     @Override

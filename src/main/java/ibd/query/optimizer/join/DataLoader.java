@@ -129,28 +129,28 @@ public class DataLoader {
         dataRow.setInt("year", year);
         dataRow.setString("title", title);
         dataRow.setInt("idDirector", idDirector);
-        table.addRecord(dataRow);
+        table.addRecord(dataRow, true);
     }
 
     private void addArtist(Table table, int idArtist, String name) throws Exception {
         BasicDataRow dataRow = new BasicDataRow();
         dataRow.setInt("idArtist", idArtist);
         dataRow.setString("name", name);
-        table.addRecord(dataRow);
+        table.addRecord(dataRow, true);
     }
 
     private void addCast(Table table, int idMovie, int idArtist) throws Exception {
         BasicDataRow dataRow = new BasicDataRow();
         dataRow.setInt("idMovie", idMovie);
         dataRow.setInt("idArtist", idArtist);
-        table.addRecord(dataRow);
+        table.addRecord(dataRow, true);
     }
 
     private void addDirector(Table table, int idDirector, String name) throws Exception {
         BasicDataRow dataRow = new BasicDataRow();
         dataRow.setInt("idDirector", idDirector);
         dataRow.setString("name", name);
-        table.addRecord(dataRow);
+        table.addRecord(dataRow, true);
     }
 
    

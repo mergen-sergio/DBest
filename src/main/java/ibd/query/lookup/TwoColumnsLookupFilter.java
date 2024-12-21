@@ -84,30 +84,7 @@ public class TwoColumnsLookupFilter implements LookupFilter{
         return comparisonType;
     }
     
-    /**
-     * @return the tupleIndex
-     */
-//    public int getLeftTupleIndex() {
-//        return leftTupleIndex;
-//    }
     
-    /**
-     * Sets the left tuple index. 
-     * This information needs to be set before the filter is performed by the match function
-     * @param tupleIndex
-     */
-//    public void setLeftTupleIndex(int tupleIndex) {
-//        this.leftTupleIndex = tupleIndex;
-//    }
-    
-    /**
-     * Sets the right tuple index. 
-     * This information needs to be set before the filter is performed by the match function
-     * @param tupleIndex
-     */
-//    public void setRightTupleIndex(int tupleIndex) {
-//        this.rightTupleIndex = tupleIndex;
-//    }
     
     /**
      *

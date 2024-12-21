@@ -35,10 +35,10 @@ public class MergeFullOuterJoin extends Join {
     Comparable nextLeftTupleArray[];
     //an array to contain values from the right side used as the join condition
     Comparable nextRightTupleArray[];
-    
+
     //a null tuple that is shared with all left side tuples that fail to join with right side tuples
     Tuple nullRightTuple;
-    
+
     Tuple nullLeftTuple;
 
     /**
@@ -59,11 +59,6 @@ public class MergeFullOuterJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
 
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
@@ -71,11 +66,11 @@ public class MergeFullOuterJoin extends Join {
 
         nextLeftTupleArray = new Comparable[joinPredicate.size()];
         nextRightTupleArray = new Comparable[joinPredicate.size()];
-        
+
         setNullLeftTuple();
         setNullRightTuple();
     }
-    
+
     protected void setNullLeftTuple() throws Exception {
         //flowOperations = new ArrayList();
 
@@ -89,7 +84,7 @@ public class MergeFullOuterJoin extends Join {
         }
 
     }
-    
+
     protected void setNullRightTuple() throws Exception {
         //flowOperations = new ArrayList();
 
@@ -256,24 +251,16 @@ public class MergeFullOuterJoin extends Join {
                 } else if (comp < 0) {// Left tuple is smaller
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(leftTuple, nullRightTuple);
-                    if (lookup.match(tuple)) {
-                        // move to the next left tuple
-                        leftTuple = null;
-                        return tuple;
-                    }
-                    
                     // move to the next left tuple
                     leftTuple = null;
+                    return tuple;
+
                 } else {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(nullLeftTuple, rightTuple);
-                    if (lookup.match(tuple)) {
-                        // move to the next left tuple
-                        rightTuple = null;
-                        return tuple;
-                    }
                     // Right tuple is smaller, move to the next right tuple
                     rightTuple = null;
+                    return tuple;
                 }
             }
 

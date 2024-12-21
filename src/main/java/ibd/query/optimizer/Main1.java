@@ -12,7 +12,9 @@ import ibd.query.Operation;
 import ibd.query.Tuple;
 import ibd.query.Utils;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.ColumnElement;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.FullTableScan;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.filter.Filter;
@@ -87,7 +89,7 @@ public class Main1 {
         Operation scan1 = new IndexScan("t1", table1);
         Operation scan2 = new IndexScan("t2", table2);
 
-        SingleColumnLookupFilterByValue filter_ = new SingleColumnLookupFilterByValue("id", 6, EQUAL);
+        SingleColumnLookupFilter filter_ = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(6));
         
         Operation filter1 = new Filter(scan2, filter_);
 
@@ -114,8 +116,8 @@ public class Main1 {
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
         Operation join2 = new NestedLoopJoin(join1, scan3, terms);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 2, EQUAL);
-        SingleColumnLookupFilterByValue filter_2 = new SingleColumnLookupFilterByValue("id", 30, LOWER_EQUAL_THAN);
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(2));
+        SingleColumnLookupFilter filter_2 = new SingleColumnLookupFilter(new ColumnElement("id"),  LOWER_EQUAL_THAN,new LiteralElement(30));
 
         Operation filter1 = new Filter(join2, filter_1);
         Operation filter2 = new Filter(filter1, filter_2);
@@ -136,7 +138,7 @@ public class Main1 {
 
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
         
-        SingleColumnLookupFilterByValue filter = new SingleColumnLookupFilterByValue("id", 6, EQUAL);
+        SingleColumnLookupFilter filter = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(6));
 
         Operation filter1 = new Filter(join1, filter);
 
@@ -159,7 +161,7 @@ public class Main1 {
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
         Operation join2 = new NestedLoopJoin(join1, scan3, terms);
         
-        SingleColumnLookupFilterByValue filter = new SingleColumnLookupFilterByValue("id", 60, EQUAL);
+        SingleColumnLookupFilter filter = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL,new LiteralElement(60));
 
         Operation filter1 = new Filter(join2, filter);
 
@@ -174,9 +176,9 @@ public class Main1 {
         Operation scan1 = new IndexScan("t1", table1);
         Operation scan2 = new IndexScan("t2", table2);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("nome",  EQUAL,"Alexandre");
-        SingleColumnLookupFilterByValue filter_2 = new SingleColumnLookupFilterByValue("id",  EQUAL, 20);
-        SingleColumnLookupFilterByValue filter_3 = new SingleColumnLookupFilterByValue("nome",  EQUAL,"Alice");
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("nome"),  EQUAL,new LiteralElement("Alexandre"));
+        SingleColumnLookupFilter filter_2 = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL, new LiteralElement(20));
+        SingleColumnLookupFilter filter_3 = new SingleColumnLookupFilter(new ColumnElement("nome"),  EQUAL,new LiteralElement("Alice"));
 
         Operation filter1 = new Filter(scan2, filter_1);
         Operation filter2 = new Filter(filter1, filter_2);
@@ -209,8 +211,8 @@ public class Main1 {
 
         Operation diff2 = new NestedLoopJoin(join1, join2, terms);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 10, GREATER_EQUAL_THAN);
-        SingleColumnLookupFilterByValue filter_2 = new SingleColumnLookupFilterByValue("id", 12, EQUAL);
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),  GREATER_EQUAL_THAN,new LiteralElement(10));
+        SingleColumnLookupFilter filter_2 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(12));
 
         Operation filter1 = new Filter(diff2, filter_1);
         Operation filter2 = new Filter(filter1, filter_2);
@@ -226,7 +228,7 @@ public class Main1 {
         Operation scan1 = new IndexScan("t1", table1);
         Operation scan2 = new IndexScan("t2", table2);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("nome", EQUAL,"Alexandre");
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("nome"), EQUAL,new LiteralElement("Alexandre"));
 
         Operation filter1 = new Filter(scan2, filter_1);
 
@@ -246,8 +248,8 @@ public class Main1 {
         Operation scan1 = new IndexScan("t1", table1);
         Operation scan2 = new IndexScan("t2", table2);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("nome", EQUAL,"Alexandre");
-        SingleColumnLookupFilterByValue filter_2 = new SingleColumnLookupFilterByValue("nome",  EQUAL,"Alice");
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("nome"), EQUAL,new LiteralElement("Alexandre"));
+        SingleColumnLookupFilter filter_2 = new SingleColumnLookupFilter(new ColumnElement("nome"),  EQUAL,new LiteralElement("Alice"));
 
         Operation filter1 = new Filter(scan2, filter_1);
         Operation filter2 = new Filter(filter1, filter_2);
@@ -269,7 +271,7 @@ public class Main1 {
         Operation scan1 = new IndexScan("t1", table1);
         Operation scan2 = new IndexScan("t2", table2);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, DIFF);
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), DIFF,new LiteralElement(20));
                 
         Operation filter1 = new Filter(scan2, filter_1);
 
@@ -301,9 +303,9 @@ public class Main1 {
         
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
         
-        SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, LOWER_THAN);
-        SingleColumnLookupFilterByValue filter_2 = new SingleColumnLookupFilterByValue("id", 20, GREATER_THAN);
-        SingleColumnLookupFilterByValue filter_3 = new SingleColumnLookupFilterByValue("id", 10, LOWER_THAN);
+        SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), LOWER_THAN,new LiteralElement(20));
+        SingleColumnLookupFilter filter_2 = new SingleColumnLookupFilter(new ColumnElement("id"), GREATER_THAN,new LiteralElement(20));
+        SingleColumnLookupFilter filter_3 = new SingleColumnLookupFilter(new ColumnElement("id"),  LOWER_THAN,new LiteralElement(10));
 
 
         Operation filterX = new Filter(join1, filter_1);

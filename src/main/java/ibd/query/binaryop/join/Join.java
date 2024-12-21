@@ -53,6 +53,27 @@ public abstract class Join extends BinaryOperation {
         return (List<JoinTerm>) joinPredicate.getTerms();
     }
     
+    @Override
+    public void prepare() throws Exception {
+
+        
+        //sets the column indexes for the terms of the join predicate
+        setJoinTermsIndexes();
+        
+        super.prepare();
+
+        
+
+    }
+    
+    //sets the column indexes for the terms of the join predicate
+    protected void setJoinTermsIndexes() throws Exception {
+        for (JoinTerm term : joinPredicate.getTerms()) {
+            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
+            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
+        }
+    }
+    
     /**
      * {@inheritDoc }
      * the data sources array  is a concatenation of the data sources

@@ -714,7 +714,7 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
     }
 
     @Override
-    public boolean insert(Key key, Value value) {
+    public boolean insert(Key key, Value value, boolean unique) {
         if (isEmpty()) {
 
             /* Flow of execution goes here only when first insert takes place */
@@ -734,13 +734,15 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
             LeafNode ln = (getRootID() == -1) ? firstLeaf
                     : findLeafNode(key);
 
-            // Perform binary search to find index of key within dictionary
-            DictionaryPair[] dps = ln.dictionary;
-            int index = Utils.binarySearch(dps, ln.numPairs, key, this);
+            if (unique) {
+                // Perform binary search to find index of key within dictionary
+                DictionaryPair[] dps = ln.dictionary;
+                int index = Utils.binarySearch(dps, ln.numPairs, key, this);
 
-            //key is already indexed.
-            if (index >= 0) {
-                return false;
+                //key is already indexed.
+                if (index >= 0) {
+                    return false;
+                }
             }
 
             // Insert into leaf node fails if node becomes overfull
@@ -941,19 +943,19 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
     public EqualKeyIterator equalKeyIterator(Key key) {
         return new EqualKeyIterator(this, key);
     }
-    
+
     public LargerKeyIterator largerKeyIterator(Key key, boolean largerEqual) {
         return new LargerKeyIterator(this, key, largerEqual);
     }
-    
+
     public SmallerKeyIterator smallerKeyIterator(Key key, boolean smallerEqual) {
         return new SmallerKeyIterator(this, key, smallerEqual);
     }
-    
+
     public DifferentKeyIterator differentKeyIterator(Key key) {
         return new DifferentKeyIterator(this, key);
     }
-    
+
     public LeafNode getFirstPage() {
         return (LeafNode) getNode(getFirstLeafID());
     }
@@ -962,7 +964,6 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
 
         //LeafNode firstLeaf = (LeafNode) getNode(getFirstLeafID());
         //InternalNode root = (InternalNode) getNode(getRootID());
-
         // If B+ tree is completely empty, return null
         if (isEmpty()) {
             return null;
@@ -1048,7 +1049,6 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
 
     @Override
     public boolean contains(Key key) {
-
 
         // If B+ tree is completely empty, return null
         if (isEmpty()) {

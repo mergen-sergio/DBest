@@ -202,7 +202,7 @@ public class Test_1 {
     private void insert(BPlusTree tree, Key key) {
         
         Value value = dic.get(key);
-        tree.insert(key, value);
+        tree.insert(key, value, true);
         
     }
     
@@ -211,7 +211,7 @@ public class Test_1 {
         for (Key key : list) {
             //System.out.println("insert "+key);
             Value value = dic.get(key);
-            tree.insert(key, value);
+            tree.insert(key, value, true);
         }
         
     }
@@ -399,7 +399,7 @@ public class Test_1 {
                     //System.out.println("insert "+key.toString());
                     operations.add("operations.add(\"insert," + key.get(2) + "\");");
                     lastOp = "operations.add(\"insert," + key.get(2) + "\");";
-                    tree.insert(key, value);
+                    tree.insert(key, value, true);
                     keys.add(key);
                     deletedKeys.remove(key);
                 }
@@ -508,7 +508,7 @@ public class Test_1 {
                     //System.out.println("insert "+key.toString());
                     if (!keys.contains(key)) {
                         //operations.add("operations.add(\"insert," + key.get(2) + "\");");
-                        tree.insert(key, value);
+                        tree.insert(key, value, true);
                         keys.add(key);
                         deletedKeys.remove(key);
                     }
@@ -591,7 +591,7 @@ public class Test_1 {
                 Value value = tree.createValue();
                 value.set(0, bytes);
                 
-                tree.insert(key, value);
+                tree.insert(key, value, true);
                 keys.add(key);
                 deletedKeys.remove(key);
                 

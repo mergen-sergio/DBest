@@ -48,8 +48,10 @@ public abstract class BPlusTree {
      *
      * @param key: a key to be used in the dictionary pair
      * @param value: a value to be used in the dictionary pair
+     * @param unique: no duplicate values are allowed for the key part
+     * @return 
      */
-    public abstract boolean insert(Key key, Value value);
+    public abstract boolean insert(Key key, Value value, boolean unique);
     
     /**
      * Given a key, this method returns the value associated with the key within

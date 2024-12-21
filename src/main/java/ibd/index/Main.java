@@ -25,7 +25,7 @@ public class Main {
         BasicDataRow row = new BasicDataRow();
         row.setInt("id", pk);
         row.setString("nome", content);
-        table.addRecord(row);
+        table.addRecord(row, true);
     } 
     
     public static void removeRecord(Table table, int pk) throws Exception{

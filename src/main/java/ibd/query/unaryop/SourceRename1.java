@@ -19,12 +19,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This operation removes tuples whose value of an specified column is already
- * part of another accepted tuple.
+ * This operation collapses all data sources coming from the child operarion
+ * into one. One single alias is then used to refer to all columns produced by
+ * the collapsed data sources. The operation fails if columns from different
+ * data sources have the same name.
  *
  * @author Sergio
  */
@@ -44,28 +44,32 @@ public class SourceRename1 extends UnaryOperation {
         this.alias = alias;
 
     }
-    
-    private void setColumns() throws Exception{
+
+    //Sets the list of columns to be used by the collapsed data source.
+    //Columns with the same name are added to the columns lists, but they 
+    //produce errors when the list is converted into a schema
+    private void setColumns() throws Exception {
         ReferedDataSource childSources[] = getChildOperation().getDataSources();
         columns = new ArrayList();
         for (ReferedDataSource dataSource : childSources) {
             for (Column col : dataSource.prototype.getColumns()) {
-                ColumnDescriptor colDesc = new ColumnDescriptor(dataSource.alias+"."+col.getName());
+                ColumnDescriptor colDesc = new ColumnDescriptor(dataSource.alias + "." + col.getName());
                 columns.add(colDesc);
             }
-            
+
         }
-        
+
     }
 
     @Override
     public void prepare() throws Exception {
-        
+
         super.prepare();
-        
+
         setColumnsIndexes();
     }
 
+    //is this necessary? The method is already called by the set prototype method
     private void setColumnsIndexes() throws Exception {
         for (ColumnDescriptor col : columns) {
             //int index = childOperation.getRowIndex(col.getTableName());
@@ -74,6 +78,7 @@ public class SourceRename1 extends UnaryOperation {
         }
     }
 
+    //sets the schema of the collapsed data source by taking its collected columns
     protected void setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         for (ColumnDescriptor col : columns) {
@@ -85,13 +90,16 @@ public class SourceRename1 extends UnaryOperation {
 
         dataSources[0].prototype = prototype;
     }
-    
+
     @Override
     public Map<String, List<String>> getContentInfo() {
-        HashMap<String,List<String>> map = new LinkedHashMap<>();
-        
+        HashMap<String, List<String>> map = new LinkedHashMap<>();
+
         try {
-            if (columns==null || columns.size()==0){
+            //columns are not yet set if the operation was never run
+            //they are only set when the operation is run from the first time
+            //in this case, we need to define the data sources info by hand in order to get the content info
+            if (columns == null || columns.size() == 0) {
                 setDataSourcesInfo();
                 setColumns();
             }
@@ -101,43 +109,43 @@ public class SourceRename1 extends UnaryOperation {
         for (ColumnDescriptor colDescriptor : columns) {
             list.add(colDescriptor.getColumnName());
         }
-        map.put(alias,list);
+        map.put(alias, list);
         return map;
     }
 
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
-        return new DuplicateRemovalIterator(processedTuples, withFilterDelegation);
+        return new SourceRenameIterator(processedTuples, withFilterDelegation);
     }
 
     @Override
     public void setDataSourcesInfo() throws Exception {
+        
+        childOperation.setDataSourcesInfo();
+        
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
 
-        childOperation.setDataSourcesInfo();
-        
         setColumns();
         setPrototype();
     }
 
     @Override
     public String toString() {
-        return "projection:" + columns;
+        return "Source Rename:" + columns;
     }
 
     /**
-     * this class produces resulting tuples by removing duplicates from the
-     * child operation
+     * this class transforms tuples that come from the child operation by
+     * collapsing all data sources into one
      */
-    private class DuplicateRemovalIterator extends UnpagedOperationIterator {
+    private class SourceRenameIterator extends UnpagedOperationIterator {
 
         //the iterator over the child operation
         Iterator<Tuple> tuples;
 
-        
-        public DuplicateRemovalIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        public SourceRenameIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             tuples = childOperation.lookUp(processedTuples, false);//accesses all tuples produced by the child operation 
         }
@@ -146,7 +154,8 @@ public class SourceRename1 extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                
+                //creates the single row of the resulting tuple
+                //and add all collapsed columns 
                 LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
                 for (int i = 0; i < columns.size(); i++) {
                     ColumnDescriptor col = columns.get(i);
@@ -154,37 +163,16 @@ public class SourceRename1 extends UnaryOperation {
                     row.setValue(i, value);
                 }
 
+                //the row is added to the resulting tuple
                 Tuple returnTp = new Tuple();
                 returnTp.rows = new LinkedDataRow[1];
                 returnTp.rows[0] = new LinkedDataRow();
                 returnTp.rows[0] = row;
-                
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (!lookup.match(returnTp)) {
-                    continue;
-                }
+
                 return returnTp;
 
-                //NOT WORKING: needs to adjust by comparing only the value of the reference column
-//                if (prevTuple == null || (!equals(prevTuple, tp))) {
-//                    prevTuple = tp;
-//                    return tp;
-//                }
             }
             return null;
-        }
-
-        private boolean equals(Tuple tt1, Tuple tt2) {
-            for (ColumnDescriptor projectionColumn : columns) {
-                Comparable value1 = tt1.rows[projectionColumn.getColumnLocation().rowIndex].getValue(projectionColumn.getColumnLocation().colIndex);
-                Comparable value2 = tt2.rows[projectionColumn.getColumnLocation().rowIndex].getValue(projectionColumn.getColumnLocation().colIndex);
-                int comp = value1.compareTo(value2);
-                if (comp != 0) {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
     }

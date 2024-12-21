@@ -7,17 +7,20 @@ package ibd.query;
 
 import ibd.query.binaryop.BinaryOperation;
 import ibd.query.binaryop.join.Join;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.NoLookupFilter;
+import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByReference;
 import ibd.query.lookup.TwoColumnsLookupFilter;
 import ibd.table.prototype.column.Column;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 /**
  * An operation in this context is defined as a data transformation step within
@@ -26,9 +29,10 @@ import java.util.Map;
  * data access and transformation:
  *
  * - Source operations: These are leaf nodes that directly interact with data
- * sources, initiating data flow. - Unary operations: Nodes that perform
- * transformations using data from a single preceding operation. - Binary
- * operations: Nodes that manipulate data received from two preceding
+ * sources, initiating data flow. 
+ * - Unary operations: Nodes that perform transformations using data from a 
+ * single preceding operation. 
+ * - Binary operations: Nodes that manipulate data received from two preceding
  * operations.
  *
  * Data flows from the leaf nodes to the root, with each node processing
@@ -37,12 +41,13 @@ import java.util.Map;
  * the entry points for data sources. The root node represents the entire query,
  * aggregating and finalizing the data transformation process.
  *
- * Regarding tuple formation: - Source operations produce tuples consisting of a
- * single row from their respective data sources. - Unary operations produce
- * tuples that contain the same number of rows as the tuples provided by the
- * underlying operation. - Binary operations, such as joins, produce tuples
- * where the number of rows is the sum of the rows from the two input tuples
- * provided by the connected children.
+ * Regarding tuple formation: 
+ * - Source operations produce tuples consisting of a  * single row from their 
+ * respective data sources. 
+ * - Unary operations produce tuples that contain the same number of rows as 
+ * the tuples provided by the underlying operation. 
+ * - Binary operations, such as joins, produce tuples where the number of rows 
+ * is the sum of the rows from the two input tuples provided by the connected children.
  *
  * Queries can be executed at any node; which redirects the request to the
  * relevant operations below it, leveraging the hierarchical structure to
@@ -80,7 +85,7 @@ public abstract class Operation {
     protected Operation parentOperation;
 
     /**
-     * the operation is ready to call prepare. It needs to have the data sources
+     * the operation is ready to call the prepare method. It needs to have the data sources
      * set immediately prior to calling the prepare method.
      */
     protected boolean isReady = false;
@@ -144,16 +149,22 @@ public abstract class Operation {
 
     /**
      * Prepares this operation for query answering performing one-time setup
-     * commands. The preparation involves: - setting up static variables;
-     * setting array indexes to row columns; opening data sources, if any;
-     * preparing the underlying operations, if any.
+     * commands. The preparation involves, among others: 
+     * - setting up static variables;
+     * - setting array indexes to row columns; 
+     * - opening data sources, if any;
+     * - preparing the underlying operations, if any.
      *
      * @throws Exception
      */
     public void prepare() throws Exception {
+        //if the query starts with this operation, the filters from the parent
+        //must be ignored
         if (!runFromHere) {
             checkFilters();
         }
+        
+       
     }
 
     /**
@@ -178,7 +189,7 @@ public abstract class Operation {
             return;
         }
 
-        //if the parent operator has filters, we initially set it to true
+        //if the parent operator has non empty filters, we initially set it to true
         if (!(parentOperation.getFilters() instanceof NoLookupFilter)) {
             hasDelegatedFilters = true;
         }
@@ -197,9 +208,9 @@ public abstract class Operation {
 
         }
 
-        if (hasDelegatedFilters) {
-            setTupleIndex(parentOperation.getFilters());
-        }
+//        if (hasDelegatedFilters) {
+//            setTupleIndex(parentOperation.getFilters());
+//        }
 
     }
 
@@ -208,7 +219,7 @@ public abstract class Operation {
     * locate the tuple whose column will be compared.
     * The tuple index is set based on the table name information retrieved from the filter.
      */
-    private void setTupleIndex(LookupFilter filter) {
+    private void setTupleIndex(LookupFilter filter) throws Exception {
         if (filter instanceof CompositeLookupFilter) {
             setTupleIndex((CompositeLookupFilter) filter);
 
@@ -220,27 +231,47 @@ public abstract class Operation {
     }
 
     //sets the tuple indexes for all parts of this composite filter
-    private void setTupleIndex(CompositeLookupFilter filter) {
+    private void setTupleIndex(CompositeLookupFilter filter) throws Exception {
         for (LookupFilter filter1 : filter.getFilters()) {
             setTupleIndex(filter1);
         }
     }
 
-    //sets the tuple index for this single column filter
-    private void setTupleIndex(SingleColumnLookupFilter filter) {
+    private ColumnElement setTupleIndex(ColumnElement elem) throws Exception{
         try {
+        setColumnLocation(elem.getColumnDescriptor());
+        }
+        catch(Exception e){
+            boolean found = setColumnLocationFromProcessedOperations(elem.getColumnDescriptor());
+            if (found){
+                return new ReferencedElement(elem.getColumnDescriptor());
+            }
+            else throw new Exception("Error in operation "+this+".\nColumn " + elem.getColumnDescriptor().getColumnName()+" not found.");
+        
+        }
+        return null;
+    }
+    
+    //sets the tuple index for this single column filter
+    private void setTupleIndex(SingleColumnLookupFilter filter) throws Exception{
 
             //sets  the tuple index of the column to be filtered.
-            setColumnLocation(filter.getColumnDescriptor());
-
-            //sets the tuple location of the column to be used as a reference value, if necessary
-            if (filter instanceof SingleColumnLookupFilterByReference) {
-                SingleColumnLookupFilterByReference f1 = (SingleColumnLookupFilterByReference) filter;
-                f1.setTupleLocation(this);
+            if (filter.getFirstElement() instanceof ColumnElement){
+            ColumnElement colElem = (ColumnElement)filter.getFirstElement();
+            ColumnElement newElem = setTupleIndex(colElem);
+            if (newElem!=null)
+                filter.setFirstElement(newElem);
             }
-
-        } catch (Exception ex) {
-        }
+            //sets the tuple location of the column to be used as a reference value, if necessary
+            //sets the tuple location of the column to be used as a reference value, if necessary
+            
+            if (filter.getSecondElement() instanceof ColumnElement){
+            ColumnElement colElem = (ColumnElement) filter.getSecondElement();
+            ColumnElement newElem = setTupleIndex(colElem);
+            if (newElem!=null)
+                filter.setSecondElement(newElem);
+            }
+        
     }
 
     private void setTupleIndex(TwoColumnsLookupFilter filter) {
@@ -258,6 +289,15 @@ public abstract class Operation {
         }
     }
 
+    
+    /**
+     *
+     * @return
+     */
+    public boolean canProcessDelegatedFilters() {
+        return false;
+    }
+    
     /**
      *
      * @return
@@ -270,13 +310,12 @@ public abstract class Operation {
     }
 
     /**
-     * Retrieves the filters generated by this operation. The filters created by
-     * an operation are not processed internally by the same operation. Instead,
-     * they are delegated to one of its direct underlying operations in the
-     * query execution tree. Operations such as 'Filter' and 'NestedLoopJoin'
-     * are examples of operations that can create such filters. This setup
-     * allows for modular and efficient filtering mechanisms where processing is
-     * delegated to appropriate subcomponents of the query plan.
+     * Retrieves the filters generated by this operation. Operations that contain 
+     * filters (such as 'Filter' and 'NestedLoopJoin') should try to delegated the 
+     * execution to one of its direct underlying operations. The operation only 
+     * processed its own filters if the underlying operation is unable to do it 
+     * efficiently. This setup allows for modular and efficient filtering mechanisms 
+     * where processing is delegated to appropriate subcomponents of the query plan.
      *
      * @return the filters.
      */
@@ -327,6 +366,13 @@ public abstract class Operation {
         return -1;
     }
 
+    /**
+     * Returns the data source refered by an alias.
+     *
+     * @param tableName the alias of the table
+     * @return the data source refered by the alias
+     * @throws Exception
+     */
     public ReferedDataSource getDataSource(String tableName) throws Exception {
         if (tableName == null) {
             return null;
@@ -342,6 +388,10 @@ public abstract class Operation {
         return null;
     }
 
+    /**
+     * @return the size of a tuple generated by this operation
+     * @throws Exception
+     */
     public int getTupleSize() throws Exception {
         int size = 0;
         for (ReferedDataSource referedDataSource : getDataSources()) {
@@ -384,7 +434,7 @@ public abstract class Operation {
      * @param columnDescriptor
      * @throws Exception
      */
-    public void setColumnLocationFromProcessedOperations(ColumnDescriptor columnDescriptor) throws Exception {
+    public boolean setColumnLocationFromProcessedOperations(ColumnDescriptor columnDescriptor) throws Exception {
 
         for (int i = 0; i < processedOperations.size(); i++) {
             Operation processedOperation = processedOperations.get(i);
@@ -392,10 +442,10 @@ public abstract class Operation {
             ColumnLocation auxColumnLocation = columnDescriptor.getColumnLocation();
             if (auxColumnLocation != null) {
                 auxColumnLocation.tupleIndex = i;
-                return;
+                return true;
             }
         }
-
+        return false;
     }
 
     /**
@@ -429,6 +479,8 @@ public abstract class Operation {
             colLoc.rowIndex = 0;
             ReferedDataSource[] dataSources_ = getDataSources();
             Column col = dataSources_[0].prototype.getColumn(columnDescriptor.getColumnName());
+            if (col==null)
+                throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
             colLoc.colIndex = col.index;
             columnDescriptor.setColumnLocation(colLoc);
         } else {
@@ -436,12 +488,12 @@ public abstract class Operation {
             if (rowIndex != -1) {
                 Column col = getDataSources()[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
                 if (col==null)
-                    throw new Exception("Error in operation "+getParentOperation()+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
+                    throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
                 colLoc.rowIndex = rowIndex;
                 colLoc.colIndex = col.index;
                 columnDescriptor.setColumnLocation(colLoc);
             }
-            else throw new Exception("Error in operation "+getParentOperation()+".\nTable " + columnDescriptor.getTableName()+" not found.");
+            else throw new Exception("Error in operation "+this+".\nTable " + columnDescriptor.getTableName()+" not found.");
         }
 
     }
@@ -449,22 +501,23 @@ public abstract class Operation {
     /**
      * sets information about the data sources that are directly or indirectly
      * accessed by this operation. The information includes the source alias and
-     * schema.
+     * schema. TO be used during the preparation of the execution tree.
      *
      * @throws Exception
      */
     public abstract void setDataSourcesInfo() throws Exception;
 
     /**
-     * Sets the list of operations that already have processed tuples before
-     * this operation executes.
+     * Sets the list of operations that processes tuples before
+     * this operation executes. Columns from these operations can be used in 
+     * referenced filters.
      */
     public void setProcessedOperations() {
 
         processedOperations = new ArrayList();
 
         Operation parent = getParentOperation();
-        if (parent != null && parent.processedOperations != null) {
+        if (parent != null && parent.processedOperations != null && !runFromHere) {
             List<Operation> processedOperations_ = parent.processedOperations;
             //the processing operations contains all processing operations of the parent node
             processedOperations.addAll(processedOperations_);
@@ -490,7 +543,7 @@ public abstract class Operation {
      *
      * @param processedTuples the tuples that come from operations already
      * processed. The rows from these tuples can be used by the unprocessed
-     * operations, like for filtering.
+     * operations, like for referenced filtering.
      * @param withFilterDelegation indicates if the filters created by the
      * parent operation need to be processed. Set this to false if the execution
      * starts from this operation.
@@ -505,7 +558,7 @@ public abstract class Operation {
      *
      * @param processedTuples the tuples that come from operations already
      * processed. The rows from these tuples can be used by the unprocessed
-     * operations, like for filtering.
+     * operations, like for referenced filtering.
      * @param withFilterDelegation indicates if the filters created by the
      * parent operation need to be processed. Set this to false if the execution
      * starts from this operation.
@@ -542,7 +595,8 @@ public abstract class Operation {
      * Verifies if this operation produces resulting tuples.
      *
      * @param processedTuples the tuples that come from operations already
-     * processed.
+     * processed. The rows from these tuples can be used by the unprocessed
+     * operations, like for referenced filtering.
      * @param withFilterDelegation indicates if the filters created by the
      * parent operation need to be processed. Set this to false if the execution
      * starts from this operation.
@@ -553,6 +607,9 @@ public abstract class Operation {
         return iterator.hasNext();
     }
 
+    /*************************************************************************
+     * Code added for compatibility reasons with the DBest query execution tool.
+     */
     Iterator<Tuple> currentRun;
 
     public void open() throws Exception {
@@ -567,6 +624,73 @@ public abstract class Operation {
         return currentRun.hasNext();
     }
 
+    /**************************************************************************/
+    
+    protected List<Operation> childOperations = new ArrayList();
+    public List<Operation> getChildOperations(){
+        return childOperations;
+    }
+    
+    protected void prepareFromTopDown() throws Exception{
+         setTupleIndex(getFilters());
+    }
+    
+    private void prepareAllFromTopDown() throws Exception{
+    Stack<Operation> stack = new Stack<>();
+        Operation current = this;
+
+        while (current != null || !stack.isEmpty()) {
+            // Traverse to the leftmost node
+            while (current != null) {
+                stack.push(current);
+                List<Operation> children = current.getChildOperations();
+                current = (children != null && !children.isEmpty()) ? children.get(0) : null;
+            }
+
+            // Process the node
+            current = stack.pop();
+            current.prepareFromTopDown();
+
+            // Move to the right child, if any
+            List<Operation> children = current.getChildOperations();
+            current = (children != null && children.size() > 1) ? children.get(1) : null;
+        }
+    }
+    
+    //this replaces the recursive method where the operations are responsible for calling setDatSOurces for their child operations
+    //not yet in use
+    public void prepareAllDataSources() throws Exception {
+
+        Stack<Operation> stack = new Stack<>();
+        Stack<Operation> processedStack = new Stack<>();
+        stack.push(this);
+
+        // Post-order traversal using two stacks
+        while (!stack.isEmpty()) {
+            Operation current = stack.pop();
+            processedStack.push(current);
+
+            // Push children onto the stack
+            List<Operation> children = current.getChildOperations();
+            if (children != null) {
+                for (Operation child : children) {
+                    stack.push(child);
+                }
+            }
+        }
+
+        // Process nodes in post-order
+        while (!processedStack.isEmpty()) {
+            processedStack.pop().setDataSourcesInfo();
+        }
+    }
+    
+    /**
+     * Used for compatibility reasons with DBest. 
+     *
+     * @return a map containing the source alias and its columns for all information
+     * returned by a tuple.
+     */
     public abstract Map<String, List<String>> getContentInfo();
 
     /**
@@ -577,15 +701,23 @@ public abstract class Operation {
      * @throws java.lang.Exception
      */
     public Iterator<Tuple> run() throws Exception {
+        try{
         runFromHere = true;
         hasDelegatedFilters = false;
         //sets information from the data sources that are important during query execution
         setDataSourcesInfo();
+        
         setProcessedOperations();
 
+        prepareAllFromTopDown();
         //prepares the operations from the query tree
         prepare();
-
+        }
+        catch(Exception ex){
+            runFromHere = false;
+            throw ex;
+        }
+        
         runFromHere = false;
 
         //runs the query using with an empty list of processed operations and no delegated filters .

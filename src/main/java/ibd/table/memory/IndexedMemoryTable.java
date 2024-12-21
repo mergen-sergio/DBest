@@ -8,13 +8,9 @@ import ibd.index.btree.Key;
 import ibd.index.btree.Value;
 import ibd.index.btree.table.BinaryKey;
 import ibd.index.btree.table.BinaryValue;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
-import ibd.table.btree.AllRowsIterator;
-import ibd.table.btree.FilteredRowsIterator;
-import ibd.table.btree.KeyFilteredRowsIterator;
-import ibd.table.btree.RowsIterator;
-import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.DataRow;
 import ibd.table.prototype.Header;
@@ -89,10 +85,11 @@ public class IndexedMemoryTable extends Table {
      * Adds a row to the table
      *
      * @param dataRow: the row to be added
+     * @param unique
      * @return the added row or null if no row was added
      */
     @Override
-    public LinkedDataRow addRecord(BasicDataRow dataRow) {
+    public LinkedDataRow addRecord(BasicDataRow dataRow, boolean unique) {
         LinkedDataRow linkedDataRow = dataRow.getLinkedDataRow(prototype);
 
         DataRow pkRow = prototype.createPKRow(linkedDataRow);
@@ -317,7 +314,7 @@ public class IndexedMemoryTable extends Table {
      * @return the list of rows that satisfy all search conditions
      */
     @Override
-    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter) {
+    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter) {
 
         Key key = createKey();
         key.setKeys(new DataRow[]{pkRow});
@@ -385,7 +382,7 @@ public class IndexedMemoryTable extends Table {
      * @throws Exception
      */
     @Override
-    public List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception {
+    public List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception {
         //returns all b-trees leaf entries
         List<LinkedDataRow> allRows = getAllRecords();
         List<LinkedDataRow> filteredRows = new ArrayList();
@@ -406,7 +403,7 @@ public class IndexedMemoryTable extends Table {
      * @throws Exception
      */
     @Override
-    public Iterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception {
+    public Iterator getFilteredRecordsIterator(LookupFilter filter) throws Exception {
         List<LinkedDataRow> list = getFilteredRecords(filter);
         return list.iterator();
     }
@@ -419,7 +416,7 @@ public class IndexedMemoryTable extends Table {
      * @throws Exception
      */
     @Override
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception {
         Key key = createKey();
         key.setKeys(new DataRow[]{pkRow});
 

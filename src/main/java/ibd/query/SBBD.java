@@ -8,16 +8,18 @@ package ibd.query;
 import dsl.DslParser;
 import ibd.query.binaryop.conditional.Exists;
 import ibd.query.binaryop.join.CrossJoinOld;
-import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
+import ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin;
 import ibd.query.binaryop.set.Union;
-import ibd.query.binaryop.join.HashJoin;
+import ibd.query.binaryop.join.HashInnerJoin;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.binaryop.join.semi.NestedLoopSemiJoin;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.LiteralElement;
 import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
-import ibd.query.lookup.SingleColumnLookupFilterByReference;
+import ibd.query.lookup.ReferencedElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.aggregation.Aggregation;
 import ibd.query.unaryop.HashIndex;
@@ -173,7 +175,7 @@ public class SBBD {
                 }
                 row.setString("title", title);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -205,7 +207,7 @@ public class SBBD {
                 row.setInt("person_id", Integer.parseInt(cod));
                 row.setString("person_name", name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -258,7 +260,7 @@ public class SBBD {
                 row.setInt("gender_id", Integer.parseInt(gender_id));
                 row.setString("character_name", character_name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -301,7 +303,7 @@ public class SBBD {
                 row.setInt("person_id", Integer.parseInt(person_id));
                 row.setInt("movie_id", Integer.parseInt(movie_id));
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -347,7 +349,7 @@ public class SBBD {
                 row.setInt("department_id", Integer.parseInt(department_id));
                 row.setString("job", job);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -389,7 +391,7 @@ public class SBBD {
                 BasicDataRow row = new BasicDataRow();
                 row.setInt("person_id", Integer.parseInt(person_id));
                 row.setInt("movie_id", Integer.parseInt(movie_id));
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -439,17 +441,17 @@ public class SBBD {
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("movie.movie_id", "movie_cast.movie_id");
             //terms.addTerm("movie_cast.person_id", "person.person_id");
-            Operation join1 = new HashJoin(scanMovie, scanMovieCast, terms);
+            Operation join1 = new HashInnerJoin(scanMovie, scanMovieCast, terms);
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("movie_cast.person_id", "person.person_id");
-            Operation join2 = new HashJoin(join1, scanPerson, terms1);
+            Operation join2 = new HashInnerJoin(join1, scanPerson, terms1);
 
             /*
         CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-        SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.EQUAL, "a");
-        SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person.person_name", ComparisonTypes.EQUAL, "b");
+        SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter("movie.title", ComparisonTypes.EQUAL, "a");
+        SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter("person.person_name", ComparisonTypes.EQUAL, "b");
         filter1.addFilter(singleFilter1);
         filter1.addFilter(singleFilter2);
 
@@ -483,7 +485,7 @@ public class SBBD {
                 scanPerson = new HashIndex(scanPerson);
             }
 
-            LookupFilter lup = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_THAN, "ZZ");
+            LookupFilter lup = new SingleColumnLookupFilter(new ColumnElement("movie.title"), ComparisonTypes.GREATER_THAN, new LiteralElement("ZZ"));
             Filter filter = new Filter(scanMovie, lup);
 
             JoinPredicate terms = new JoinPredicate();
@@ -541,7 +543,7 @@ public class SBBD {
 
             JoinPredicate terms = new JoinPredicate();
             terms.addTerm("person.person_id", "movie_castIndex.person_id");
-            NestedLoopAntiJoin join1 = new NestedLoopAntiJoin(scanPerson, scanMovieCrewIndex, terms);
+            NestedLoopLeftAntiJoin join1 = new NestedLoopLeftAntiJoin(scanPerson, scanMovieCrewIndex, terms);
             //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person.person_id", "movie_castIndex.person_id", ComparisonTypes.DIFF);
 
             return join1;
@@ -571,10 +573,10 @@ public class SBBD {
                 scanMovieCrew = new HashIndex(scanMovieCrew);
             }
 
-            SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie1.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+            SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie1.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
             Operation filterCast = new Filter(scanMovie1, lookupCast);
 
-            SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie2.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+            SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie2.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
             Operation filterCrew = new Filter(scanMovie2, lookupCrew);
 
             JoinPredicate termsSemiJoinCast = new JoinPredicate();
@@ -615,8 +617,8 @@ public class SBBD {
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("gr.person_id", "person.person_id");
-            Operation join1 = new HashJoin(groupBy, scanPerson, terms1);
-            SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+            Operation join1 = new HashInnerJoin(groupBy, scanPerson, terms1);
+            SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter(new ColumnElement("person.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
             Operation filter = new Filter(join1, singleFilter1);
             return join1;
         } catch (Exception e) {
@@ -650,7 +652,7 @@ public class SBBD {
                 //scanMovieCrewIndex = new HashIndex(scanMovieCrewIndex, "");
             }
 
-            SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+            SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
             Filter filterCast = new Filter(scanPersonCast, filter1);
 
             JoinPredicate terms1 = new JoinPredicate();
@@ -661,9 +663,9 @@ public class SBBD {
             terms2.addTerm("movie_cast_index.movie_id", "movie1.movie_id");
             Operation join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-            Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"}, false);
+            Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
 
-            SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+            SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
             Filter filterCrew = new Filter(scanPersonCrew, filter2);
 
             JoinPredicate terms3 = new JoinPredicate();
@@ -674,7 +676,7 @@ public class SBBD {
             terms4.addTerm("movie_crew_index.movie_id", "movie2.movie_id");
             Operation join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-            Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"}, false);
+            Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
 
             Sort s1 = new Sort(proj1, "p_cast.title", true);
             Sort s2 = new Sort(proj2, "p_crew.title", true);
@@ -731,8 +733,8 @@ public class SBBD {
 
             CompositeLookupFilter compositeFilter = new CompositeLookupFilter(CompositeLookupFilter.OR);
 
-            SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-            SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+            SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
+            SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
             compositeFilter.addFilter(filter1);
             compositeFilter.addFilter(filter2);
 
@@ -766,14 +768,14 @@ public class SBBD {
                 scanPersonCrew = new HashIndex(scanPersonCrew);
             }
 
-            SingleColumnLookupFilterByReference lookupCast = new SingleColumnLookupFilterByReference("movie_cast.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+            SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie_cast.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
             Filter filterCast = new Filter(scanMovieCast, lookupCast);
 
             JoinPredicate terms1 = new JoinPredicate();
             terms1.addTerm("movie_cast.person_id", "person_cast.person_id");
             NestedLoopJoin join1 = new NestedLoopJoin(filterCast, scanPersonCast, terms1);
 
-            SingleColumnLookupFilterByReference lookupCrew = new SingleColumnLookupFilterByReference("movie_crew.movie_id", ComparisonTypes.EQUAL, "movie.movie_id");
+            SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie_crew.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
             Filter filterCrew = new Filter(scanMovieCrew, lookupCrew);
 
             JoinPredicate terms2 = new JoinPredicate();
@@ -784,15 +786,15 @@ public class SBBD {
             CrossJoinOld join3 = new CrossJoinOld(join1, join2);
             //NestedLoopJoin join3 = new NestedLoopJoin(filterCrew, filterCast, terms);
 
-            //SingleColumnLookupFilterByValue filterMovie_ = new SingleColumnLookupFilterByValue("movie.title", ComparisonTypes.GREATER_EQUAL_THAN, "X");
+            //SingleColumnLookupFilter filterMovie_ = new SingleColumnLookupFilter("movie.title", ComparisonTypes.GREATER_EQUAL_THAN, "X");
             //Filter filterMovie = new Filter(scanMovie, filterMovie_);
             NestedLoopJoin join4 = new NestedLoopJoin(scanMovie, join3, terms);
 
             //TwoColumnsLookupFilter filter1 = new TwoColumnsLookupFilter("person_crew.person_name", "person_cast.person_name", ComparisonTypes.EQUAL);
 //            CompositeLookupFilter filter1 = new CompositeLookupFilter(CompositeLookupFilter.OR);
 //
-//            SingleColumnLookupFilterByValue singleFilter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
-//            SingleColumnLookupFilterByValue singleFilter2 = new SingleColumnLookupFilterByValue("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+//            SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter("person_crew.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
+//            SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter("person_cast.person_name", ComparisonTypes.EQUAL, "\"Brad Pitt\"");
 //            filter1.addFilter(singleFilter1);
 //            filter1.addFilter(singleFilter2);
 //

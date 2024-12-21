@@ -49,11 +49,6 @@ public class MergeJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
 
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
@@ -163,7 +158,7 @@ public class MergeJoin extends Join {
                 // Prepare the right side tuple
                 if (rightTuple == null && rightTuples.hasNext()) {
                     rightTuple = rightTuples.next();
-                    fillLeftTupleArray(rightTupleArray, rightTuple);
+                    fillRightTupleArray(rightTupleArray, rightTuple);
                 }
 
                 if (leftTuple == null || rightTuple == null) {

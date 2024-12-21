@@ -5,40 +5,35 @@
  */
 package ibd.query.unaryop;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
-import ibd.table.prototype.LinkedDataRow;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * This operation removes tuples whose value of an specified column is already
- * part of another accepted tuple.
+ * This operation renames one of the data sources that are part of the tuples returned by a child operation
  *
  * @author Sergio
  */
 public class SourceRename extends UnaryOperation {
 
-    String oldAlias;
     String newAlias;
+    //why a map, if a single alias is added? Better to change the map to a single variable
     HashMap<String, String> old2NewPairs = new HashMap();
 
     /**
      *
      * @param op the operation to be connected into this unary operation
-     * @param alias the name used to refer to tuples produced by this operation
+     * @param oldAlias the alias to be replaced
+     * @param newAlias the new alias
      * @throws Exception
      */
-    public SourceRename(Operation op, String oldAlias,String newAlias) throws Exception {
+    public SourceRename(Operation op, String oldAlias, String newAlias) throws Exception {
         super(op);
-        this.oldAlias = oldAlias;
         this.newAlias = newAlias;
         old2NewPairs.put(oldAlias, newAlias);
     }
@@ -48,10 +43,14 @@ public class SourceRename extends UnaryOperation {
     @Override
     public void setDataSourcesInfo() throws Exception {
         childOperation.setDataSourcesInfo();
+        
+        
         ReferedDataSource s[] = childOperation.getDataSources();
         dataSources = new ReferedDataSource[s.length];
         
         int i = 0;
+        //copies the array of data sources from the child operation
+        //and replaces the alias of one of the data sources, if the old alias is found
         for (ReferedDataSource referedDataSource : s) {
             ReferedDataSource newDataSource = new ReferedDataSource();
             newDataSource.prototype = referedDataSource.prototype;
@@ -70,6 +69,8 @@ public class SourceRename extends UnaryOperation {
     public Map<String, List<String>> getContentInfo() {
         Map<String,List<String>> newMap = new HashMap<String,List<String>>(); 
         Map<String,List<String>> oldMap = this.getChildOperation().getContentInfo();
+        // why going for the child operation map?        
+        //perhaps it would work by taking the data source array from this operation
         for (Map.Entry<String, List<String>> entry : oldMap.entrySet()) {
             String oldAlias_ = entry.getKey();
             String newAlias_ = old2NewPairs.get(oldAlias_);
@@ -112,12 +113,6 @@ public class SourceRename extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                
-                
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (!lookup.match(tp)) {
-                    continue;
-                }
                 return tp;
 
             }

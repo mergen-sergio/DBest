@@ -1,7 +1,7 @@
 package operations.binary.joins;
 
 import ibd.query.Operation;
-import ibd.query.binaryop.join.anti.NestedLoopAntiJoin;
+import ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.lookup.ExpressionConverter;
 import java.util.logging.Level;
@@ -15,7 +15,7 @@ public class AntiLeftInnerJoin extends JoinOperators {
     public Operation createJoinOperator(Operation operator1, Operation operator2, BooleanExpression booleanExpression) {
         try {
             JoinPredicate joinPredicate = ExpressionConverter.convert2JoinPredicate(booleanExpression);
-            return new NestedLoopAntiJoin(operator1, operator2, joinPredicate);
+            return new NestedLoopLeftAntiJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -25,7 +25,7 @@ public class AntiLeftInnerJoin extends JoinOperators {
     @Override
     public Operation createJoinOperator(Operation operator1, Operation operator2, JoinPredicate joinPredicate) {
         try {
-            return new NestedLoopAntiJoin(operator1, operator2, joinPredicate);
+            return new NestedLoopLeftAntiJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }

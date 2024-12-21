@@ -12,12 +12,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A filter operation filters tuples that come from its child operation. This
- * operation defines the filter and asks for the child operation to resolve it.
- * The child operation apply the filter over all tuples that is generates. Is
- * the child operation is an index scan, and depending on the filters defined,
- * the search can be performed efficiently by index lookups.
- *
+ * The Scan operation just traverses the child operation and delivers tuples as rows are accessed.
+ * Its purpose is to prevent lookups. If an operation can use lookups and we want to prevent it, we connect the Scan operation over it. 
+ * Avoiding lookups is interesting if we believe lookups are more expansive than full scans. 
  * @author Sergio
  */
 public class Scan extends UnaryOperation {
@@ -39,7 +36,7 @@ public class Scan extends UnaryOperation {
     /**
      * {@inheritDoc }
      *
-     * @return an iterator that performs a filter over the child operation
+     * @return an iterator that performs a scan over the child operation
      */
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
@@ -64,9 +61,7 @@ public class Scan extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                if (lookup.match(tp)) {
-                    return tp;
-                }
+                return tp;
 
             }
             return null;

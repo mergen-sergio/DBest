@@ -4,7 +4,7 @@
  */
 package ibd.table.csv;
 
-import ibd.table.lookup.RowLookupFilter;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.prototype.LinkedDataRow;
 import sources.csv.InvalidCsvException;
 
@@ -16,9 +16,9 @@ import sources.csv.InvalidCsvException;
  */
 public class FilteredCSVRowsIterator extends CSVRowsIterator {
 
-    RowLookupFilter filter;
+    LookupFilter filter;
 
-    public FilteredCSVRowsIterator(CSVTable csvTable, RowLookupFilter filter) throws InvalidCsvException {
+    public FilteredCSVRowsIterator(CSVTable csvTable, LookupFilter filter) throws InvalidCsvException {
         super(csvTable);
         this.filter = filter;
     }

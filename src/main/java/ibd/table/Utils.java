@@ -69,7 +69,7 @@ public class Utils {
             row.setString("nome", text);
             row.setInt("idade", idades[i]);
             row.setString("cidade", cidades[i]);
-            table.addRecord(row);
+            table.addRecord(row, true);
 
             //table.addRecord(array1[i], String.valueOf(array1[i]));
             //table.addRecord(array1[i], "0");

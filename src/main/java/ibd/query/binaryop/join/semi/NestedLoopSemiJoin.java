@@ -9,14 +9,11 @@ import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
-import ibd.query.binaryop.join.Join;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.binaryop.join.JoinTerm;
+import ibd.query.binaryop.join.LookupJoin;
 import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.CompositeLookupFilter;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
-import ibd.table.ComparisonTypes;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +24,8 @@ import java.util.Map;
  *
  * @author Sergio
  */
-public class NestedLoopSemiJoin extends Join {
+public class NestedLoopSemiJoin extends LookupJoin {
 
-    //the filter that needs to be performed over the right side operation.
-    CompositeLookupFilter joinFilter;
 
     /**
      *
@@ -43,10 +38,6 @@ public class NestedLoopSemiJoin extends Join {
         super(leftOperation, rightOperation, joinPredicate);
     }
 
-    @Override
-    public boolean useLeftSideLookups() {
-        return true;
-    }
 
     /**
      * {@inheritDoc }
@@ -71,49 +62,6 @@ public class NestedLoopSemiJoin extends Join {
     public Map<String, List<String>> getContentInfo() {
         return getLeftOperation().getContentInfo();
     }
-
-    @Override
-    public void prepare() throws Exception {
-        
-        //creates the single filter condition that will be pushed down to the right side operation.
-        createJoinFilter();
-        
-        super.prepare();
-        
-        //sets the column indexes for the terms of the join predicate
-        setJoinTermsIndexes();
-    }
-
-    //sets the column indexes for the terms of the join predicate
-    private void setJoinTermsIndexes() throws Exception {
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
-    }
-
-    //creates the single filter condition that will be pushed down to the right side operation. 
-    //each time a left-side tuple performs a lookup on the right side, ths filter is reused. 
-    //Only the look-up value coming from the left is replaced, in the moment of the lookup.
-    private void createJoinFilter() {
-        joinFilter = new CompositeLookupFilter(CompositeLookupFilter.AND);
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            SingleColumnLookupFilterByValue f = new SingleColumnLookupFilterByValue(term.getRightColumnDescriptor(), ComparisonTypes.EQUAL, 0);
-            joinFilter.addFilter(f);
-        }
-    }
-
-    /**
-     *
-     * @return the join filters
-     */
-    @Override
-    public LookupFilter getFilters() {
-        return joinFilter;
-    }
-
-    ;
-
 
     /**
      *
@@ -158,21 +106,20 @@ public class NestedLoopSemiJoin extends Join {
             leftTuples = leftOperation.lookUp(processedTuples, false);
         }
 
-        //fills the join filters with the left-side values that are necessary to perform the lookup.
-        private void fillFilter(Tuple currentLeftTuple) {
-            List<JoinTerm> joinTerms = joinPredicate.getTerms();
-            int x = 0;
-            for (LookupFilter filter : joinFilter.getFilters()) {
-                JoinTerm joinTerm = joinTerms.get(x);
-                SingleColumnLookupFilter f = (SingleColumnLookupFilter) filter;
-                //Comparable value = currentLeftTuple.rows[joinTerm.getLeftTupleRowIndex()].getValue(f.getColumn());
-                Comparable value = currentLeftTuple.rows[joinTerm.getLeftColumnDescriptor().getColumnLocation().rowIndex].getValue(joinTerm.getLeftColumnDescriptor().getColumnLocation().colIndex);
-                f.setValue(value);
-                x++;
 
-            }
+        private boolean exists(){
+        if (rightOperation.canProcessDelegatedFilters())
+            return rightOperation.exists(processedTuples, true);
+        
+        Iterator tuples = rightOperation.lookUp(processedTuples, false);
+        while (tuples.hasNext()){
+            Tuple tuple = (Tuple)tuples.next();
+            if (rightOperation.canProcessDelegatedFilters() || lookup.match(tuple)) return true;
         }
-
+        
+        return false;
+        }
+        
         /**
          *
          * @return the next satisfying tuple, if any
@@ -190,7 +137,7 @@ public class NestedLoopSemiJoin extends Join {
                 fillFilter(currentLeftTuple);
 
                 //check if there exists a correpondendence on the right side
-                boolean exists = rightOperation.exists(processedTuples, true);
+                boolean exists = exists();
 
                 //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
                 processedTuples.remove(processedTuples.size() - 1);
@@ -198,11 +145,7 @@ public class NestedLoopSemiJoin extends Join {
                 if (exists) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple);
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        return tuple;
-                    }
-
+                    return tuple;
                 }
 
             }

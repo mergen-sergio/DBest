@@ -45,7 +45,7 @@ public class SingleWriteInstruction extends Instruction{
         endProcessing = true;
         List l = new ArrayList();
         
-        l.add(getTable().addRecord(rowData));
+        l.add(getTable().addRecord(rowData, true));
         return l;
         
     }

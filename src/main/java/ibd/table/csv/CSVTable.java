@@ -1,9 +1,9 @@
 package ibd.table.csv;
 
 import engine.exceptions.DataBaseException;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
-import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
 import ibd.table.prototype.LinkedDataRow;
@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.Column;
-import ibd.table.prototype.column.LongColumn;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -28,14 +27,14 @@ public class CSVTable extends Table {
     private String name;
 
 
-    private static final String pkName = "__IDX__";
+    //private static final String pkName = "__IDX__";
     
     private static Header prepareStuff(Header header){
-        for (Column c:header.getPrototype()) {
-            if(c.getName().compareTo(pkName)==0)return header;
-        }
-        LongColumn newCol = new LongColumn(pkName, 8, (short)(Column.PRIMARY_KEY|Column.IGNORE_COLUMN));
-        header.getPrototype().addColumn(newCol);
+//        for (Column c:header.getPrototype()) {
+//            if(c.getName().compareTo(pkName)==0)return header;
+//        }
+//        LongColumn newCol = new LongColumn(pkName, 8, (short)(Column.PRIMARY_KEY|Column.IGNORE_COLUMN));
+//        header.getPrototype().addColumn(newCol);
         return header;
     }
 
@@ -99,7 +98,7 @@ public CSVTable(Header header) {
     }
 
     @Override
-    public LinkedDataRow addRecord(BasicDataRow dataRow) {
+    public LinkedDataRow addRecord(BasicDataRow dataRow, boolean unique) {
         throw new DataBaseException("CSVTable", "This type of table (CSVTable) is not writable");
     }
 
@@ -152,10 +151,10 @@ public CSVTable(Header header) {
         LinkedDataRow dataRow = new LinkedDataRow(prototype, false);
         for (Column c
                 : prototype.getColumns()) {
-            if (c.getName().compareTo(pkName) == 0) {
-                dataRow.setLong(c.getName(), pk);
-                continue;
-            }
+//            if (c.getName().compareTo(pkName) == 0) {
+//                dataRow.setLong(c.getName(), pk);
+//                continue;
+//            }
             for (int x = 0; x < columns.length; x++) {
                 String columnName = columns[x];
                 if (c.getName().compareToIgnoreCase(columnName) != 0) {
@@ -318,7 +317,7 @@ public CSVTable(Header header) {
      * @return the list of rows that satisfy all search conditions
      */
     @Override
-    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception{
+    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter) throws Exception{
 
         List<LinkedDataRow> rows = new ArrayList();
         Iterator<LinkedDataRow> it = getAllRecordsIterator();
@@ -398,7 +397,7 @@ public CSVTable(Header header) {
      * @throws Exception
      */
     @Override
-    public List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception {
+    public List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception {
         
         List<LinkedDataRow> rows = new ArrayList();
         Iterator<LinkedDataRow> it = getAllRecordsIterator();
@@ -420,7 +419,7 @@ public CSVTable(Header header) {
      * @throws Exception
      */
     @Override
-    public Iterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception {
+    public Iterator getFilteredRecordsIterator(LookupFilter filter) throws Exception {
         return new FilteredCSVRowsIterator(this, filter);
     }
 
@@ -450,7 +449,7 @@ public CSVTable(Header header) {
         return prototype;
     }
 
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception {
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter) throws Exception {
         return new KeyFilteredCSVRowsIterator1(this, pkRow, rowFilter);
     }
 
@@ -464,7 +463,7 @@ public CSVTable(Header header) {
         return header.getFileName();
     }
     @Override
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); 
     }
 

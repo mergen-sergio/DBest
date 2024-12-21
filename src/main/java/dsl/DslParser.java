@@ -258,8 +258,14 @@ public class DslParser {
         if (operationExpression.getType() == OperationType.SCAN) {
             return new ibd.query.unaryop.Scan(child1);
         }
+        if (operationExpression.getType() == OperationType.EXPLODE) {
+            return new ibd.query.unaryop.Explode(child1, arguments.get(0), arguments.get(1));
+        }
+        if (operationExpression.getType() == OperationType.AUTO_INCREMENT) {
+            return new ibd.query.unaryop.AutoIncrement(child1, "autoIncrement",arguments.get(0));
+        }
         if (operationExpression.getType() == OperationType.PROJECTION) {
-            return new ibd.query.unaryop.Projection(child1, "projection", arguments.toArray(new String[0]), false);
+            return new ibd.query.unaryop.Projection(child1, "projection", arguments.toArray(new String[0]));
         }
         if (operationExpression.getType() == OperationType.SELECTION) {
             String expression = arguments.get(0);
@@ -305,7 +311,7 @@ public class DslParser {
         }
         if (operationExpression.getType() == OperationType.HASH_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
-            return new ibd.query.binaryop.join.HashJoin(child1, child2, joinPredicate);
+            return new ibd.query.binaryop.join.HashInnerJoin(child1, child2, joinPredicate);
         }
         if (operationExpression.getType() == OperationType.MERGE_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
@@ -365,7 +371,7 @@ public class DslParser {
         }
         if (operationExpression.getType() == OperationType.ANTI_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
-            return new ibd.query.binaryop.join.anti.NestedLoopAntiJoin(child1, child2, joinPredicate);
+            return new ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin(child1, child2, joinPredicate);
         }
         if (operationExpression.getType() == OperationType.HASH_LEFT_ANTI_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);

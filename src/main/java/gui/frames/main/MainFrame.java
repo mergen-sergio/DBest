@@ -118,7 +118,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuBar topMenuBar = new JMenuBar();
 
-    protected JMenuItem importTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
+    //protected JMenuItem importTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
     
     protected JMenuItem openCSVTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openCSVTable"));
     
@@ -284,14 +284,14 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         JMenu fileMenu = new JMenu(ConstantController.getString("menu.file"));
         this.topMenuBar.add(fileMenu);
 
-        fileMenu.add(this.importTableTopMenuBarItem);
+        //fileMenu.add(this.importTableTopMenuBarItem);
         fileMenu.add(this.openCSVTableTopMenuBarItem);
         fileMenu.add(this.openBTreeTableTopMenuBarItem);
         fileMenu.add(this.openHeadFileTableTopMenuBarItem);
         
         fileMenu.add(this.openQueryTopMenuBarItem);
 
-        this.importTableTopMenuBarItem.addActionListener(this);
+        //this.importTableTopMenuBarItem.addActionListener(this);
         this.openCSVTableTopMenuBarItem.addActionListener(this);
         this.openBTreeTableTopMenuBarItem.addActionListener(this);
         this.openHeadFileTableTopMenuBarItem.addActionListener(this);
@@ -405,6 +405,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         
         
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.EXPLODE, this, this.operationsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AUTO_INCREMENT, this, this.operationsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
         
         addGroupButton(this.indexOperatorsPanel, "Index Operators");
@@ -461,8 +463,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.setOperatorsPanel));
 
                 
-        this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
+        //this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
+        //this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
         
     }
     

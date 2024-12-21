@@ -39,7 +39,7 @@ public class Main {
         rowData.setInt("cost", cost);
         rowData.setString("title", title);
         rowData.setString("genre", genre);
-        table.addRecord(rowData);
+        table.addRecord(rowData, true);
 
     }
 

@@ -39,6 +39,7 @@ public abstract class UnaryOperation extends Operation {
      */
     public final void setChildOperation(Operation childOperation) {
         this.childOperation = childOperation;
+        childOperations.add(childOperation);
         childOperation.setParentOperation(this);
     }
 

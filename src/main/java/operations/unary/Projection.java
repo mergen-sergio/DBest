@@ -59,7 +59,7 @@ public class Projection implements IOperator {
 
         ibd.query.Operation filterColumns = null;
         try {
-            filterColumns = new ibd.query.unaryop.Projection(operator, "projection", fixedArguments.toArray(new String[0]), false);
+            filterColumns = new ibd.query.unaryop.Projection(operator, "projection", fixedArguments.toArray(new String[0]));
         } catch (Exception ex) {
             ex.printStackTrace();
         }

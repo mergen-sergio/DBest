@@ -17,28 +17,17 @@ public class SingleRowColumnLookupLookupFilter extends SingleRowColumnLookupFilt
     /*
     * the filter that contains the filtered value
     */
-    SingleColumnLookupFilter filter;
+    RowReferenceElement elem2;
 
-    public SingleRowColumnLookupLookupFilter(int colIndex, int comparisonType) throws Exception {
+    public SingleRowColumnLookupLookupFilter(int colIndex, int comparisonType, SingleColumnLookupFilter filter) throws Exception {
         super(colIndex, comparisonType);
+        elem2 = new RowReferenceElement(filter);
     }
     
     
-    public void setFilter(SingleColumnLookupFilter filter){
-        this.filter = filter;
-    }
-    
-    /**
-     *
-     * @return the filter than contains the value to be placed at the right side of the comparison.
-     */
-    public SingleColumnLookupFilter getFilter(){
-        return filter;
-    }
-
     @Override
     public Comparable getValue() {
-        return filter.getValue();
+        return elem2.getValue(null);
     }
     
     

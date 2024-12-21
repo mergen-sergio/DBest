@@ -143,7 +143,7 @@ public class BlockIndex {
         byte bytes[] = tree.prototype.convertToArray(rowData);
         value.set(0, bytes);
 
-        tree.insert(key, value);
+        tree.insert(key, value, true);
     }
 
     public void update(DataRow record, int blockID) {

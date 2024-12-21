@@ -9,24 +9,16 @@ import ibd.index.btree.Key;
 import ibd.index.btree.Value;
 import ibd.index.btree.table.BinaryKey;
 import ibd.index.btree.table.BinaryValue;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
-import ibd.table.btree.AllRowsIterator;
-import ibd.table.btree.FilteredRowsIterator;
-import ibd.table.btree.KeyFilteredRowsIterator;
-import ibd.table.btree.RowsIterator;
-import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
-import ibd.table.prototype.DataRow;
 import ibd.table.prototype.Header;
 import ibd.table.prototype.LinkedDataRow;
 import ibd.table.prototype.Prototype;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 public class MemoryTable extends Table {
 
@@ -90,10 +82,11 @@ public class MemoryTable extends Table {
      * Adds a row to the table
      *
      * @param dataRow: the row to be added
+     * @param unique
      * @return the added row or null if no row was added
      */
     @Override
-    public LinkedDataRow addRecord(BasicDataRow dataRow) {
+    public LinkedDataRow addRecord(BasicDataRow dataRow, boolean unique) {
         LinkedDataRow linkedDataRow = dataRow.getLinkedDataRow(prototype);
 
         rows.add(linkedDataRow);
@@ -236,7 +229,7 @@ public class MemoryTable extends Table {
      * @return the list of rows that satisfy all search conditions
      */
     @Override
-    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter) throws Exception{
+    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter) throws Exception{
 
         List<LinkedDataRow> rows = new ArrayList();
         Iterator<LinkedDataRow> it = getAllRecordsIterator();
@@ -316,7 +309,7 @@ public class MemoryTable extends Table {
      * @throws Exception
      */
     @Override
-    public List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception {
+    public List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception {
         
         List<LinkedDataRow> rows = new ArrayList();
         Iterator<LinkedDataRow> it = getAllRecordsIterator();
@@ -338,7 +331,7 @@ public class MemoryTable extends Table {
      * @throws Exception
      */
     @Override
-    public Iterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception {
+    public Iterator getFilteredRecordsIterator(LookupFilter filter) throws Exception {
         List<LinkedDataRow> list = getFilteredRecords(filter);
         return list.iterator();
     }
@@ -372,7 +365,7 @@ public class MemoryTable extends Table {
     }
     
     @Override
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); 
     }
 

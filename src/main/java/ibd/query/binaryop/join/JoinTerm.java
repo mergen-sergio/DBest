@@ -16,12 +16,6 @@ public class JoinTerm {
     private final ColumnDescriptor leftColumn;
     private final ColumnDescriptor rightColumn;
 
-    private int leftTupleRowIndex = -1;
-    private int rightTupleRowIndex = -1; 
-    
-    private int leftColumnIndex;
-    private int rightColumnIndex;
-
     /**
      *
      * @param leftTableAlias the name of the left side table
@@ -64,20 +58,16 @@ public class JoinTerm {
     }
 
     public int getLeftColumnIndex(){
-        return leftColumnIndex; 
+        return leftColumn.getColumnLocation().colIndex; 
     }
     
-    public void setLeftColumnIndex(int leftColumnIndex){
-        this.leftColumnIndex = leftColumnIndex;
-    }
+    
     
     public int getRightColumnIndex(){
-        return rightColumnIndex;
+        return rightColumn.getColumnLocation().colIndex;
     }
     
-    public void setRightColumnIndex(int rightColumnIndex){
-        this.rightColumnIndex = rightColumnIndex;
-    }
+    
     
     public ColumnDescriptor getLeftColumnDescriptor(){
         return leftColumn;
@@ -103,42 +93,6 @@ public class JoinTerm {
         return rightColumn.getColumnName();
     }
 
-    /**
-     *
-     * @param tupleIndex the index of the row from the left side tuple that contains the left
-     * side column
-     */
-    public void setLeftTupleRowIndex(int tupleIndex) {
-        this.leftTupleRowIndex = tupleIndex;
-    }
-
-    /**
-     *
-     * @param tupleIndex the index of the row from the right side tuple that contains the
-     * righr side column
-     */
-    public void setRightTupleRowIndex(int tupleIndex) {
-        this.rightTupleRowIndex = tupleIndex;
-    }
-
-    /**
-     *
-     * @return the index of the row from the left side tuple that contains the left side
-     * column
-     */
-    public int getLeftTupleRowIndex() {
-        return leftTupleRowIndex;
-    }
-
-    /**
-     *
-     * @return the index of the row from right side tuple that contains the right side
-     * column
-     */
-    public int getRightTupleRowIndex() {
-        return rightTupleRowIndex;
-    }
-    
     @Override
     public String toString(){
         return getLeftTableAlias()+"."+getLeftColumn()+"="+getRightTableAlias()+"."+getRightColumn();

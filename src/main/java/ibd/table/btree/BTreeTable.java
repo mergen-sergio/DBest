@@ -7,9 +7,9 @@ import ibd.index.btree.Value;
 import ibd.index.btree.table.BinaryValue;
 import ibd.persistent.PersistentPageFile;
 import ibd.persistent.cache.Cache;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
-import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -206,10 +206,11 @@ public class BTreeTable extends Table {
      * Adds a row to the table
      *
      * @param dataRow: the row to be added
+     * @param unique: rows with duplicate primary keys are not allowed
      * @return the added row or null if no row was added
      */
     @Override
-    public LinkedDataRow addRecord(BasicDataRow dataRow) {
+    public LinkedDataRow addRecord(BasicDataRow dataRow, boolean unique) {
         LinkedDataRow linkedDataRow = dataRow.getLinkedDataRow(tree.prototype);
 
         DataRow pkRow = tree.prototype.createPKRow(linkedDataRow);
@@ -223,7 +224,7 @@ public class BTreeTable extends Table {
         ((BinaryValue) value).rowData = linkedDataRow;
 
         //tries to insert the row into the b-tree
-        boolean ok = tree.insert(key, value);
+        boolean ok = tree.insert(key, value, unique);
         if (!ok) {
             return null;
         }
@@ -450,7 +451,7 @@ public class BTreeTable extends Table {
      * @return the list of rows that satisfy all search conditions
      */
     @Override
-    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter) {
+    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter) {
 
         Key key = tree.createKey();
         key.setKeys(new DataRow[]{pkRow});
@@ -522,7 +523,7 @@ public class BTreeTable extends Table {
      * @throws Exception
      */
     @Override
-    public List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception {
+    public List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception {
         //returns all b-trees leaf entries
         List<DictionaryPair> values = tree.searchAll();
         List<LinkedDataRow> rows = new ArrayList();
@@ -549,7 +550,7 @@ public class BTreeTable extends Table {
      * @throws Exception
      */
     @Override
-    public FilteredRowsIterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception {
+    public FilteredRowsIterator getFilteredRecordsIterator(LookupFilter filter) throws Exception {
         return new FilteredRowsIterator(tree, filter);
     }
 
@@ -561,7 +562,7 @@ public class BTreeTable extends Table {
      * @throws Exception
      */
     @Override
-    public RowsIterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+    public RowsIterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception {
         Key key = tree.createKey();
         key.setKeys(new DataRow[]{pkRow});
         return new KeyFilteredRowsIterator(tree, key, rowFilter, compType);

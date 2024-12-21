@@ -15,24 +15,22 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This operation removes tuples whose value of an specified column is already
- * part of another accepted tuple.
+ * This operation removes duplicated tuples that cmoe frmo the chilp operation.
+ * The duplicates are identified by using a materialized hash table
  *
  * @author Sergio
  */
 public class HashDuplicateRemoval extends UnaryOperation {
 
 
+    //the materialized hash table
     HashMap<String, Tuple> allTuples;
+    //the tuple size, used to control the size of the hash table
     int tupleSize = 0;
     
     /**
      *
      * @param op the operation to be connected into this unary operation
-     * @param referenceColumn the name of the column to be used to remove
-     * duplicates. The name can be prefixed by the table name (e.g. tab.col)
-     * @param isOrdered indicates if the incoming tuples from the connected
-     * operation are already ordered by the referenceColumn column
      * @throws Exception
      */
     public HashDuplicateRemoval(Operation op) throws Exception {
@@ -77,6 +75,8 @@ public class HashDuplicateRemoval extends UnaryOperation {
             allTuples = new HashMap<>();
         }
         
+        //gets the key to a tuple.
+        //the key is the concatenation of all values that are part of the tupe
         private String getKey(Tuple tuple){
             String key = "";
             for (LinkedDataRow row : tuple.rows) {
@@ -93,10 +93,9 @@ public class HashDuplicateRemoval extends UnaryOperation {
         protected Tuple findNextTuple() {
             while (tuples.hasNext()) {
                 Tuple tp = tuples.next();
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (!lookup.match(tp)) {
-                    continue;
-                }
+                
+                //the tuples are added to the hash table
+                //duplicated keys are ignored
                 String key = getKey(tp);
                 allTuples.put(key, tp);
             }
@@ -106,6 +105,7 @@ public class HashDuplicateRemoval extends UnaryOperation {
                 QueryStats.MEMORY_USED += allTuples.size()*tupleSize;
             }
             
+            //the tuples are returned from the hash table, which is duplicate free
             while(allTuplesIterator.hasNext()){
                 Tuple tp = allTuplesIterator.next();
                 return tp;

@@ -8,8 +8,6 @@ package ibd.query.binaryop.join;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.NoLookupFilter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -30,11 +28,6 @@ public class CrossJoinOld extends Join {
      */
     public CrossJoinOld(Operation leftOperation, Operation rightOperation) throws Exception {
         super(leftOperation, rightOperation, new JoinPredicate());
-    }
-    
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
     }
     
 
@@ -111,10 +104,7 @@ public class CrossJoinOld extends Join {
                     //create returning tuple and add the joined tuples
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
-                    //a tuple must satisfy the lookup filter that comes from the parent operation
-                    if (lookup.match(tuple)) {
-                        return tuple;
-                    }
+                    return tuple;
 
                 }
                 //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing

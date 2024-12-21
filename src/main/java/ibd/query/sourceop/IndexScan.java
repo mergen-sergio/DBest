@@ -7,15 +7,17 @@ package ibd.query.sourceop;
 
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.Element;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.NoLookupFilter;
+import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
-import ibd.table.lookup.CompositeRowLookupFilter;
 import ibd.table.lookup.NoRowLookupFilter;
-import ibd.table.lookup.RowLookupFilter;
-import ibd.table.lookup.SingleRowColumnLookupLookupFilter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -24,8 +26,6 @@ import ibd.table.prototype.column.Column;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Performs an index scan over a table
@@ -52,6 +52,8 @@ public class IndexScan extends SourceOperation {
      * table lookups
      */
     List<SingleColumnLookupFilter> fastFilters;
+    
+    List<SingleColumnLookupFilter> processedFilters;
 
     /**
      * the row to be used as a parameter to the efficient table lookup. It must
@@ -62,8 +64,8 @@ public class IndexScan extends SourceOperation {
     /*
     The filter to be used for those columns that cannot be efficiently looked-up
      */
-    RowLookupFilter slowLookupFilter;
-    
+    LookupFilter slowLookupFilter;
+
     int compType;
 
     /**
@@ -99,17 +101,23 @@ public class IndexScan extends SourceOperation {
         super.setDataSourcesInfo();
         dataSources[0].prototype = table.getPrototype();
     }
-    
-    public String getDataSourceName(){
+
+    @Override
+    public String getDataSourceName() {
         return table.getName();
+    }
+
+    @Override
+    public boolean canProcessDelegatedFilters() {
+        return true;
     }
 
     //separates filters into slow and fast, based on the tables hability to efficiently handle the search condition
     private void separateFilters() throws Exception {
 
         //an empty row filter is prepared, just in case
-        slowLookupFilter = new NoRowLookupFilter();
-        
+        slowLookupFilter = new NoLookupFilter();
+
         //reset variable
         canLookup = false;
 
@@ -121,6 +129,7 @@ public class IndexScan extends SourceOperation {
 
             //builds a preliminary list of fast filters
             fastFilters = new ArrayList();
+            processedFilters = new ArrayList();
             fillFastFilters(joinFilter);
 
             //identifies the columns used by the fast filters 
@@ -143,6 +152,8 @@ public class IndexScan extends SourceOperation {
                     fastFilters.remove(i);
                 }
             }
+            
+
 
             //fills the slow Filter with the lookup filters that are not part of the fast Filters list
             slowLookupFilter = fillSlowFilter(parentOperation.getFilters());
@@ -151,7 +162,7 @@ public class IndexScan extends SourceOperation {
     }
 
     //fills the list of fast filters
-    private void fillFastFilters(LookupFilter filter) {
+    private void fillFastFilters(LookupFilter filter) throws Exception {
         if (filter instanceof CompositeLookupFilter compositeLookupFilter) {
             if (compositeLookupFilter.getBooleanConnector() == CompositeLookupFilter.OR) {
                 return;
@@ -159,41 +170,56 @@ public class IndexScan extends SourceOperation {
             for (LookupFilter f : compositeLookupFilter.getFilters()) {
                 fillFastFilters(f);
             }
-        } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter) {
+        } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter ) {
             //if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) 
             {
-                compType = singleColumnLookupFilter.getComparisonType();
-                fastFilters.add(singleColumnLookupFilter);
+                Element elem1 = singleColumnLookupFilter.getFirstElement();
+                Element elem2 = singleColumnLookupFilter.getSecondElement();
+                if (elem1 instanceof ColumnElement && (elem2 instanceof LiteralElement || elem2 instanceof ReferencedElement)) {
+                    compType = singleColumnLookupFilter.getComparisonType();
+                    fastFilters.add(singleColumnLookupFilter);
+                    processedFilters.add(singleColumnLookupFilter);
+                } else if (elem2 instanceof ColumnElement && (elem1 instanceof LiteralElement || elem1 instanceof ReferencedElement)) {
+                    compType = singleColumnLookupFilter.getComparisonType();
+                    compType = ComparisonTypes.getSwitchedComparisonType(compType);
+                    SingleColumnLookupFilter invertedFilter = new SingleColumnLookupFilter(
+                            singleColumnLookupFilter.getSecondElement(), 
+                            compType, 
+                            singleColumnLookupFilter.getFirstElement());
+                    fastFilters.add(invertedFilter);
+                    processedFilters.add(singleColumnLookupFilter);
+                }
+                
             }
         }
 
     }
 
     //fills the list of slow filters
-    private RowLookupFilter fillSlowFilter(LookupFilter filter) throws Exception {
+    private LookupFilter fillSlowFilter(LookupFilter filter) throws Exception {
 
         if (filter instanceof CompositeLookupFilter clf) {
 
-            CompositeRowLookupFilter rowFilter = new CompositeRowLookupFilter(clf.getBooleanConnector());
+            CompositeLookupFilter rowFilter = new CompositeLookupFilter(clf.getBooleanConnector());
             for (LookupFilter f : clf.getFilters()) {
-                RowLookupFilter rlf = fillSlowFilter(f);
-                if (!(rlf instanceof NoRowLookupFilter)) {
+                LookupFilter rlf = fillSlowFilter(f);
+                if (!(rlf instanceof NoLookupFilter)) {
                     rowFilter.addFilter(rlf);
                 }
             }
             if (rowFilter.getFilters().isEmpty()) {
-                return new NoRowLookupFilter();
+                return new NoLookupFilter();
             }
             return rowFilter;
         } else if (filter instanceof SingleColumnLookupFilter f) {
-            if (fastFilters.contains(f)) {
-                return new NoRowLookupFilter();
+            if (processedFilters.contains(f)) {
+                return new NoLookupFilter();
             }
-            SingleRowColumnLookupLookupFilter singleRowFilter = new SingleRowColumnLookupLookupFilter(f.getColumnDescriptor().getColumnLocation().colIndex, f.getComparisonType());
-            singleRowFilter.setFilter(f);
-            return singleRowFilter;
+            //SingleColumnLookupLookupFilter singleRowFilter = new SingleColumnLookupLookupFilter(f.getColumnDescriptor().getColumnLocation().colIndex, f.getComparisonType(), f);
+            //return singleRowFilter;
+            return f;
         } else {
-            return new NoRowLookupFilter();
+            return new NoLookupFilter();
         }
     }
 
@@ -220,7 +246,7 @@ public class IndexScan extends SourceOperation {
             //the lookup row is filled with values from the lookup filters
             for (SingleColumnLookupFilter filter_ : fastFilters) {
                 //row.setValue(filter.getColumn(), (Integer) filter.getValue());
-                fastLookupRow.setValue(filter_.getColumnDescriptor().getColumnLocation().colIndex, (Integer) filter_.getValue());
+                fastLookupRow.setValue(filter_.getColumnDescriptor().getColumnLocation().colIndex, filter_.getSecondElement().getValue(null));
             }
             ibd.query.QueryStats.PK_SEARCH++;
             return table.contains(fastLookupRow);
@@ -279,20 +305,19 @@ public class IndexScan extends SourceOperation {
                     ibd.query.QueryStats.PK_SEARCH++;
                     //the lookup row is filled with values from the fast filters
                     for (SingleColumnLookupFilter filter : fastFilters) {
-                        fastLookupRow.setValue(filter.getColumnDescriptor().getColumnLocation().colIndex, filter.getValue());
+                        fastLookupRow.setValue(filter.getColumnDescriptor().getColumnLocation().colIndex, filter.getSecondElement().getValue(null));
                     }
 
                     //the lookup occurs
-
                     if (slowLookupFilter instanceof NoRowLookupFilter) {
                         //no slow filter needs to be satisfied
                         //iterator = table.getRecords(fastLookupRow).iterator();
                         //iterator = records.iterator();
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter,  compType);
+                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
                     } else {
                         //there are slow filters to be satisfied
                         //iterator = table.getRecords(fastLookupRow, slowLookupFilter).iterator;
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter,  compType);
+                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
                     }
 
                     return;

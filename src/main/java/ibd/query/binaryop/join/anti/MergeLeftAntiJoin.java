@@ -40,7 +40,7 @@ public class MergeLeftAntiJoin extends Join {
     public MergeLeftAntiJoin(Operation leftOperation, Operation rightOperation, JoinPredicate terms) throws Exception {
         super(leftOperation, rightOperation, terms);
     }
-    
+
     /**
      * {@inheritDoc }
      * the data sources array is a copy of the data sources that come from the
@@ -64,6 +64,7 @@ public class MergeLeftAntiJoin extends Join {
     public Map<String, List<String>> getContentInfo() {
         return getLeftOperation().getContentInfo();
     }
+
     /**
      * {@inheritDoc }
      */
@@ -71,11 +72,6 @@ public class MergeLeftAntiJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
 
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
@@ -172,11 +168,8 @@ public class MergeLeftAntiJoin extends Join {
                 } else if (comp < 0) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(leftTuple);
-                    if (lookup.match(tuple)) {
-                        leftTuple = null;
-                        return tuple;
-                    }
                     leftTuple = null;
+                    return tuple;
                 } else {
                     rightTuple = null;
                 }

@@ -6,6 +6,7 @@
 package ibd.table;
 
 import engine.exceptions.DataBaseException;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
@@ -109,7 +110,7 @@ public abstract class Table  {
     
     public abstract List<LinkedDataRow> getRecords(BasicDataRow rowData)throws Exception;
 
-    public abstract LinkedDataRow addRecord(BasicDataRow rowdata) throws Exception;
+    public abstract LinkedDataRow addRecord(BasicDataRow rowdata, boolean unique) throws Exception;
 
     public abstract LinkedDataRow updateRecord(BasicDataRow rowdata) throws Exception;
     
@@ -137,10 +138,10 @@ public abstract class Table  {
     
     public abstract boolean contains(LinkedDataRow pkRow);
     
-    public abstract List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception;
+    public abstract List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception;
     
     public abstract Iterator getAllRecordsIterator() throws Exception;
-    public abstract Iterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception;
-    public abstract List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter)throws Exception;
-    public abstract Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception ;
+    public abstract Iterator getFilteredRecordsIterator(LookupFilter filter) throws Exception;
+    public abstract List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter)throws Exception;
+    public abstract Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception ;
 }

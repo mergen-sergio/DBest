@@ -37,20 +37,16 @@ public class HashIndex extends UnaryOperation {
     HashMap<String, List<Tuple>> tuples;
 
     /**
-     * the list of conjunctive equality filters conditions that form keys of the
-     * hash
+     * the list of conjunctive equality filters conditions that form the key of
+     * the hash
      */
     List<SingleColumnLookupFilter> hashedFilters;
 
     /**
-     * the filters that of conjunctive equality filters conditions that form
-     * keys of the hash
+     * the query filters after taking the hashed filters off
      */
     LookupFilter unhashedFilters;
-    
-    
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
+
 
     /**
      *
@@ -59,6 +55,11 @@ public class HashIndex extends UnaryOperation {
      */
     public HashIndex(Operation childOperation) throws Exception {
         super(childOperation);
+    }
+    
+    @Override
+    public boolean canProcessDelegatedFilters() {
+        return true;
     }
 
     @Override
@@ -71,7 +72,6 @@ public class HashIndex extends UnaryOperation {
         //erases the previously built hash.
         //a new one is created when the first query is executed. 
         tuples = null;
-        memoryUsedDefined = false;
     }
 
     //sets the list of columns that will be part of the hash keys
@@ -158,13 +158,13 @@ public class HashIndex extends UnaryOperation {
             buildHash();
             queryHash();
         }
-        
-        private void queryHash(){
-        //here is where we build an iterator to traverse the query results
+
+        private void queryHash() {
+            //here is where we build an iterator to traverse the query results
             //the hash is queried using as key the values of the hashed filter columns
             String key = "";
             for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
-                key += lookupFilter.getValue().toString();
+                key += lookupFilter.getValue(null).toString();
             }
 
             List<Tuple> result = tuples.get(key);
@@ -174,12 +174,12 @@ public class HashIndex extends UnaryOperation {
                 it = new ArrayList<Tuple>().iterator();
             }
         }
-        
-        private void buildHash(){
-        //build hash, if one does not exist yet
+
+        private void buildHash() {
+            //build hash, if one does not exist yet
             if (tuples == null) {
                 tuples = new HashMap();
-                memoryUsed = 0;
+                long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     it = childOperation.lookUp(processedTuples, false);
@@ -200,7 +200,7 @@ public class HashIndex extends UnaryOperation {
                             tuples.put(key, tupleList);
                         }
                         tupleList.add(tuple);
-                        memoryUsed+=tupleSize;
+                        memoryUsed += tupleSize;
                     }
 
                 } catch (Exception ex) {
@@ -208,7 +208,6 @@ public class HashIndex extends UnaryOperation {
                 QueryStats.MEMORY_USED += memoryUsed;
             }
 
-            
         }
 
         @Override

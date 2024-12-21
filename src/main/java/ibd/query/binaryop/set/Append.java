@@ -124,9 +124,7 @@ public class Append extends Set {
                 returnTp.rows = new LinkedDataRow[1];
                 returnTp.rows[0] = buildRow(leftTuple);
 
-                if (lookup.match(returnTp)) {
-                    return returnTp;
-                }
+                return returnTp;
             }
             while (rightTuples.hasNext()) {
                 Tuple rightTuple = rightTuples.next();
@@ -134,9 +132,7 @@ public class Append extends Set {
                 returnTp.rows = new LinkedDataRow[1];
                 returnTp.rows[0] = buildRow(rightTuple);
 
-                if (lookup.match(returnTp)) {
-                    return returnTp;
-                }
+                return returnTp;
             }
 
             return null;

@@ -72,11 +72,6 @@ public class MergeLeftSemiJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
 
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
@@ -170,13 +165,10 @@ public class MergeLeftSemiJoin extends Join {
                 if (comp == 0) {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(leftTuple);
-                    if (lookup.match(tuple)) {
-                        rightTuple = null;
-                        leftTuple = null;
-                        return tuple;
-                    }
                     rightTuple = null;
                     leftTuple = null;
+                    return tuple;
+                    
                 } else if (comp < 0) {
 
                     leftTuple = null;

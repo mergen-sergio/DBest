@@ -46,7 +46,7 @@ public class Main1 {
             BasicDataRow rowData = new BasicDataRow();
             rowData.setInt("id", array[i]);
             rowData.setString("nome", "Novo registros " + array[i]);
-            table.addRecord(rowData);
+            table.addRecord(rowData, true);
 
         }
 

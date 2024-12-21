@@ -34,27 +34,27 @@ public class ExpressionConverter {
             }
             return clf;
         } else if (be instanceof AtomicExpression ae) {
-            if (ae.isSecondElementAColumn()) {
-                String leftColumn = getQualifiedColumnName((Variable) ae.getFirstElement());
-                String rightColumn = getQualifiedColumnName((Variable) ae.getSecondElement());
-                int compType = convertComparisonType(ae);
-                //TwoColumnsLookupFilter tclf = new TwoColumnsLookupFilter(leftColumn, rightColumn, compType);
-                SingleColumnLookupFilterByReference sclf = new SingleColumnLookupFilterByReference(leftColumn, compType, rightColumn);
-                return sclf;
-            } else {//if (ae.isSecondElementAColumn()){
-                String leftColumn = getQualifiedColumnName((Variable) ae.getFirstElement());
-                Comparable value = null;
-                if (ae.getSecondElement() instanceof Value) {
-                    value = getValue((Value) ae.getSecondElement());
-                }
-                int compType = convertComparisonType(ae);
-                SingleColumnLookupFilterByValue sclf = new SingleColumnLookupFilterByValue(leftColumn, compType, value);
-                //
-                return sclf;
-            }
+            Element elem1 = getElement(ae.getFirstElement());
+            Element elem2 = getElement(ae.getSecondElement());
+            
+
+            int compType = convertComparisonType(ae);
+            //TwoColumnsLookupFilter tclf = new TwoColumnsLookupFilter(leftColumn, rightColumn, compType);
+            SingleColumnLookupFilter sclf = new SingleColumnLookupFilter(elem1, compType, elem2);
+            return sclf;
 
         }
         return null;
+    }
+
+    private static Element getElement(lib.booleanexpression.entities.elements.Element element) throws Exception {
+        if (element instanceof Variable) {
+            String leftColumn = getQualifiedColumnName((Variable) element);
+            return new ColumnElement(leftColumn);
+        } else {
+            Comparable value = getValue((Value) element);
+            return new LiteralElement(value);
+        }
     }
 
     public static JoinPredicate convert2JoinPredicate(BooleanExpression be) throws Exception {

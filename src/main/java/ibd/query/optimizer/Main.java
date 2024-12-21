@@ -12,7 +12,9 @@ import ibd.query.Operation;
 import ibd.query.Tuple;
 import ibd.query.Utils;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.ColumnElement;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.filter.Filter;
 import static ibd.table.ComparisonTypes.EQUAL;
@@ -94,7 +96,7 @@ public class Main {
 
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
         
-        SingleColumnLookupFilterByValue filter_ = new SingleColumnLookupFilterByValue("id",  EQUAL, 6L);
+        SingleColumnLookupFilter filter_ = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL, new LiteralElement(6L));
 
         Operation filter1 = new Filter(join1,  filter_);
 

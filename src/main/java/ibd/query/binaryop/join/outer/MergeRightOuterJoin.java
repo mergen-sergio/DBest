@@ -35,7 +35,7 @@ public class MergeRightOuterJoin extends Join {
     Comparable nextLeftTupleArray[];
     //an array to contain values from the right side used as the join condition
     Comparable nextRightTupleArray[];
-    
+
     //a null tuple that is shared with all right side tuples that fail to join with left side tuples
     Tuple nullLeftTuple;
 
@@ -57,11 +57,6 @@ public class MergeRightOuterJoin extends Join {
     public void prepare() throws Exception {
 
         super.prepare();
-        //sets the tuple indexes for the terms of the join predicate
-        for (JoinTerm term : joinPredicate.getTerms()) {
-            leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
-            rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-        }
 
         //creates the arrays used to join tuples
         leftTupleArray = new Comparable[joinPredicate.size()];
@@ -69,10 +64,10 @@ public class MergeRightOuterJoin extends Join {
 
         nextLeftTupleArray = new Comparable[joinPredicate.size()];
         nextRightTupleArray = new Comparable[joinPredicate.size()];
-        
+
         setNullLeftTuple();
     }
-    
+
     protected void setNullLeftTuple() throws Exception {
         //flowOperations = new ArrayList();
 
@@ -242,13 +237,9 @@ public class MergeRightOuterJoin extends Join {
                 } else {
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(nullLeftTuple, rightTuple);
-                    if (lookup.match(tuple)) {
-                        // move to the next left tuple
-                        rightTuple = null;
-                        return tuple;
-                    }
                     // Right tuple is smaller, move to the next right tuple
                     rightTuple = null;
+                    return tuple;
                 }
             }
 

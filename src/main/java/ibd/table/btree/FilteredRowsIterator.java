@@ -5,9 +5,9 @@
 package ibd.table.btree;
 
 import ibd.index.btree.DictionaryPair;
-import ibd.index.btree.AllKeysIterator;
 import ibd.index.btree.table.BPlusTreeFileTable;
 import ibd.index.btree.table.BinaryValue;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.Iterator;
@@ -20,10 +20,10 @@ import java.util.Iterator;
  */
 public class FilteredRowsIterator extends RowsIterator {
 
-    RowLookupFilter filter;
+    LookupFilter filter;
     Iterator<DictionaryPair> valueIterator = null;
 
-    public FilteredRowsIterator(BPlusTreeFileTable btree, RowLookupFilter filter) {
+    public FilteredRowsIterator(BPlusTreeFileTable btree, LookupFilter filter) {
         super(btree);
         this.filter = filter;
         valueIterator = btree.searchAllIterator();

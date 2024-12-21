@@ -13,7 +13,7 @@ public class HashLeftInnerJoin extends JoinOperators {
     public Operation createJoinOperator(Operation operator1, Operation operator2, BooleanExpression booleanExpression) {
         try {
             JoinPredicate joinPredicate = ExpressionConverter.convert2JoinPredicate(booleanExpression);
-            return new ibd.query.binaryop.join.HashJoin(operator1, operator2, joinPredicate);
+            return new ibd.query.binaryop.join.HashInnerJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -23,7 +23,7 @@ public class HashLeftInnerJoin extends JoinOperators {
     @Override
     public Operation createJoinOperator(Operation operator1, Operation operator2, JoinPredicate joinPredicate) {
         try {
-            return new ibd.query.binaryop.join.HashJoin(operator1, operator2, joinPredicate);
+            return new ibd.query.binaryop.join.HashInnerJoin(operator1, operator2, joinPredicate);
         } catch (Exception ex) {
             Logger.getLogger(Join.class.getName()).log(Level.SEVERE, null, ex);
         }

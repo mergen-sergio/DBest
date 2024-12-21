@@ -22,7 +22,7 @@ public class MainCompositePK {
         BasicDataRow rowData = new BasicDataRow();
         rowData.setInt("id1", id1);
         rowData.setInt("id2", id2);
-        table.addRecord(rowData);
+        table.addRecord(rowData, true);
         
     }
 

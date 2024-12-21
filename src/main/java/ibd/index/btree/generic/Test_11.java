@@ -125,7 +125,7 @@ public class Test_11 {
     private void insert(BPlusTree tree, Key key) {
         Value value = tree.createValue();
         value.set(0, "zz");
-        tree.insert(key, value);
+        tree.insert(key, value, true);
 
     }
 
@@ -136,7 +136,7 @@ public class Test_11 {
             Value value = tree.createValue();
             //value.setObject(10);
             value.set(0, key.toString());
-            tree.insert(key, value);
+            tree.insert(key, value, true);
         }
 
     }
@@ -313,7 +313,7 @@ System.out.println("deleted test OK");
                     //System.out.println("insert "+key.toString());
                     operations.add("operations.add(\"insert," + key.get(2) + "\");");
                     lastOp = "operations.add(\"insert," + key.get(2) + "\");";
-                    tree.insert(key, value);
+                    tree.insert(key, value, true);
                     keys.add(key);
                     deletedKeys.remove(key);
                 }
@@ -1051,7 +1051,7 @@ keys.add(key);
                     //System.out.println("insert "+key.toString());
                     if (!keys.contains(key)) {
                         operations.add("operations.add(\"insert," + key.get(2) + "\");");
-                        tree.insert(key, value);
+                        tree.insert(key, value, true);
                         keys.add(key);
                         deletedKeys.remove(key);
                     }
@@ -1108,7 +1108,7 @@ keys.add(key);
                 //value.setObject(10);
                 value.set(0, "yy");
                 System.out.println(i + " insert " + key.toString());
-                tree.insert(key, value);
+                tree.insert(key, value, true);
                 keys.add(key);
                 deletedKeys.remove(key);
 

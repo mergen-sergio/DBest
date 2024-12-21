@@ -39,6 +39,8 @@ public abstract class BinaryOperation extends Operation {
         super();
         setLeftOperation(leftOperation);
         setRightOperation(rightOperation);
+        
+        
     }
     
     public boolean useLeftSideLookups(){
@@ -70,8 +72,9 @@ public abstract class BinaryOperation extends Operation {
     public final void setLeftOperation(Operation op) {
         leftOperation = op;
         op.setParentOperation(this);
+        refreshChildOperations();
     }
-
+    
     /**
      * sets the right side operation
      *
@@ -80,6 +83,15 @@ public abstract class BinaryOperation extends Operation {
     public final void setRightOperation(Operation op) {
         rightOperation = op;
         op.setParentOperation(this);
+        refreshChildOperations();
+    }
+    
+    private void refreshChildOperations(){
+        childOperations.clear();
+        if (leftOperation!=null)
+            childOperations.add(leftOperation);
+        if (rightOperation!=null)
+            childOperations.add(rightOperation);
     }
 
     /**

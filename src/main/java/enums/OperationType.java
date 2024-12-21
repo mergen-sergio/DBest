@@ -11,6 +11,8 @@ import gui.frames.forms.operations.BooleanExpressionForm;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.forms.operations.JoinForm;
 import gui.frames.forms.operations.unary.AggregationForm;
+import gui.frames.forms.operations.unary.AutoIncrementForm;
+import gui.frames.forms.operations.unary.ExplodeForm;
 import gui.frames.forms.operations.unary.GroupForm;
 import gui.frames.forms.operations.unary.LimitForm;
 import gui.frames.forms.operations.unary.ProjectionForm;
@@ -49,7 +51,9 @@ import operations.binary.set.Intersection;
 import operations.binary.set.UnilateralExistence;
 import operations.binary.set.Union;
 import operations.unary.Aggregation;
+import operations.unary.AutoIncrement;
 import operations.unary.DuplicateRemoval;
+import operations.unary.Explode;
 import operations.unary.Group;
 import operations.unary.Hash;
 import operations.unary.HashDuplicateRemoval;
@@ -74,6 +78,9 @@ public enum OperationType {
 DUPLICATE_REMOVAL(ConstantController.getString("operation.duplicateRemoval"), "\u0394", "duplicateRemoval", "duplicateRemoval(source)", OperationArity.UNARY, null, DuplicateRemoval.class, false),
   HASH_DUPLICATE_REMOVAL(ConstantController.getString("operation.hashDuplicateRemoval"), "#\u0394", "hashDuplicateRemoval", "hashDuplicateRemoval(source)", OperationArity.UNARY, null, HashDuplicateRemoval.class, true),  
 RENAME            (ConstantController.getString("operation.rename"), "ρ", "rename", "rename[args](source)", OperationArity.UNARY, RenameForm.class, Rename.class, false),
+EXPLODE            (ConstantController.getString("operation.explode"), "E", "explode", "explode[args](source)", OperationArity.UNARY, ExplodeForm.class, Explode.class, false),
+AUTO_INCREMENT            (ConstantController.getString("operation.autoInc"), "A", "autoInc", "autoInc[args](source)", OperationArity.UNARY, AutoIncrementForm.class, AutoIncrement.class, false),
+
 //    GROUP             (ConstantController.getString("operation.group"), "G", "group", "group[args](source)", OperationArity.UNARY, GroupForm.class, Group.class, NO_ONE_ARGUMENT, PARENT_WITHOUT_COLUMN, NO_PREFIX),
     GROUP             (ConstantController.getString("operation.group"), "↕{}\u2211", "group", "group[args](source)", OperationArity.UNARY, GroupForm.class, Group.class, false),
     HASH_GROUP             (ConstantController.getString("operation.hashGroup"), "{}\u2211", "hashGroup", "hashGroup[args](source)", OperationArity.UNARY, GroupForm.class, HashGroup.class, false),

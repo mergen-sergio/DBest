@@ -75,6 +75,30 @@ public class ComparisonTypes {
                 "---";
         };
     }
+    
+    
+    public static int getSwitchedComparisonType(int type) {
+        return switch (type) {
+            case EQUAL ->
+                EQUAL;
+            case DIFF ->
+                DIFF;
+            case GREATER_THAN ->
+                LOWER_EQUAL_THAN;
+            case GREATER_EQUAL_THAN ->
+                LOWER_THAN;
+            case LOWER_THAN ->
+                GREATER_EQUAL_THAN;
+            case LOWER_EQUAL_THAN ->
+               GREATER_THAN;
+            case IS_NULL ->
+                IS_NULL;
+            case IS_NOT_NULL ->
+                IS_NOT_NULL;
+            default ->
+                -1;
+        };
+    }
 
     /**
      * Compares two values according to a comparison type

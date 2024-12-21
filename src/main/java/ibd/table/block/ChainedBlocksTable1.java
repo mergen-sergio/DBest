@@ -9,13 +9,13 @@ import ibd.persistent.PageFile;
 import ibd.persistent.PersistentPageFile;
 import ibd.persistent.cache.Cache;
 import ibd.persistent.cache.LRUCache;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.btree.AllRowsIterator;
 import ibd.table.btree.FilteredRowsIterator;
 import ibd.table.Table;
 import ibd.table.block.freeblocks.FreeBlocksManagement;
 import ibd.table.block.index.BlockIndex;
 import ibd.table.block.management.BlockPageSerialization;
-import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.BasicDataRow;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -146,15 +146,15 @@ public class ChainedBlocksTable1 extends Table {
     }
 
     /**
-     * Adds a record to the table. The record is added at the first fitting
-     * block
+     * Adds a record to the table.The record is added at the first fitting block
      *
      * @param dataRow
+     * @param unique
      * @return
      * @throws Exception
      */
     @Override
-    public LinkedDataRow addRecord(BasicDataRow dataRow) throws Exception {
+    public LinkedDataRow addRecord(BasicDataRow dataRow, boolean unique) throws Exception {
         //dataRow.setMetadata(rowPrototype);
         Integer blockID = blockIndex.searchBlockID(dataRow);
         if (blockID != null) {
@@ -419,7 +419,7 @@ public class ChainedBlocksTable1 extends Table {
     }
 
     @Override
-    public List<LinkedDataRow> getFilteredRecords(RowLookupFilter filter) throws Exception {
+    public List<LinkedDataRow> getFilteredRecords(LookupFilter filter) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
@@ -429,12 +429,12 @@ public class ChainedBlocksTable1 extends Table {
     }
 
     @Override
-    public FilteredRowsIterator getFilteredRecordsIterator(RowLookupFilter filter) throws Exception {
+    public FilteredRowsIterator getFilteredRecordsIterator(LookupFilter filter) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, RowLookupFilter rowFilter) {
+    public List<LinkedDataRow> getRecords(LinkedDataRow pkRow, LookupFilter rowFilter) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
@@ -449,7 +449,7 @@ public class ChainedBlocksTable1 extends Table {
     }
 
     @Override
-    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, RowLookupFilter rowFilter, int compType) throws Exception {
+    public Iterator getPKFilteredRecordsIterator(LinkedDataRow pkRow, LookupFilter rowFilter, int compType) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 

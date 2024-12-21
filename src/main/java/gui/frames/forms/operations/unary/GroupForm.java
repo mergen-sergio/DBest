@@ -72,13 +72,13 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
         addExtraComponent(new JLabel(ConstantController.getString("operationForm.groupBy")+":"), 0, 7, 1, 1);
         addExtraComponent(comboBoxGroupByColumn, 1, 7, 1, 1);
 
-        parent1.getSources().stream()
+        leftChild.getSources().stream()
                 .map(Cell::getName)
                 .forEach(comboBoxGroupBySource::addItem);
 
-        comboBoxGroupBySource.addActionListener(actionEvent -> setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, parent1));
+        comboBoxGroupBySource.addActionListener(actionEvent -> setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild));
 
-        setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, parent1);
+        setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild);
         setPreviousArgs();
 
         pack();

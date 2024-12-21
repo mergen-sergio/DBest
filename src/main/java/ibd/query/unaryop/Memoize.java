@@ -5,7 +5,6 @@
  */
 package ibd.query.unaryop;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
@@ -19,13 +18,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This unary operation is materialized. It creates a hash containing all the
- * tuples that come from the child operation. Useful for lookups based on
- * equivalence conditions.
+ * This unary operation is materialized. It creates a hash containing tuples
+ * that come from the child operation. Useful for lookups based on equivalence
+ * conditions. Tuples that match the equivalence conditions are hashed using the
+ * lookup conditions as key. Subsequent accesses using the already hashed keys
+ * benefit from the hash.
  *
  * @author Sergio
  */
@@ -39,18 +38,15 @@ public class Memoize extends UnaryOperation {
     HashMap<String, List<Tuple>> tuples;
 
     /**
-     * the list of conjunctive equality filters conditions that form keys of the
-     * hash
+     * the list of conjunctive equality filters conditions that form the key of
+     * the hash
      */
     List<SingleColumnLookupFilter> hashedFilters;
 
     /**
-     * the filters that of conjunctive equality filters conditions that form
-     * keys of the hash
+     * the query filters after taking the hashed filter off
      */
     LookupFilter unhashedFilters;
-
-    
 
     /**
      *
@@ -81,7 +77,10 @@ public class Memoize extends UnaryOperation {
         return new NoLookupFilter();
     }
 
-    ;
+    @Override
+    public boolean canProcessDelegatedFilters() {
+        return true;
+    }
 
     //sets the list of columns that will be part of the hash keys
     private void prepareHashColumns() throws Exception {
@@ -147,7 +146,7 @@ public class Memoize extends UnaryOperation {
 
     @Override
     public String toString() {
-        return "Hash";
+        return "Memoize";
     }
 
     /**
@@ -158,15 +157,20 @@ public class Memoize extends UnaryOperation {
 
         //the iterator over the child operation
         Iterator<Tuple> it = null;
-        
-        boolean memoryUsedDefined = false;
-        long memoryUsed = 0;
+        int tupleSize = 0;
 
         public MemoizeIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
 
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             //only the unhashed filters from the parent need to be verififed. The others will be satisfied by the hash search.
             this.lookup = unhashedFilters;
+
+            try {
+                tupleSize = childOperation.getTupleSize();
+
+            } catch (Exception ex) {
+            }
+
             queryHash(processedTuples);
         }
 
@@ -175,36 +179,29 @@ public class Memoize extends UnaryOperation {
             //the hash is queried using as key the values of the hashed filter columns
             String key = "";
             for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
-                key += lookupFilter.getValue().toString();
+                key += lookupFilter.getValue(null).toString();
             }
 
             List<Tuple> result = tuples.get(key);
             if (result != null) {
+                //the hash already contains the resulting tuples
                 it = result.iterator();
             } else {
+                //the hash does not contain the resulting tuples. The child operation needs to be accessed
                 it = childOperation.lookUp(processedTuples, true);//pushes filter down to the child operation
                 it = feedHash(key);
             }
         }
 
         private Iterator<Tuple> feedHash(String key) {
-            //build hash, if one does not exist yet
-
-            memoryUsed = 0;
             List tupleList = new ArrayList();
-            int tupleSize = 0;
-            try {
-                tupleSize = childOperation.getTupleSize();
-            } catch (Exception ex) {
-            }
 
             while (it.hasNext()) {
                 Tuple tuple = (Tuple) it.next();
                 tupleList.add(tuple);
 
             }
-            memoryUsed += tupleList.size() * tupleSize;
-            QueryStats.MEMORY_USED += memoryUsed;
+            QueryStats.MEMORY_USED += tupleList.size() * tupleSize;
             tuples.put(key, tupleList);
             return tupleList.iterator();
 

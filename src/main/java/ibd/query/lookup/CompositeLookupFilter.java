@@ -5,6 +5,7 @@
 package ibd.query.lookup;
 
 import ibd.query.Tuple;
+import ibd.table.prototype.LinkedDataRow;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,6 +83,39 @@ public class CompositeLookupFilter implements LookupFilter {
 
         for (LookupFilter filter : filters) {
             if (filter.match(tuple)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    @Override
+    public boolean match(LinkedDataRow row) {
+
+        if (boolean_connector == CompositeLookupFilter.AND) {
+            return matchAnd(row);
+        }
+
+        return matchOr(row);
+
+    }
+
+    private boolean matchAnd(LinkedDataRow row) {
+
+        for (LookupFilter filter : filters) {
+            if (!filter.match(row)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean matchOr(LinkedDataRow row) {
+
+        for (LookupFilter filter : filters) {
+            if (filter.match(row)) {
                 return true;
             }
         }

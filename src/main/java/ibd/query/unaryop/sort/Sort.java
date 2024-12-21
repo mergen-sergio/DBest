@@ -166,10 +166,7 @@ public class Sort extends UnaryOperation {
             //iterates over all tuples from the materialized collection.
             while (it.hasNext()) {
                 Tuple tp = it.next();
-                //a tuple must satisfy the lookup filter that comes from the parent operation
-                if (lookup.match(tp)) {
-                    return tp;
-                }
+                return tp;
             }
             return null;
         }

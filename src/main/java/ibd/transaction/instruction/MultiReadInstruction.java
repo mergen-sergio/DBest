@@ -8,7 +8,9 @@ package ibd.transaction.instruction;
 import ibd.table.ComparisonTypes;
 import ibd.query.Operation;
 import ibd.query.Tuple;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.ColumnElement;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.FullTableScan;
 import ibd.query.unaryop.filter.Filter;
 import ibd.table.Table;
@@ -75,7 +77,7 @@ public class MultiReadInstruction extends Instruction {
 
         Operation scan1 = new FullTableScan("t1", getTable());
         if (comparisonType2==-1){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", pk, comparisonType);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), comparisonType, new LiteralElement(pk));
             query = new Filter(scan1, filter_1);
         }
         //else query = new ColumnRangeFilter(scan1, "t1", "id", comparisonType, pk, comparisonType2, pk2); 

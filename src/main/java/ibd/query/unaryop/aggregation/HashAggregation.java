@@ -191,11 +191,12 @@ public class HashAggregation extends UnaryOperation {
      */
     @Override
     public void setDataSourcesInfo() throws Exception {
+        
+        childOperation.setDataSourcesInfo();
+        
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
-
-        childOperation.setDataSourcesInfo();
 
         createPrototype();
         dataSources[0].prototype = prototype;
@@ -298,9 +299,6 @@ public class HashAggregation extends UnaryOperation {
 
                 for (int i = 0; i < aggregationTypes.size(); i++) {
                     groupedValues[i].clear();
-                }
-                if (!lookup.match(tuple)) {
-                    continue;
                 }
                 
                 return tuple;

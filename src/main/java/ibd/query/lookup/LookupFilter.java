@@ -6,6 +6,7 @@
 package ibd.query.lookup;
 
 import ibd.query.Tuple;
+import ibd.table.prototype.LinkedDataRow;
 
 /**
  * A lookup filter is responsible for finding tuples that satisfy a filter condition. 
@@ -23,5 +24,5 @@ public interface LookupFilter {
      */
     public boolean match(Tuple tuple) ;
     
-    
+    public boolean match(LinkedDataRow row) ;
 }

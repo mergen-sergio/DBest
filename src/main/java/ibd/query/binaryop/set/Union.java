@@ -143,9 +143,7 @@ public class Union extends Set {
                 if (leftTuples.hasNext()) {
                     while (leftTuples.hasNext()) {
                         leftTuple = leftTuples.next();
-                        if (lookup.match(leftTuple)) {
-                            break;
-                        }
+                        break;
                     }
                 }
             }
@@ -153,9 +151,7 @@ public class Union extends Set {
             if (rightTuple == null) {
                 while (rightTuples.hasNext()) {
                     rightTuple = rightTuples.next();
-                    if (lookup.match(rightTuple)) {
-                        break;
-                    }
+                    break;
                 }
             }
 

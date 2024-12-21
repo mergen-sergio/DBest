@@ -98,7 +98,7 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
 			restrictedColumns.clear();
 			comboBoxColumn.removeAllItems();
 
-			parent1.getColumnNames().forEach(comboBoxColumn::addItem);
+			leftChild.getColumnNames().forEach(comboBoxColumn::addItem);
 
 		} else if(e.getSource() == btnCancel){
 

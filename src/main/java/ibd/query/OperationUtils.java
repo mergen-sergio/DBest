@@ -22,7 +22,7 @@ public class OperationUtils {
         Operation op1 = op;
         List<Operation> operations = new ArrayList();
         while (op1 != null) {
-            if (op1 instanceof BinaryOperation && isleftSideCorrelated(op1)) {
+            if (op1 instanceof BinaryOperation && ((BinaryOperation)op1).useLeftSideLookups()) {
                 operations.add(((BinaryOperation) op1).getLeftOperation());
             }
             op1 = op1.getParentOperation();

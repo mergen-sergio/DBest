@@ -9,14 +9,15 @@ import ibd.table.Directory;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.table.Params;
 import static ibd.table.Utils.createTable;
-import ibd.table.ComparisonTypes;
 
 import ibd.query.Operation;
 import ibd.query.Tuple;
 import ibd.query.Utils;
 import ibd.query.binaryop.join.MergeJoin;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.ColumnElement;
+import ibd.query.lookup.LiteralElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.FullTableScan;
 import ibd.query.unaryop.filter.Filter;
 import ibd.query.unaryop.sort.external.ExternalSort;
@@ -98,7 +99,7 @@ public class Main {
         Operation sort = new ExternalSort(scan1);
         
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL,new LiteralElement(20));
             sort = new Filter(sort, filter_1);
         }
         return sort;
@@ -118,7 +119,7 @@ public class Main {
         Operation join1 = new NestedLoopJoin(scan1, scan2, terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL, new LiteralElement(20));
             join1 = new Filter(join1, filter_1);
         }
         return join1;
@@ -139,7 +140,7 @@ public class Main {
         Operation join1 = new NestedLoopJoin(new ExternalSort(scan1), scan2, terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL,new LiteralElement(20));
             join1 = new Filter(join1, filter_1);
         }
         return join1;
@@ -163,7 +164,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(new ExternalSort(join1), new ExternalSort(scan3), terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;
@@ -187,7 +188,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(join1, new ExternalSort(scan3), terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;
@@ -210,7 +211,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(join1, new ExternalSort(scan3), terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;
@@ -233,7 +234,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(join1, scan3, terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"), EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;
@@ -256,7 +257,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(join1, scan3, terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),EQUAL,new LiteralElement(20));
             join2 = new Filter(join2,filter_1);
         }
         return join2;
@@ -279,7 +280,7 @@ public class Main {
         Operation join2 = new MergeJoin(new ExternalSort(join1), new ExternalSort(scan3), terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;
@@ -302,7 +303,7 @@ public class Main {
         Operation join2 = new NestedLoopJoin(join1, scan3, terms);
 
         if (filter){
-            SingleColumnLookupFilterByValue filter_1 = new SingleColumnLookupFilterByValue("id", 20, EQUAL);
+            SingleColumnLookupFilter filter_1 = new SingleColumnLookupFilter(new ColumnElement("id"),  EQUAL,new LiteralElement(20));
             join2 = new Filter(join2, filter_1);
         }
         return join2;

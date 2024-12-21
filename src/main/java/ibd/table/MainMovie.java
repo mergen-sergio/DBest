@@ -9,8 +9,10 @@ import ibd.query.Operation;
 import ibd.query.Tuple;
 import ibd.query.binaryop.join.NestedLoopJoin;
 import ibd.query.binaryop.join.JoinPredicate;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilterByValue;
+import ibd.query.lookup.ReferencedElement;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.query.sourceop.IndexScan;
 import ibd.query.unaryop.filter.Filter;
 import ibd.table.prototype.BasicDataRow;
@@ -54,7 +56,7 @@ public class MainMovie {
                 }
                 row.setString("title", title);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -86,7 +88,7 @@ public class MainMovie {
                 row.setInt("person_id", Integer.parseInt(cod));
                 row.setString("person_name", name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -146,7 +148,7 @@ public class MainMovie {
                 row.setInt("gender_id", Integer.parseInt(gender_id));
                 row.setString("character_name", character_name);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -194,7 +196,7 @@ public class MainMovie {
                 row.setInt("department_id", Integer.parseInt(department_id));
                 row.setString("job", job);
 
-                table.addRecord(row);
+                table.addRecord(row, true);
                 count++;
                 line = br.readLine();
 
@@ -309,8 +311,8 @@ public class MainMovie {
         
         CompositeLookupFilter compositeFilter = new CompositeLookupFilter(CompositeLookupFilter.OR);
         
-        SingleColumnLookupFilterByValue filter1 = new SingleColumnLookupFilterByValue("person_crew.person_name", ComparisonTypes.EQUAL,"\"Brad Pitt\"");
-        SingleColumnLookupFilterByValue filter2 = new SingleColumnLookupFilterByValue("person_cast.person_name",  ComparisonTypes.EQUAL,"\"Brad Pitt\"");
+        SingleColumnLookupFilter filter1 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL,new ReferencedElement("\"Brad Pitt\""));
+        SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_cast.person_name"),  ComparisonTypes.EQUAL,new ReferencedElement("\"Brad Pitt\""));
         compositeFilter.addFilter(filter1);
         compositeFilter.addFilter(filter2);
         

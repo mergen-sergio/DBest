@@ -5,43 +5,28 @@
  */
 package ibd.query.unaryop;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.NoLookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.table.ComparisonTypes;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This unary operation is materialized. It creates a hash containing all the
- * tuples that come from the child operation. Useful for lookups based on
- * equivalence conditions.
+ * This unary operation is materialized. It creates a list containing all the
+ * tuples that come from the child operation. The scan over the materialized
+ * tuples is cheaper than scanning tuples from persistent storage.
  *
  * @author Sergio
  */
 public class Materialization extends UnaryOperation {
 
     /*
-    materialized hash of tuples, using as key the columns that are part of conjunctive equality search conditions.
-    It can answer lookups based on equivalence conditions efficiently.
+    materialized list of tuples.
     This collection is shared among all private iterators, because we need all queries issued over this operation to use the same collection.
      */
     List<Tuple> tuples;
-
-    
-    
-    boolean memoryUsedDefined = false;
-    long memoryUsed = 0;
 
     /**
      *
@@ -56,13 +41,15 @@ public class Materialization extends UnaryOperation {
     public void prepare() throws Exception {
         super.prepare();
 
-        //erases the previously built hash.
+        //erases the previously built list.
         //a new one is created when the first query is executed. 
         tuples = null;
-        memoryUsedDefined = false;
     }
-
     
+    @Override
+    public boolean canProcessDelegatedFilters() {
+        return true;
+    }
 
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
@@ -76,7 +63,7 @@ public class Materialization extends UnaryOperation {
 
     /**
      * the class that materializes a collection of tuples that come from the
-     * child operation using a hash. The query is answered using the hash.
+     * child operation. The query is answered using the materialized collection.
      */
     public class MaterializedIndexIterator extends UnpagedOperationIterator {
 
@@ -86,35 +73,30 @@ public class Materialization extends UnaryOperation {
         public MaterializedIndexIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
 
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
-            buildHash();
+            buildList();
             it = tuples.iterator();
         }
-        
-        
-        
-        private void buildHash(){
-        //build hash, if one does not exist yet
+
+        private void buildList() {
+            //build list, if one does not exist yet
             if (tuples == null) {
                 tuples = new ArrayList<>();
-                memoryUsed = 0;
                 int tupleSize = 0;
                 try {
                     tupleSize = childOperation.getTupleSize();
                 } catch (Exception ex) {
                 }
-                    //accesses and indexes all tuples that come from the child operation
-                    it = childOperation.lookUp(processedTuples, false);
-                    
-                    while (it.hasNext()) {
-                        Tuple tuple = (Tuple) it.next();
-                        tuples.add(tuple);
-                    }
+                //accesses and indexes all tuples that come from the child operation
+                it = childOperation.lookUp(processedTuples, false);
 
-                memoryUsed+=tuples.size()*tupleSize;
-                QueryStats.MEMORY_USED += memoryUsed;
+                while (it.hasNext()) {
+                    Tuple tuple = (Tuple) it.next();
+                    tuples.add(tuple);
+                }
+
+                QueryStats.MEMORY_USED += tuples.size() * tupleSize;
             }
 
-            
         }
 
         @Override

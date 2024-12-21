@@ -363,9 +363,10 @@ public class MainController extends MainFrame {
         Object source = event.getSource();
         String theme = null;
 
-        if (source == this.importTableTopMenuBarItem) {
-            this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
-        } else if (source == this.openCSVTableTopMenuBarItem) {
+//        if (source == this.importTableTopMenuBarItem) {
+//            this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
+//        } else 
+        if (source == this.openCSVTableTopMenuBarItem) {
             openCSV();
         } else if (source == this.openBTreeTableTopMenuBarItem) {
             new ImportFile(FileType.DAT, new AtomicReference<>(false));
@@ -668,7 +669,7 @@ public class MainController extends MainFrame {
 
             try {
 
-                TableCell tableCell = TableCreator.createFYITable(pk.getTableName(), columns, cell);
+                TableCell tableCell = TableCreator.createIndex(pk.getTableName(), columns, cell, false);
                 this.executeImportTableCommand(tableCell);
                 CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
 

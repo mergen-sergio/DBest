@@ -8,6 +8,7 @@ import ibd.index.btree.DictionaryPair;
 import ibd.index.btree.Key;
 import ibd.index.btree.table.BPlusTreeFileTable;
 import ibd.index.btree.table.BinaryValue;
+import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.lookup.RowLookupFilter;
 import ibd.table.prototype.LinkedDataRow;
@@ -22,10 +23,10 @@ import java.util.Iterator;
  */
 public class KeyFilteredRowsIterator extends RowsIterator {
 
-    RowLookupFilter filter;
+    LookupFilter filter;
     Iterator<DictionaryPair> valueIterator = null;
 
-    public KeyFilteredRowsIterator(BPlusTreeFileTable btree, Key key, RowLookupFilter filter, int compType) {
+    public KeyFilteredRowsIterator(BPlusTreeFileTable btree, Key key, LookupFilter filter, int compType) {
         super(btree);
         this.filter = filter;
         switch (compType) {

@@ -70,7 +70,7 @@ public class Main {
             rowData.setString("nome", DataFaker.pad(text, len));
             rowData.setString("bla", DataFaker.pad(text, len));
 
-            table.addRecord(rowData);
+            table.addRecord(rowData, true);
 
         }
 

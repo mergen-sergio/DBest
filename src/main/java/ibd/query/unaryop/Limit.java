@@ -5,32 +5,24 @@
  */
 package ibd.query.unaryop;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
-import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
-import ibd.query.unaryop.sort.Sort;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * This operation removes tuples whose value of an specified column is already
- * part of another accepted tuple.
+ * This operation limits the number of tuples that are accessed from its underlying child operation.
  *
  * @author Sergio
  */
 public class Limit extends UnaryOperation {
 
-    //int tuplesToReadX = -1;
-    //int startingTupleX = -1;
     
     /**
      *
      * @param op the operation to be connected into this unary operation
-     * @param referenceColumn the name of the column to be used to remove
-     * duplicates. The name can be prefixed by the table name (e.g. tab.col)
-     * @param isOrdered indicates if the incoming tuples from the connected
-     * operation are already ordered by the referenceColumn column
+     * @param tuplesToRead the amount of tuples to be read
+     * @param startingTuple the first tuple to be read
      * @throws Exception
      */
     public Limit(Operation op, int tuplesToRead, int startingTuple) throws Exception {
