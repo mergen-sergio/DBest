@@ -13,6 +13,10 @@ The example below illustrates two query trees that combine basic operators:
 - **Join:** Combines `movie` and `movie_cast`.
 - **Filter (Selection):** Filters rows based on the `year`.
 - **Projection:** Projects only the `title` and `character_name` columns.
+  
+
+
+<img src="assets/images/basic-queries.png" alt="Basic Queries" width="700"/>
 
 #### Key Difference:
 - The **left tree** applies the filter operator after the join.  
