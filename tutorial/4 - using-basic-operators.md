@@ -6,7 +6,10 @@ The **DBest** tool includes a wide range of operators that enable the creation o
 - **Join**  
 - **Aggregation**  
 
-Some operators, like **joins**, have multiple variations, as join types (cross-join, inner-join, semi-join, anti-join, outer-join) and join algorithm (nested-loop, merge-join, hash-join). As a starting point, use the classic **Inner Join**. One you become familiar with how  the basic operators work, you can try different ones. 
+
+
+
+# Example: Configuring a Query Tree
 
 The example below illustrates two query trees that combine basic operators:
 - **Join:** Combines `movie` and `movie_cast`.
@@ -17,11 +20,31 @@ The example below illustrates two query trees that combine basic operators:
 
 <img src="assets/images/basic-queries.png" alt="Basic Queries" width="700"/>
 
-#### Key Difference:
-- The **left tree** applies the filter operator after the join.  
-- The **right tree** applies the filter operator before the join.
 
-The position of the operators can significantly affect query performance. In the example provided, it is better to perform the filter before the join, as it reduces the effort spent on finding matches. 
+
+
+The following screenshots demonstrates configuring the query tree operators.
+
+1. **Join Operator**:  
+   The property window for the join operator shows the available columns from the left (`movie`) and right (`movie_cast`) child nodes. The join predicate is defined as:  
+   `movie.movie_id = movie_cast.movie_id`.
+
+   ![Join Operator Properties](assets/images/join-properties.png)
+
+2. **Filter Operator**:  
+   The property window for the filter operator defines an atomic expression comparing the `cast_order` column to a constant value.  
+
+   ![Filter Operator Properties](assets/images/filter-properties_.png)
+
+3. **Projection Operator**:  
+   The property window for the projection operator specifies two columns for retrieval:  
+   - `title` from the `movie` data node.  
+   - `character_name` from the `movie_cast` data node.
+
+   ![Projection Operator Properties](assets/images/projection-properties_.png)
+
+
+Some operators, like **joins**, have multiple variations, as join types (cross-join, inner-join, semi-join, anti-join, outer-join) and join algorithm (nested-loop, merge-join, hash-join). As a starting point, use the classic **Inner Join**. One you become familiar with how  the basic operators work, you can try different ones. 
 
 ---
 
