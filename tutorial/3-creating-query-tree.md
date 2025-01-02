@@ -34,26 +34,5 @@ The properties required for configuration depend on the type of operator. Exampl
 - **Join Operator**: Requires a join predicate and displays columns from the left and right child nodes.  
 - **Filter Operator**: Defines a boolean expression that must be satisfied, based on columns from its child node.
 
-# Example: Configuring a Query Tree
-
-The following example demonstrates configuring a query tree with join, filter, and projection operators.
-
-1. **Join Operator**:  
-   The property window for the join operator shows the available columns from the left (`movie`) and right (`movie_cast`) child nodes. The join predicate is defined as:  
-   `movie.movie_id = movie_cast.movie_id`.
-
-   ![Join Operator Properties](assets/images/join-properties.png)
-
-2. **Filter Operator**:  
-   The property window for the filter operator defines an atomic expression comparing the `cast_order` column to a constant value.  
-
-   ![Filter Operator Properties](assets/images/filter-properties_.png)
-
-3. **Projection Operator**:  
-   The property window for the projection operator specifies two columns for retrieval:  
-   - `title` from the `movie` data node.  
-   - `character_name` from the `movie_cast` data node.
-
-   ![Projection Operator Properties](assets/images/projection-properties_.png)
 
 
