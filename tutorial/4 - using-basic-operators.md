@@ -15,11 +15,8 @@ The example showcases a query tree that combine basic operators:
 - **Filter (Selection):** Filters rows based on the `year`.  
 - **Projection:** Projects only the `title` and `character_name` columns.  
 
-<img src="assets/images/basic-queries.png" alt="Basic Queries" width="700"/>
+<img src="assets/images/basic-query-tree.png" alt="Basic Query Tree" width="400"/>
 
----
-
-### Configuring Query Tree Operators
 
 The following screenshots demonstrate how to configure the query tree operators:
 
@@ -43,13 +40,14 @@ The following screenshots demonstrate how to configure the query tree operators:
 
 ---
 
-### Exploring Join Variations
+### Exploring Operator Variations
 
-Operators like **joins** offer multiple variations, such as:  
-- **Join Types:** Cross-join, inner-join, semi-join, anti-join, outer-join.  
-- **Join Algorithms:** Nested-loop, merge-join, hash-join.  
+The example above demonstrated basic operators. However, many operators have variations that differ in semantics and efficiency. For instance, the **join** operation includes:  
+- **Join Types:** `cross-join`, `inner-join`, `semi-join`, `anti-join`, and `outer-join`.  
+- **Join Algorithms:** `nested-loop`, `merge-join`, and `hash-join`.  
 
-To begin, use the classic **Inner Join**. As you become familiar with basic operators, you can explore other join types and algorithms.
+Start with the classic operators to build a solid foundation. Once comfortable with the basics, experiment with these variations to better understand their use cases and performance implications.
+
 
 ---
 
