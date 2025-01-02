@@ -29,11 +29,14 @@ The example below demonstrates how to create a boolean expression for a filter o
 
 Additional atomic expressions or sub-expressions can be added by clicking the appropriate button in the editor.
 
+<img src="assets/images/filter-properties.png" alt="Filter Properties" width="500"/>
+
 ---
 
 ### Example: Editing an Atomic Expression
 The example also shows how to edit an existing atomic expression. The user changes the compared elements, such as modifying constant values or selecting different columns for comparison.
 
+<img src="assets/images/filter-atomic-condition.png" alt="Editing an Atomic Expression" width="500"/>
 
 ## Boolean Expressions and Specialized Boolean Operators
 
@@ -62,6 +65,8 @@ The example below demonstrates how to create the same boolean expression as in t
 - **AND operator**: Combines two condition operators.
 - **Condition operators**: Use referenced columns for comparisons.
 
+<img src="assets/images/filter-expression-tree.png" alt="Boolean Expression Tree" width="500"/>
+
 The filter operator is still present, but now it contains a simpler expression that directly tests the result of the **AND operator**.
 
 ---
@@ -82,6 +87,9 @@ FROM movie
 WHERE movie_id IN (SELECT movie_id FROM movie_cast) 
    OR movie_id IN (SELECT movie_id FROM movie_crew)
 ```
+
+
+<img src="assets/images/filter-sub-queries.png" alt="Expresion tree to represent disjoint sub-queries" width="500"/>
 
 In this query tree:
 
