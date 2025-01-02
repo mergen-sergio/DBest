@@ -48,6 +48,7 @@ Every operator in DBest has a **schema** that defines the structure of its outpu
 
 You can view the schemas of an operator by double-clicking the node or running a query over it. It will display the result set. The columns of the result set are prefixed by the data source (schema) name. 
 
+
 ### Dynamic Schema Updates
 
 When editing an operator’s properties, the **property window** displays information about the schemas of the connected nodes,  as the operator will be applied to the **tuples** coming from those nodes.
@@ -58,6 +59,10 @@ If an operator’s child node is disconnected or replaced by a node with a diffe
 - If the new schema is incompatible with the current configuration, the operator's label turns **red**, indicating invalid properties.
 - The user must update the properties to resolve the issue.
 
+
+### Defining schema names
+
+The name of the schemas are derived from the name of the data nodes. Some operators group all schemas coming from the connected operators into a single one, with an default name. These are called schemafull operators. Examples include aggregation (whose default name if agg) and AND (whose default name is condition).  The name the data nodes and the schemafull operators can be edited by right clicking the node and chosing 'Rename'. Renaming schemas is important for query plans that contain two schemas with the same name. It can happen when using the same data node more than once (example, in queries with self-relationships) or when using two schemafull operators of the same kind (example, two aggregate operators than are united by a join operator. 
 
 
 
