@@ -16,6 +16,9 @@ In DBest, every operator can have **multiple schemas**, as operations combine sc
 
 You can view an operator’s schemas by **running a query** over the node to see the result set. Each column in the result set is prefixed with its corresponding schema name.
 
+The example below displays the result set obtained by joining the `movie` and `movie_cast` data nodes, with column names prefixed by their respective schema names.
+ 
+
 ---
 
 ### Dynamic Schema Updates
