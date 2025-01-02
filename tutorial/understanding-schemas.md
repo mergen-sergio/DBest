@@ -48,3 +48,12 @@ Users can rename schemas by **right-clicking a node** and selecting **Rename**. 
   - **Multiple schema-full operators:** For example, two aggregation operators joined in a query.
 
 Proper naming ensures clarity and prevents conflicts in complex query plans. This is especially important for queries that rely on precise schema identification to produce correct results.
+
+
+
+## Summary
+- Operators derive their schema from their connected nodes, adapting dynamically based on the operation they perform.
+- The property window shows schema-related details to assist in configuring the operation.
+- Invalid properties are flagged to maintain the integrity of the query tree.
+
+
