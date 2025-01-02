@@ -18,16 +18,22 @@ You can view an operator’s schemas by **running a query** over the node to see
 
 The example below displays the result set obtained by joining the `movie` and `movie_cast` data nodes, with column names prefixed by their respective schema names.
  
+<img src="assets/images/join-schemas.png" alt="Schemas Constructed by a Join" width="700"/>
 
 ---
 
 ### Dynamic Schema Updates
 
-When editing an operator's properties, the **property window** displays the schemas of the connected nodes. This enables users to configure how the operator processes the data streams from its inputs.
+When editing an operator's properties, the **property window** displays the schemas of the connected nodes. This allows users to configure how the operator processes data streams from its inputs.
 
-If a **child node is disconnected** or replaced by a node with a different schema, the operator recalculates its schemas dynamically.  
-If the new schemas are **incompatible** with the operator’s current configuration, the operator’s label turns **red**, signaling invalid properties.
+If a **child node is disconnected** or replaced by a node with a different schema, the operator dynamically recalculates its schemas.  
+If the new schemas are **incompatible** with the operator’s current configuration, the operator’s label turns **red**, indicating invalid properties.  
 Users must update the operator’s configuration to resolve the issue.
+
+The example below shows two query trees. The tree on the left is valid. The tree on the right is invalid because the right child node of the join was disconnected. As a result, the join operator becomes invalid since its predicate references a schema no longer part of the tree. The operator is highlighted in red to indicate the problem.
+
+<img src="assets/images/red-flag.png" alt="Join with a broken reference" width="700"/>
+
 
 ---
 
