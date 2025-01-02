@@ -6,9 +6,8 @@ The **DBest** tool includes a wide range of operators that enable the creation o
 - **Join**  
 - **Aggregation**  
 
-Some operators, like **joins**, have multiple variations. As a starting point, use the classic versions, such as the **Inner Join**.
+Some operators, like **joins**, have multiple variations, as join types (cross-join, inner-join, semi-join, anti-join, outer-join) and join algorithm (nested-loop, merge-join, hash-join). As a starting point, use the classic **Inner Join**. One you become familiar with how  the basic operators work, you can try different ones. 
 
-### Example Query Trees
 The example below illustrates two query trees that combine basic operators:
 - **Join:** Combines `movie` and `movie_cast`.
 - **Filter (Selection):** Filters rows based on the `year`.
@@ -22,7 +21,7 @@ The example below illustrates two query trees that combine basic operators:
 - The **left tree** applies the filter operator after the join.  
 - The **right tree** applies the filter operator before the join.
 
-The position of the operators can significantly affect query performance. 
+The position of the operators can significantly affect query performance. In the example provided, it is better to perform the filter before the join, as it reduces the effort spent on finding matches. 
 
 ---
 
