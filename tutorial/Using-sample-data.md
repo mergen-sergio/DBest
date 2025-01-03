@@ -85,6 +85,8 @@ DBest leverages these indexes to enable efficient data access. For more details 
 
 While the schema includes `FOREIGN KEY` constraints to denote relationships between tables, these are not enforced in practice. Instead, they serve as references to the relational structure of the data.
 
+The .dat files can be found [here](data)
+
 ## Using the `.dat` Files
 
 To work with the `.dat` files:
