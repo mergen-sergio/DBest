@@ -1,8 +1,11 @@
 # Movie Database Example
 
-The examples in this tutorial are based on a movie database, which is available at the following webpage:  
+The examples in this tutorial are based on a movie database, available at the following GitHub repository:  
+[https://github.com/bbrumm/databasestar](https://github.com/bbrumm/databasestar)  
 
-The SQL files published in the repository were converted into DBest-indexed `.dat` files. Each file includes a primary index for efficient lookups and ordered reads.
+
+The SQL files published in the repository were converted into DBest-indexed `.dat` files. These files incorporate a primary index, enabling efficient lookups and ordered reads.
+
 
 Below is the schema of the database, presented in SQL-like format:
 
@@ -67,19 +70,29 @@ CREATE TABLE idx_crew_p (
 );
 
 ```
+## Notes on Indexed Files
+
+Some `.dat` files serve as indexes (their names start with `idx`). These indexes correspond to another `.dat` file containing the full records. For instance:
+
+- **`idx_year`**:  
+  This file is a B+ tree index optimized for lookups by the `release_year` column.  
+  - The `movie_id` column in `idx_year` acts as a reference to the `movie.dat` file.  
+  - Using the `movie_id`, the `movie.dat` file can be queried to retrieve all associated columns from the `movie` table.
+
+DBest leverages these indexes to enable efficient data access. For more details on DBest's indexing strategy, visit: [DBest Indexing Strategy](xxx).
 
 ## Notes on Foreign Keys
 
-While the schema includes `FOREIGN KEY` constraints to indicate relationships between columns and primary keys in target tables, no actual foreign key constraints are enforced. These commands simply serve as references to the relational structure.
+While the schema includes `FOREIGN KEY` constraints to denote relationships between tables, these are not enforced in practice. Instead, they serve as references to the relational structure of the data.
 
 ## Using the `.dat` Files
 
-To utilize the `.dat` files, you can either:
-
+To work with the `.dat` files:
 1. Use the **'Open Indexed Data'** option in the top menu.  
-2. Drag and drop the files directly into the editor.  
+2. Alternatively, drag and drop the files directly into the editor.
 
-This setup ensures efficient data access and supports the examples used throughout the tutorial.
+This approach ensures efficient access and supports the examples discussed throughout the tutorial.
+
 
 
 
