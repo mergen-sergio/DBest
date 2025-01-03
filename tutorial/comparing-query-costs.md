@@ -1,8 +1,9 @@
 # Query Plan Comparison and Efficiency
 
-When executing queries, there can be multiple **query plans** that are logically equivalent, meaning they produce the same result set regardless of the stored data. However, these plans can differ in efficiency, which depends on execution time and memory usage. Efficiency is influenced by the volume of data processed and the logic applied by each operator.
+When executing queries, multiple **query plans** may be logically equivalent, meaning they produce the same result set regardless of the stored data. However, these plans can differ in efficiency, influenced by execution time and memory usage. Efficiency depends on the amount of data processed and the logic applied by each operator.
 
 ## Example: Movie Query
+
 The goal is to retrieve **movie titles** and **character names** for movies released before 1930.
 
 ![Equivalent Queries](assets/images/basic-queries.png)
@@ -11,20 +12,21 @@ The goal is to retrieve **movie titles** and **character names** for movies rele
 - The **left tree** applies the filter operator **after** the join.  
 - The **right tree** applies the filter operator **before** the join.
 
-This distinction in operator placement significantly impacts query performance. In this case, applying the filter **before** the join is more efficient because it reduces the number of rows processed during the join.
+Applying the filter **before** the join (as in the right tree) is more efficient because it reduces the number of rows processed during the join. While this example is straightforward, assessing costs in more complex query plans can be challenging. For such cases, **DBest** provides detailed metrics to analyze query performance.
 
 ---
 
 ## Query Indicators in DBest
-DBest provides several metrics to help analyze query performance:
+
+DBest offers several metrics to evaluate query performance:
 
 - **Tuples Read:** Number of tuples returned by the query.
 - **Accessed Blocks:** Total page accesses, including memory hits.
 - **Loaded Blocks:** Pages loaded into memory, which may vary due to buffering.
 - **Filter Comparisons:** Number of atomic filter conditions evaluated.
-- **Memory Usage:** Bytes used by materialized operators.
+- **Memory Usage:** Bytes consumed by materialized operators.
 - **Next Calls:** Iterations performed by operators to fetch tuples.
-- **Primary Key Searches:** Number of B+ tree searches executed.
+- **Primary Key Searches:** Count of B+ tree searches executed.
 - **Records Read:** Total records accessed, including non-returned records.
 - **Sorted Tuples:** Tuples sorted by `Sort` operators.
 
@@ -32,43 +34,50 @@ DBest provides several metrics to help analyze query performance:
 1. **Accessed Blocks** – Reflects I/O efficiency.  
 2. **Memory Usage** – Highlights resource demand.  
 
-Query indicators are displayed during execution. A **button** in the result data frame reveals these metrics.
+Metrics are displayed during execution, accessible via a **button** in the result data frame.
 
 ---
 
 ## Comparing Query Plans
+
+A powerful feature of DBest is the query plan comparator. It enables users to evaluate and compare the efficiency of multiple query plans side by side, providing detailed insights into resource usage, execution costs, and operator performance, ultimately aiding in query optimization and decision-making.
+
 ### Steps to Compare Query Plans:
+
 1. **Mark Nodes for Comparison:**
    - Right-click the nodes to compare and select **Mark**.
-   - Mark root nodes to compare entire query trees or subtrees for specific analysis.
+   - Typically, the root nodes are marked to compare full query trees, but subtrees can also be analyzed.
+   - Marked nodes are highlighted with a red rectangle. In the example below, the root nodes are marked and renamed as `Q1` (left tree) and `Q2` (right tree) for easy identification.
 
    ![Marking Queries](assets/images/marking-queries.png)
 
-   Marked nodes are highlighted with a red rectangle and renamed as `Q1` (left tree) and `Q2` (right tree) for easy identification.
-
 2. **Open the Comparator Panel:**
    - Select the **Comparator** menu from the bottom toolbar.
-   - The comparator panel displays one column for each marked query with various cost indicators.
+   - The panel displays one column for each marked query, showing various cost indicators.
 
 3. **Analyze Costs:**
    - Advance records incrementally or compute the full result set.
-   - Observe how query costs evolve during execution.
+   - Observe how costs evolve during execution.
 
 ---
 
 ## Example Analysis
-The comparator panel reveals that the **left tree** incurs higher costs. Specifically:
-- **Accessed Blocks:** More disk pages are read because filtering occurs **after** the join, leading to unnecessary processing of `movie_cast` rows.
-- **Filter Comparisons:** Higher in the left tree because the same movie is filtered multiple times, once for each match in `movie_cast`.
+
+In the example, the comparator panel provides a snapshot after retrieving five tuples. It shows that the **left tree** incurs higher costs. Key observations include:
+
+- **Accessed Blocks:** The left tree reads more disk pages because filtering occurs **after** the join, causing unnecessary processing of `movie_cast` rows.
+- **Filter Comparisons:** Higher in the left tree since the same movie is filtered multiple times, once per match in `movie_cast`.
 
 ![Comparing Queries](assets/images/comparing_queries.png)
 
 ---
 
 ## Benefits of Query Plan Comparison
-Query plan comparisons offer several advantages:
-- **Snapshots of Costs:** Gain insights into query effort at different stages.
-- **Partial vs. Final Costs:** Understand how intermediate steps influence overall performance.
-- **Optimization Opportunities:** Identify inefficiencies in operator placement or logic.
 
-By advancing records one at a time, you can evaluate the incremental effort needed to fetch the next tuple and identify opportunities to optimize query execution.
+Query plan comparisons provide valuable insights:
+
+- **Snapshots of Costs:** Understand query effort at different stages.
+- **Partial vs. Final Costs:** Identify how intermediate steps impact overall performance.
+- **Optimization Opportunities:** Detect inefficiencies in operator placement or logic.
+
+By advancing records incrementally, you can evaluate the effort required to fetch the next tuple and uncover optimization opportunities for improved query execution.
