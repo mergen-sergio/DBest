@@ -5,7 +5,7 @@
   <a href="./11 - creating-indexes.md">Next</a>
 </div>
 
-# Working with Indexes in DBest
+# DBest Indexing Strategy
 
 In DBest, **data nodes** can be indexed or non-indexed. Non-indexed data nodes, such as memory tables or CSV files, provide **sequential access** to their tuples. When performing a lookup, all tuples must be traversed to find matching results. To improve performance, DBest supports indexed data nodes in the form of **B+ trees**, enabling **efficient lookups** and **ordered access** over key columns.
 
