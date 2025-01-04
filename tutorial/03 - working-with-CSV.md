@@ -1,4 +1,9 @@
-
+<div align="left">
+    <a href="./02 - operators.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./04 - working-with-temp-tables.md">Next</a>
+</div>
 
 # Working with CSV Files in DBest
 
@@ -36,3 +41,12 @@ Once imported, the CSV node will appear in the **left-side panel**. To work with
 Both methods allow you to navigate through the records efficiently.
 
 With these steps, you’re ready to import and query your CSV files in DBest!
+
+<br>
+
+<div align="left">
+    <a href="./02 - operators.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./04 - working-with-temp-tables.md">Next</a>
+</div>
