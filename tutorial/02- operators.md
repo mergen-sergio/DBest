@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./01 - data-sources.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./03 - working-with-CSV.md">Next</a>
+</div>
+
 
 ## Available Operators
 
@@ -58,12 +65,3 @@ In DBest, you can build query execution plans by using a variety of operators. T
     - Sorted
     - Hashed
  
-
-<table style="width: 100%">
-  <tr>
-    <td style="text-align: left; width: 50%"><a href="./page1.md">&lt; Previous</a></td>
-    <td style="text-align: right; width: 50%"><a href="./page3.md">Next &gt;</a></td>
-  </tr>
-</table>
-
-
