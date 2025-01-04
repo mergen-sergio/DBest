@@ -52,7 +52,7 @@ To get started with DBest, follow these steps:
    Explore the tutorial for a comprehensive, step-by-step guide to using DBest. Learn how to create indexes, build query trees, and run queries effectively.
 
 3. **Access Sample Data:**  
-   Practice using the tool with sample data provided in the tutorial. You can download the dataset [here](data/01a - tutorial-data.md).
+   Practice using the tool with sample data provided in the tutorial. You can download the dataset [here](data/01a%20-%20tutorial-data.md).
 
 <br>
 
