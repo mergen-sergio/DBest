@@ -64,4 +64,12 @@ In DBest, you can build query execution plans by using a variety of operators. T
 - **Intersect**
     - Sorted
     - Hashed
+
+<br><br>
  
+<div align="left">
+    <a href="./01 - data-sources.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./03 - working-with-CSV.md">Next</a>
+</div>
