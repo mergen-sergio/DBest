@@ -46,7 +46,7 @@ These indicators help users understand the efficiency of their query plans, enab
 To get started with DBest, follow these steps:
 
 1. **Install DBest:**  
-   Download the DBest JAR [file](DBest.jar) and run it to launch the tool. Make sure you have Java 20 installed, as it is required to execute the application.
+   Download the DBest JAR [file](DBest.jar) and run it to launch the tool. Make sure you have Java 17 installed, as it is required to execute the application.
 
 2. **Read the [Tutorial](tutorial/README.md):**  
    Explore the tutorial for a comprehensive, step-by-step guide to using DBest. Learn how to create indexes, build query trees, and run queries effectively.
