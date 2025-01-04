@@ -28,13 +28,17 @@ When creating composite indexes:
 3. **Query the index**:
    - Drag the indexed node into the query editor.
    - Double-click the node to view tuples ordered by the key column(s).
+
+<br>
+
 ---
+
+<br>
 
 # Example: Creating a Clustered Primary Index and a Non-Clustered Secondary Index
 
 This tutorial utilizes pre-generated `.dat` index files derived from CSV data. However, the following steps demonstrate how to create these indexes manually.
 
----
 
 ## Creating a Clustered Primary Index
 
