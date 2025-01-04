@@ -2,7 +2,7 @@
     <a href="./06 - other-query-options.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./09 - working-with-temp-tables.md">Next</a>
+  <a href="./08 - working-with-temp-tables.md">Next</a>
 </div>
 
 # Working with CSV Files in DBest
@@ -47,5 +47,5 @@ Both methods allow you to navigate through the records efficiently.
     <a href="./06 - other-query-options.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./09 - working-with-temp-tables.md">Next</a>
+  <a href="./08 - working-with-temp-tables.md">Next</a>
 </div>
