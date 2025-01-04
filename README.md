@@ -2,19 +2,8 @@
 
 # Database Basics for Engaging Students and Teachers (DBest)
 
-## Índice
 
-1. [Resumo](#resumo)
-2. [Objetivo inicial](#objetivo-inicial)
-3. [Objetivo atual](#objetivo-atual)
-4. [Ferramentas](#ferramentas)
-5. [Utilização](#utilização)
-6. [Dependências externas](#dependências-externas)
-7. [Contribuições](#contribuições)
-8. 
-# DBest: Visual Query Engine
-
-**DBest** is a powerful, interactive tool for creating and visualizing database query execution plans. It allows users to design query plans by dragging and dropping operators, providing a user-friendly interface to understand query execution, optimize performance, and integrate heterogeneous data sources. It is suitable for teaching, data integration, and improving query performance.
+**DBest** is an interactive tool for creating and visualizing database query execution plans. It allows users to design query plans by dragging and dropping operators, providing a user-friendly interface to understand query execution, optimize performance, and integrate heterogeneous data sources. It is suitable for teaching, data integration, and improving query performance.
 
 ---
 
@@ -46,28 +35,7 @@ With DBest, you can:
 
 ---
 
-[Working With CSV](tutorial/working-with-CSV.md)
 
-
-## Features
-
-- **Visual Query Plan Creation**: Drag and drop operators to build execution plans.
-- **Execution Trees**: View query execution steps and data flow.
-- **Query Optimization**: Experiment with different operators and execution paths for performance improvements.
-- **Educational Tool**: Ideal for teaching database concepts such as query planning and optimization.
-- **Data Integration**: Connect and query multiple data sources using a unified execution plan.
-
----
-
-
-
-### Key Considerations
-
-- **No Concurrent Updates**: DBest is not designed for concurrent updates or multi-user write operations. The system is optimized for batch processing and query execution rather than real-time data updates. This means that once data is loaded or a B+ Tree is created, it is expected to remain static during query execution.
-  
-- **Pre-Processing B+ Tree**: Since DBest does not support concurrent updates, a B+ Tree can be **prepared once**—i.e., indexed and stored for later use. Once created, the B+ Tree can be reused across multiple queries, enabling efficient range queries and lookups without needing to rebuild the index each time. This approach provides significant performance improvements when querying large datasets, as the B+ Tree can quickly resolve range and equality queries over the indexed columns.
-
-- **Custom Updates via Java Code**: While DBest is not designed for concurrent updates, **records can be updated manually by writing custom Java code**. If you need to modify the data in a dataset or B+ Tree after it has been loaded, you can write Java code to perform these updates. 
 
 ### Example Workflow
 1. **Step 1**: Open a CSV for a large dataset and define the datatypes of each column.
