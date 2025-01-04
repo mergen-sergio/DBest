@@ -61,7 +61,6 @@ The example above demonstrated basic operators. However, many operators have var
 Start with the classic operators to build a solid foundation. Once comfortable with the basics, experiment with these variations to better understand their use cases and performance implications.
 
 
----
 
 ### Tips for Beginners
 
