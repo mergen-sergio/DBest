@@ -7,16 +7,20 @@ import controllers.ConstantController;
 import database.RowConverter;
 import entities.Column;
 import entities.Edge;
+import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
+import static entities.utils.cells.CellUtils.changeCellName;
 import enums.ColumnDataType;
 import enums.OperationArity;
 import enums.OperationErrorType;
+import static enums.OperationErrorType.SAME_SOURCE;
 import enums.OperationType;
 import gui.frames.ErrorFrame;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.main.MainFrame;
 import ibd.query.Operation;
 import ibd.query.ReferedDataSource;
+import ibd.query.SingleSource;
 import operations.IOperator;
 
 import java.lang.reflect.Constructor;
@@ -45,7 +49,7 @@ public final class OperationCell extends Cell {
     private final Class<? extends IOperator> operatorClass;
 
     private Boolean hasBeenInitialized;
-
+    
     public OperationCell(mxCell jCell, OperationType type) {
         super(
                 type.getFormattedDisplayName(), jCell, ConstantController.OPERATION_CELL_HEIGHT
@@ -62,12 +66,15 @@ public final class OperationCell extends Cell {
         this.operatorClass = type.operatorClass;
     }
 
-    public OperationCell(mxCell jCell, OperationType type, List<Cell> parents, List<String> arguments) {
+    public OperationCell(mxCell jCell, OperationType type, List<Cell> parents, List<String> arguments, String alias) {
         this(jCell, type);
 
         this.arguments = arguments;
+        this.alias = alias;
 
-        if (parents != null && !parents.isEmpty()) {
+        //if (parents != null && !parents.isEmpty()) 
+        
+        {
             this.hasBeenInitialized = true;
             this.parents = parents;
 
@@ -81,7 +88,7 @@ public final class OperationCell extends Cell {
     }
 
     public void editOperation(mxCell jCell) {
-        if (!this.hasBeenInitialized) {
+        if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
             return;
         }
 
@@ -99,14 +106,14 @@ public final class OperationCell extends Cell {
     }
 
     public void updateOperation() {
-        if (!this.hasBeenInitialized) {
+        if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
             return;
         }
 
         try {
             Constructor<? extends IOperator> constructor = this.operatorClass.getDeclaredConstructor();
             IOperator operation = constructor.newInstance();
-            operation.executeOperation(this.getJCell(), this.getArguments());
+            operation.executeOperation(this.getJCell(), this.getArguments(), getAlias());
         } catch (InstantiationException | IllegalAccessException
                 | NoSuchMethodException | InvocationTargetException exception) {
             new ErrorFrame(ConstantController.getString("error"));
@@ -127,6 +134,13 @@ public final class OperationCell extends Cell {
 
     public OperationType getType() {
         return this.type;
+    }
+    
+    @Override
+    public boolean alwaysAllowConnections(){
+        if (this.type!=null)
+            return this.type.allwaysAllowConnections;
+        return super.alwaysAllowConnections();
     }
 
     public OperationArity getArity() {
@@ -214,6 +228,8 @@ public final class OperationCell extends Cell {
                 ConstantController.getString("cell.operationCell.error.noPrefix");
             case SAME_SOURCE ->
                 ConstantController.getString("cell.operationCell.error.sameSource");
+            case NOT_SOURCE ->
+                ConstantController.getString("cell.operationCell.error.notSource");
         };
     }
 
@@ -243,16 +259,18 @@ public final class OperationCell extends Cell {
 
     public OperationCell copy() {
         OperationCell operationCell = new OperationCell(
-                this.jCell, this.type, new ArrayList<>(this.parents), new ArrayList<>(this.arguments)
+                this.jCell, this.type, new ArrayList<>(this.parents), new ArrayList<>(this.arguments), getAlias()
         );
 
         operationCell.name = this.name;
+        operationCell.alias = this.alias;
 
         return operationCell;
     }
 
     public void updateFrom(OperationCell cell) {
         this.name = cell.name;
+        this.alias = cell.alias;
         this.parents = cell.parents;
         this.arguments = cell.arguments;
         this.hasBeenInitialized = cell.hasBeenInitialized;
@@ -328,5 +346,39 @@ public final class OperationCell extends Cell {
     public void setOperator(Operation operator) {
         this.operator = operator;
         this.setColumns();
+    }
+    
+    public void asOperator(String newName){
+        //if (!(operator instanceof SingleSource)) return;
+        operator.setDataSourceAlias(newName);
+        this.alias = newName;
+        jCell.setValue(newName);
+        adjustWidthSize();
+        changeSourceNames(newName);
+        TreeUtils.updateTreeBelow(this);
+    }
+    
+    public void setAlias(String alias){
+        this.alias = alias;
+    }
+
+    public void adjustWidthSize(){
+        this.width = Math.max(CellUtils.getCellWidth(jCell), ConstantController.TABLE_CELL_WIDTH);
+        String a = alias;
+        if (!a.isBlank())
+            a = ":"+a;
+        String formattedName = this.getType().symbol+a+arguments;
+        changeCellName(jCell, formattedName, ConstantController.TABLE_CELL_WIDTH);
+
+    }
+    private void changeSourceNames(String newName){
+
+        List<Column> newColumns = new ArrayList<>();
+
+        for (Column c : columns)
+            newColumns.add(Column.changeSourceColumn(c, newName));
+
+        columns = newColumns;
+
     }
 }

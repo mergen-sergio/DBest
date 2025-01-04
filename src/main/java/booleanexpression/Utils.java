@@ -1,6 +1,7 @@
 package booleanexpression;
 
 import enums.ColumnDataType;
+import ibd.table.prototype.query.fields.BooleanField;
 import ibd.table.prototype.query.fields.DoubleField;
 import ibd.table.prototype.query.fields.FloatField;
 import ibd.table.prototype.query.fields.IntegerField;
@@ -23,6 +24,9 @@ public class Utils {
         if (text.contains("'")) return getValue(text, ColumnDataType.STRING);
 
         if(text.equalsIgnoreCase("null")) return new Null();
+        
+         if(text.equalsIgnoreCase("true")) return getValueAsBoolean(text);
+         if(text.equalsIgnoreCase("false")) return getValueAsBoolean(text);
 
         try {
             return getValueAsNumber(text);
@@ -72,5 +76,13 @@ public class Utils {
         }
 
         throw new UnsupportedOperationException("This value is not a number");
+    }
+    
+    public static Element getValueAsBoolean(String flag) {
+        return new Value(new BooleanField(Boolean.parseBoolean(flag)));
+    }
+    
+    public static Element getValueAsBoolean(boolean flag) {
+        return new Value(new BooleanField(flag));
     }
 }

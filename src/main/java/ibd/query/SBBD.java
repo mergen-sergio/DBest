@@ -7,6 +7,8 @@ package ibd.query;
 
 import dsl.DslParser;
 import ibd.query.binaryop.conditional.Exists;
+import ibd.query.binaryop.conditional.LogicalAnd;
+import ibd.query.binaryop.conditional.LogicalOr;
 import ibd.query.binaryop.join.CrossJoinOld;
 import ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin;
 import ibd.query.binaryop.set.Union;
@@ -25,6 +27,7 @@ import ibd.query.unaryop.aggregation.Aggregation;
 import ibd.query.unaryop.HashIndex;
 import ibd.query.unaryop.Projection;
 import ibd.query.unaryop.aggregation.AggregationType;
+import ibd.query.unaryop.filter.Condition;
 import ibd.query.unaryop.filter.Filter;
 import ibd.query.unaryop.sort.Sort;
 import ibd.table.ComparisonTypes;
@@ -410,7 +413,7 @@ public class SBBD {
     }
 
     /* *********** QUERIES CREATION ****************/
-    public Operation createTest1(boolean hash) {
+    public Operation createTest1XXX(boolean hash) {
         try {
             return DslParser.readQuery(new File("C:\\Users\\ferna\\Dropbox\\dbest\\query trees\\23 - union 4.txt"));
             //return join2;
@@ -421,12 +424,12 @@ public class SBBD {
         return null;
     }
     
-    public Operation createTest1XXX(boolean hash) {
+    public Operation createTest1(boolean hash) {
         try {
 
-            Table movieTable = Directory.getTable(folder, "movie", null, cacheSize, pageSize, false);
-            Table movieCastTable = Directory.getTable(folder, "movieCast", null, cacheSize, pageSize, false);
-            Table personTable = Directory.getTable(folder, "person", null, cacheSize, pageSize, false);
+            Table movieTable = Directory.getTable(folder, "movie.dat", null, cacheSize, pageSize, false);
+            Table movieCastTable = Directory.getTable(folder, "movieCast.dat", null, cacheSize, pageSize, false);
+            Table personTable = Directory.getTable(folder, "person.dat", null, cacheSize, pageSize, false);
 
             Operation scanMovie = new IndexScan("movie", movieTable);
             Operation scanMovieCast = new IndexScan("movie_cast", movieCastTable);
@@ -554,12 +557,12 @@ public class SBBD {
         return null;
     }
 
-    public Operation createTest5(boolean hash) {
+    public Operation createTest51(boolean hash) {
         try {
-            Table movieTable = Directory.getTable(folder, "movie", null, cacheSize, pageSize, false);
-            Table movieCastTable = Directory.getTable(folder, "movieCast", null, cacheSize, pageSize, false);
-            Table movieCrewTable = Directory.getTable(folder, "movieCrew", null, cacheSize, pageSize, false);
-            Table personTable = Directory.getTable(folder, "person", null, cacheSize, pageSize, false);
+            Table movieTable = Directory.getTable(folder, "movie.dat", null, cacheSize, pageSize, false);
+            Table movieCastTable = Directory.getTable(folder, "movieCast.dat", null, cacheSize, pageSize, false);
+            Table movieCrewTable = Directory.getTable(folder, "movieCrew.dat", null, cacheSize, pageSize, false);
+            Table personTable = Directory.getTable(folder, "person.dat", null, cacheSize, pageSize, false);
             //Table personTable1 = Directory.getTable(null, folder, "person1", pageSize, false);
 
             Operation scanMovie = new IndexScan("movie", movieTable);
@@ -591,6 +594,87 @@ public class SBBD {
 
             JoinPredicate termsFinalSemiJoin = new JoinPredicate();
             Operation finalSemiJoinCrew = new NestedLoopSemiJoin(scanMovie, exists, termsFinalSemiJoin);
+
+            return finalSemiJoinCrew;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
+        }
+        return null;
+    }
+    
+    public Operation createTest52(boolean hash) {
+        try {
+            Table movieTable = Directory.getTable(folder, "movie.dat", null, cacheSize, pageSize, false);
+            Table movieCastTable = Directory.getTable(folder, "movieCast.dat", null, cacheSize, pageSize, false);
+            Table movieCrewTable = Directory.getTable(folder, "movieCrew.dat", null, cacheSize, pageSize, false);
+            Table personTable = Directory.getTable(folder, "person.dat", null, cacheSize, pageSize, false);
+            //Table personTable1 = Directory.getTable(null, folder, "person1", pageSize, false);
+
+            Operation scanMovie = new IndexScan("movie", movieTable);
+            Operation scanMovie1 = new IndexScan("movie1", movieTable);
+            Operation scanMovie2 = new IndexScan("movie2", movieTable);
+            Operation scanMovieCast = new IndexScan("movie_cast", movieCastTable);
+            Operation scanMovieCrew = new IndexScan("movie_crew", movieCrewTable);
+
+            if (hash) {
+                scanMovieCast = new HashIndex(scanMovieCast);
+                scanMovieCrew = new HashIndex(scanMovieCrew);
+            }
+
+            SingleColumnLookupFilter lookupCast = new SingleColumnLookupFilter(new ColumnElement("movie1.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
+            Operation filterCast = new Filter(scanMovie1, lookupCast);
+
+            SingleColumnLookupFilter lookupCrew = new SingleColumnLookupFilter(new ColumnElement("movie2.movie_id"), ComparisonTypes.EQUAL, new ReferencedElement("movie.movie_id"));
+            Operation filterCrew = new Filter(scanMovie2, lookupCrew);
+
+            JoinPredicate termsSemiJoinCast = new JoinPredicate();
+            termsSemiJoinCast.addTerm("movie1.movie_id", "movie_cast.movie_id");
+            NestedLoopSemiJoin joinCast = new NestedLoopSemiJoin(filterCast, scanMovieCast, termsSemiJoinCast);
+
+            JoinPredicate termsSemiJoinCrew = new JoinPredicate();
+            termsSemiJoinCrew.addTerm("movie2.movie_id", "movie_crew.movie_id");
+            Operation joinCrew = new NestedLoopSemiJoin(filterCrew, scanMovieCrew, termsSemiJoinCrew);
+
+            LogicalAnd exists = new LogicalAnd(joinCast, joinCrew);
+
+            JoinPredicate termsFinalSemiJoin = new JoinPredicate();
+            Operation finalSemiJoinCrew = new NestedLoopSemiJoin(scanMovie, exists, termsFinalSemiJoin);
+
+            return finalSemiJoinCrew;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.exit(1);
+        }
+        return null;
+    }
+    
+    public Operation createTest5(boolean hash) {
+        try {
+            Table movieCastTable = Directory.getTable(folder, "movieCast.dat", null, cacheSize, pageSize, false);
+            //Table personTable1 = Directory.getTable(null, folder, "person1", pageSize, false);
+
+            Operation scanMovieCast = new IndexScan("movie_cast", movieCastTable);
+
+            if (hash) {
+                scanMovieCast = new HashIndex(scanMovieCast);
+            }
+
+            
+            SingleColumnLookupFilter singleFilter1 = new SingleColumnLookupFilter(new ColumnElement("movie_cast.cast_order"), ComparisonTypes.EQUAL, new LiteralElement(5));
+            Condition condition1 = new Condition(singleFilter1);
+            
+            SingleColumnLookupFilter singleFilter2 = new SingleColumnLookupFilter(new ColumnElement("movie_cast.cast_order"), ComparisonTypes.EQUAL, new LiteralElement(2));
+            Condition condition2 = new Condition(singleFilter2);
+            
+            SingleColumnLookupFilter singleFilter3 = new SingleColumnLookupFilter(new ColumnElement("movie_cast.movie_id"), ComparisonTypes.EQUAL, new LiteralElement(5));
+            Condition condition3 = new Condition(singleFilter3);
+            
+            LogicalOr or = new LogicalOr(condition1, condition2);
+            LogicalAnd and = new LogicalAnd(or, condition3);
+
+            JoinPredicate termsFinalSemiJoin = new JoinPredicate();
+            Operation finalSemiJoinCrew = new NestedLoopSemiJoin(scanMovieCast, and, termsFinalSemiJoin);
 
             return finalSemiJoinCrew;
         } catch (Exception e) {
@@ -663,7 +747,7 @@ public class SBBD {
             terms2.addTerm("movie_cast_index.movie_id", "movie1.movie_id");
             Operation join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-            Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
+            Projection proj1 = new Projection(join2,  new String[]{"movie1.title"});
 
             SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
             Filter filterCrew = new Filter(scanPersonCrew, filter2);
@@ -676,10 +760,10 @@ public class SBBD {
             terms4.addTerm("movie_crew_index.movie_id", "movie2.movie_id");
             Operation join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-            Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
+            Projection proj2 = new Projection(join4,new String[]{"movie2.title"});
 
-            Sort s1 = new Sort(proj1, "p_cast.title", true);
-            Sort s2 = new Sort(proj2, "p_crew.title", true);
+            Sort s1 = new Sort(proj1, "movie1.title", true);
+            Sort s2 = new Sort(proj2, "movie2.title", true);
             Operation union = new Union(s1, s2);
 
             return union;
@@ -955,7 +1039,7 @@ public class SBBD {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args)  {
 
         SBBD main = new SBBD();
 
@@ -965,8 +1049,8 @@ public class SBBD {
         String action = "NONE";
 
         //args = new String[]{"EVAL", "8", "10","no_HASH"};
-        args = new String[]{"RUN", "1", "ALL_ROWS","NO_HASH"};
-        //args = new String[]{"VIEW", "8", "no_HASH"};
+        args = new String[]{"RUN", "5", "ALL_ROWS","NO_HASH"};
+        //args = new String[]{"VIEW", "5", "no_HASH"};
         //args = new String[]{"CREATE"};
         for (int i = 0; i < args.length; i++) {
             args[i] = args[i].toUpperCase();
@@ -1174,6 +1258,7 @@ public class SBBD {
             }
         }
 
+        try{
         if (action.equals("CREATE")) {
             main.createAllTables();
         } else if (action.equals("EVAL")) {
@@ -1182,6 +1267,10 @@ public class SBBD {
             main.run(queryNumber, tuplesToRead, hash);
         } else if (action.equals("VIEW")) {
             main.view(queryNumber, hash);
+        }
+        }
+        catch(Exception e){
+            e.printStackTrace();
         }
 //        for (int i = 0; i < 400; i++) {
 //            System.out.println("i = " + i);

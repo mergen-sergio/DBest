@@ -37,6 +37,10 @@ public abstract class OperationForm extends FormBase {
     protected final List<String> arguments = new ArrayList<>();
     protected final List<String> previousArguments = new ArrayList<>();
     protected final List<String> restrictedColumns = new ArrayList<>();
+    
+    protected boolean acceptFilters = true;
+    protected boolean acceptReferenceFilters = true;
+    
 
     public OperationForm(mxCell jCell) {
 
@@ -47,7 +51,12 @@ public abstract class OperationForm extends FormBase {
 
         this.operator = cell.getType().operatorClass;
         this.jCell = jCell;
-        this.leftChild = cell.getParents().get(0);
+
+        if (cell.getParents() != null && !cell.getParents().isEmpty()) {
+            this.leftChild = cell.getParents().get(0);
+        } else {
+            this.leftChild = null;
+        }
 
         if (!cell.getArguments().isEmpty()) {
             previousArguments.addAll(cell.getArguments());
@@ -99,39 +108,40 @@ public abstract class OperationForm extends FormBase {
         centerPanel.add(comboBoxColumn, gbc);
 
         contentPanel.add(centerPanel, BorderLayout.CENTER);
-        
-        Cell cell = CellUtils.getActiveCell(jCell).get().getParents().get(0);
+        Cell cell = CellUtils.getActiveCell(jCell).get(); 
+            
         java.util.List<Column> columns = setLeftComboBoxColumns(cell);
         setComboBoxData(columns, comboBoxSource, comboBoxColumn);
 
         comboBoxSource.addActionListener(actionEvent -> setColumns(comboBoxColumn, comboBoxSource, leftChild));
 
-        
+    }
+
+    protected void setLeftComboBoxData(Cell cell) {
+        Cell parentCell = cell.getParents().get(0);
+        setComboBoxData(parentCell.getColumns(), comboBoxSource, comboBoxColumn);
 
     }
-    
-    protected void setLeftComboBoxData(Cell cell){
-        setComboBoxData(cell.getColumns(), comboBoxSource, comboBoxColumn);
-        
-    }
-    
-    protected java.util.List<Column> setLeftComboBoxColumns(Cell cell){
+
+    protected java.util.List<Column> setLeftComboBoxColumns(Cell cell) {
         //OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
-        return new ArrayList(cell.getColumns());
-        
+        if (cell.getParents().isEmpty())
+            return new ArrayList();
+        Cell parentCell = cell.getParents().get(0);
+        return new ArrayList(parentCell.getColumns());
+
     }
-    
+
 //    protected void setSourceComboBoxData(){
 //        leftChild.getColumns().stream()
 //                .map(x -> x.SOURCE).distinct()
 //                .forEach(comboBoxSource::addItem);
 //    }
-    
-    protected void setComboBoxData(java.util.List<Column> columns, JComboBox<String> comboBoxSources, JComboBox<String> comboBoxColumns){
+    protected void setComboBoxData(java.util.List<Column> columns, JComboBox<String> comboBoxSources, JComboBox<String> comboBoxColumns) {
         columns.stream()
                 .map(x -> x.SOURCE).distinct()
                 .forEach(comboBoxSources::addItem);
-        
+
         setColumnsComboBox(comboBoxColumns, comboBoxSources, columns);
     }
 
@@ -186,8 +196,12 @@ public abstract class OperationForm extends FormBase {
 
     protected void setColumnsComboBox(JComboBox<String> comboBox, JComboBox<String> comboBoxS, List<Column> columns) {
         Object obj = comboBoxS.getSelectedItem();
-        if (obj==null)
+        if (obj == null) {
             obj = comboBoxS.getItemAt(0);
+        }
+        if (obj == null) {
+            return;
+        }
         String selectedItem = obj.toString();
         comboBox.removeAllItems();
         for (Column column : columns) {
@@ -214,9 +228,9 @@ public abstract class OperationForm extends FormBase {
 
         return columns;
     }
-    
-    protected List<Column> getColumnsAndReferences(Cell cell){
-    List<Column> allColumns = new ArrayList(cell.getColumns());
+
+    protected List<Column> getColumnsAndReferences(Cell cell) {
+        List<Column> allColumns = new ArrayList(cell.getColumns());
 
         //OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
         if (cell.getChild() != null) {
@@ -224,6 +238,16 @@ public abstract class OperationForm extends FormBase {
             java.util.List<entities.Column> leftSideCorrelationCols = getLeftSideCorrelationColumns(childCell.getOperator());
             allColumns.addAll(leftSideCorrelationCols);
         }
+        return allColumns;
+    }
+    
+    
+
+    protected List<Column> getReferences(Cell cell) {
+        List<Column> allColumns = new ArrayList();
+
+        java.util.List<entities.Column> leftSideCorrelationCols = getLeftSideCorrelationColumns(cell.getOperator());
+        allColumns.addAll(leftSideCorrelationCols);
         return allColumns;
     }
 
@@ -272,9 +296,11 @@ public abstract class OperationForm extends FormBase {
 
         try {
 
+            OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
+            
             Constructor<? extends IOperator> constructor = operator.getDeclaredConstructor();
             IOperator operation = constructor.newInstance();
-            operation.executeOperation(jCell, arguments);
+            operation.executeOperation(jCell, arguments, cell.getAlias());
 
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
                 | InvocationTargetException e) {

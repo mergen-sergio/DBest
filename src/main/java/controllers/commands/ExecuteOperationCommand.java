@@ -81,7 +81,7 @@ public class ExecuteOperationCommand extends BaseUndoableRedoableCommand {
             (operationCell.getArity() == OperationArity.UNARY || operationCell.getParents().size() == 2) &&
             OperationType.OPERATIONS_WITHOUT_FORM.contains(operationType)
         ) {
-            this.executeOperationWithoutForm(operationType);
+            this.executeOperationWithoutForm(operationType, operationCell.getAlias());
         }
         
         //TO DO: added to recalculate after operation created.
@@ -146,10 +146,10 @@ public class ExecuteOperationCommand extends BaseUndoableRedoableCommand {
         }
     }
 
-    private void executeOperationWithoutForm(OperationType operationType) {
+    private void executeOperationWithoutForm(OperationType operationType, String alias) {
         try {
             Constructor<? extends IOperator> constructor = operationType.operatorClass.getDeclaredConstructor();
-            constructor.newInstance().executeOperation(this.cellReference.get(), List.of());
+            constructor.newInstance().executeOperation(this.cellReference.get(), List.of(), alias);
         } catch (
             InstantiationException | IllegalAccessException |
             NoSuchMethodException | InvocationTargetException exception

@@ -21,13 +21,15 @@ import java.util.logging.Logger;
 
 public class HashGroup implements IOperator {
 
-    public static final List<String> PREFIXES = List.of("MIN:", "MAX:", "AVG:", "COUNT:", "FIRST:","LAST:","SUM:");
+    public static final List<String> PREFIXES = List.of("MIN:", "MAX:", "AVG:", "COUNT:", "FIRST:", "LAST:", "SUM:");
 
     @Override
-    public void executeOperation(mxCell jCell, List<String> arguments) {
+    public void executeOperation(mxCell jCell, List<String> arguments, String alias) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(jCell);
 
-        if (optionalCell.isEmpty()) return;
+        if (optionalCell.isEmpty()) {
+            return;
+        }
 
         OperationCell cell = (OperationCell) optionalCell.get();
         OperationErrorType errorType = null;
@@ -51,16 +53,16 @@ public class HashGroup implements IOperator {
             errorType = OperationErrorType.PARENT_WITHOUT_COLUMN;
 
             OperationErrorVerifier.parentContainsColumns(
-                cell.getParents().get(0).getColumnSourcesAndNames(), arguments.stream().limit(1).toList()
+                    cell.getParents().get(0).getColumnSourcesAndNames(), arguments.stream().limit(1).toList()
             );
 
             OperationErrorVerifier.parentContainsColumns(
-                cell.getParents().get(0).getColumnSourcesAndNames(),
-                arguments
-                    .stream()
-                    .map(x -> Utils.replaceIfStartsWithIgnoreCase(x, PREFIXES, ""))
-                    .toList()
-                    .subList(1, arguments.size())
+                    cell.getParents().get(0).getColumnSourcesAndNames(),
+                    arguments
+                            .stream()
+                            .map(x -> Utils.replaceIfStartsWithIgnoreCase(x, PREFIXES, ""))
+                            .toList()
+                            .subList(1, arguments.size())
             );
 
             errorType = OperationErrorType.NO_PREFIX;
@@ -71,7 +73,9 @@ public class HashGroup implements IOperator {
             cell.setError(errorType);
         }
 
-        if (errorType != null) return;
+        if (errorType != null) {
+            return;
+        }
 
         Cell parentCell = cell.getParents().get(0);
 
@@ -81,8 +85,8 @@ public class HashGroup implements IOperator {
 
         for (String argument : arguments.subList(1, arguments.size())) {
             String fixedArgument = argument.substring(0, Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())
-                + Column.composeSourceAndName(parentCell.getSourceNameByColumnName(argument.substring(Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())), argument.substring(Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())
-            );
+                    + Column.composeSourceAndName(parentCell.getSourceNameByColumnName(argument.substring(Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())), argument.substring(Utils.getFirstMatchingPrefixIgnoreCase(argument, PREFIXES).length())
+                    );
 
             fixedArguments.add(fixedArgument);
         }
@@ -108,24 +112,28 @@ public class HashGroup implements IOperator {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.FIRST));
             } else if (Utils.startsWithIgnoreCase(argument, "LAST:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.LAST));
-            } 
-            else if (Utils.startsWithIgnoreCase(argument, "SUM:")) {
+            } else if (Utils.startsWithIgnoreCase(argument, "SUM:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.SUM));
             }
         }
 
         ibd.query.Operation operator = parentCell.getOperator();
         //ibd.query.Operation readyOperator = new GroupOperator(operator, Column.removeName(groupBy), Column.removeSource(groupBy), aggregations);
-        ibd.query.Operation readyOperator = null;
         try {
             //readyOperator = new ibd.query.unaryop.Aggregation(operator, "aggregate", groupBy, aggregateCol, aggregateType, false);
-            readyOperator = new ibd.query.unaryop.aggregation.HashAggregation(operator, "aggregate", groupBy, aggregations, true);
+            ibd.query.unaryop.aggregation.HashAggregation readyOperator = new ibd.query.unaryop.aggregation.HashAggregation(operator, alias, groupBy, aggregations, true);
+            String formattedAlias = "";
+            alias = readyOperator.getDataSourceAlias();
+            if (!alias.isBlank()) {
+                formattedAlias = ":" + alias;
+            }
+
+            String operationName = String.format("%s%s %s", cell.getType().symbol, formattedAlias, arguments);
+
+            Operation.operationSetter(cell, operationName, arguments, readyOperator);
         } catch (Exception ex) {
             Logger.getLogger(HashGroup.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        String operationName = String.format("%s %s", cell.getType().symbol, arguments);
-
-        Operation.operationSetter(cell, operationName, arguments, readyOperator);
     }
 }

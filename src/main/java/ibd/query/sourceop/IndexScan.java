@@ -52,8 +52,8 @@ public class IndexScan extends SourceOperation {
      * table lookups
      */
     List<SingleColumnLookupFilter> fastFilters;
-    
-    List<SingleColumnLookupFilter> processedFilters;
+
+    HashMap<SingleColumnLookupFilter,SingleColumnLookupFilter> modifiedFilters;
 
     /**
      * the row to be used as a parameter to the efficient table lookup. It must
@@ -129,34 +129,59 @@ public class IndexScan extends SourceOperation {
 
             //builds a preliminary list of fast filters
             fastFilters = new ArrayList();
-            processedFilters = new ArrayList();
+            modifiedFilters = new HashMap();
+            
             fillFastFilters(joinFilter);
 
-            //identifies the columns used by the fast filters 
-            List<String> columns = new ArrayList();
+            // Identify the columns used by the fast filters
+            List<String> columns = new ArrayList<>();
             for (SingleColumnLookupFilter f : fastFilters) {
                 columns.add(f.getColumnDescriptor().getColumnName());
             }
 
-            //checks which of the identified columns are part of the index prefix.
-            //If at least one, an efficient lookup is possible
+            // Check which of the identified columns are part of the index prefix.
+            // If at least one, an efficient lookup is possible
             List<String> pkColumns = table.getPrototype().pKPrefix(columns);
             if (!pkColumns.isEmpty()) {
                 canLookup = true;
             }
 
-            //removes from the fast filters list the ones that do not use columns from the pk prefix
-            for (int i = fastFilters.size() - 1; i >= 0; i--) {
-                String colName = fastFilters.get(i).getColumnDescriptor().getColumnName();
-                if (!(pkColumns.contains(colName))) {
-                    fastFilters.remove(i);
+            // Reorganize and filter the fast filters based on the index prefix order
+            List<SingleColumnLookupFilter> reorganizedFilters = new ArrayList<>();
+            for (String pkColumn : pkColumns) {
+                for (int i = 0; i < fastFilters.size(); i++) {
+                    SingleColumnLookupFilter filter = fastFilters.get(i);
+                    String colName = filter.getColumnDescriptor().getColumnName();
+
+                    // Match column from PK prefix
+                    if (colName.equals(pkColumn)) {
+                        reorganizedFilters.add(filter);
+                        compType = filter.getComparisonType();
+                        fastFilters.remove(i); // Remove to avoid reprocessing
+                        if (filter.getComparisonType() != ComparisonTypes.EQUAL) {
+                            // Stop adding filters if the comparison type is not EQUALS
+                            fastFilters.clear(); // Clear remaining filters
+                            break;
+                        }
+                        break; // Move to the next PK column
+                    }
                 }
             }
+
+            // Replace the original fastFilters list with the reorganized version
+            fastFilters.clear();
+            fastFilters.addAll(reorganizedFilters);
+
+            List<SingleColumnLookupFilter> unnModifiedFastFilters = new ArrayList();
+            for (SingleColumnLookupFilter fastFilter : fastFilters) {
+                SingleColumnLookupFilter originalFilter = modifiedFilters.get(fastFilter);
+                if (originalFilter!=null)
+                    unnModifiedFastFilters.add(originalFilter);
+                else unnModifiedFastFilters.add(fastFilter);
+            }
             
-
-
             //fills the slow Filter with the lookup filters that are not part of the fast Filters list
-            slowLookupFilter = fillSlowFilter(parentOperation.getFilters());
+            slowLookupFilter = fillSlowFilter(parentOperation.getFilters(), unnModifiedFastFilters);
         }
 
     }
@@ -170,7 +195,7 @@ public class IndexScan extends SourceOperation {
             for (LookupFilter f : compositeLookupFilter.getFilters()) {
                 fillFastFilters(f);
             }
-        } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter ) {
+        } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter) {
             //if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) 
             {
                 Element elem1 = singleColumnLookupFilter.getFirstElement();
@@ -178,31 +203,29 @@ public class IndexScan extends SourceOperation {
                 if (elem1 instanceof ColumnElement && (elem2 instanceof LiteralElement || elem2 instanceof ReferencedElement)) {
                     compType = singleColumnLookupFilter.getComparisonType();
                     fastFilters.add(singleColumnLookupFilter);
-                    processedFilters.add(singleColumnLookupFilter);
                 } else if (elem2 instanceof ColumnElement && (elem1 instanceof LiteralElement || elem1 instanceof ReferencedElement)) {
-                    compType = singleColumnLookupFilter.getComparisonType();
-                    compType = ComparisonTypes.getSwitchedComparisonType(compType);
+                    int compType_ = ComparisonTypes.getSwitchedComparisonType(singleColumnLookupFilter.getComparisonType());
                     SingleColumnLookupFilter invertedFilter = new SingleColumnLookupFilter(
-                            singleColumnLookupFilter.getSecondElement(), 
-                            compType, 
+                            singleColumnLookupFilter.getSecondElement(),
+                            compType_,
                             singleColumnLookupFilter.getFirstElement());
                     fastFilters.add(invertedFilter);
-                    processedFilters.add(singleColumnLookupFilter);
+                    modifiedFilters.put(invertedFilter, singleColumnLookupFilter);
                 }
-                
+
             }
         }
 
     }
 
     //fills the list of slow filters
-    private LookupFilter fillSlowFilter(LookupFilter filter) throws Exception {
+    private LookupFilter fillSlowFilter(LookupFilter filter, List<SingleColumnLookupFilter> unnModifiedFastFilters) throws Exception {
 
         if (filter instanceof CompositeLookupFilter clf) {
 
             CompositeLookupFilter rowFilter = new CompositeLookupFilter(clf.getBooleanConnector());
             for (LookupFilter f : clf.getFilters()) {
-                LookupFilter rlf = fillSlowFilter(f);
+                LookupFilter rlf = fillSlowFilter(f, unnModifiedFastFilters);
                 if (!(rlf instanceof NoLookupFilter)) {
                     rowFilter.addFilter(rlf);
                 }
@@ -212,7 +235,7 @@ public class IndexScan extends SourceOperation {
             }
             return rowFilter;
         } else if (filter instanceof SingleColumnLookupFilter f) {
-            if (processedFilters.contains(f)) {
+            if (unnModifiedFastFilters.contains(f)) {
                 return new NoLookupFilter();
             }
             //SingleColumnLookupLookupFilter singleRowFilter = new SingleColumnLookupLookupFilter(f.getColumnDescriptor().getColumnLocation().colIndex, f.getComparisonType(), f);
@@ -225,7 +248,7 @@ public class IndexScan extends SourceOperation {
 
     @Override
     public String toString() {
-        return "[" + dataSourceAlias + "] Index Scan";
+        return "[" + alias + "] Index Scan";
     }
 
     /**
@@ -280,7 +303,7 @@ public class IndexScan extends SourceOperation {
     @Override
     public Map<String, List<String>> getContentInfo() {
         HashMap<String, List<String>> map = new LinkedHashMap<>();
-        map.put(dataSourceAlias, new ArrayList<>(columns));
+        map.put(alias, new ArrayList<>(columns));
         return map;
     }
 
@@ -309,24 +332,14 @@ public class IndexScan extends SourceOperation {
                     }
 
                     //the lookup occurs
-                    if (slowLookupFilter instanceof NoRowLookupFilter) {
-                        //no slow filter needs to be satisfied
-                        //iterator = table.getRecords(fastLookupRow).iterator();
-                        //iterator = records.iterator();
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
-                    } else {
-                        //there are slow filters to be satisfied
-                        //iterator = table.getRecords(fastLookupRow, slowLookupFilter).iterator;
-                        iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
-                    }
-
+                    iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
                     return;
 
                 }
 
                 //if it gets here, no fast filters exist, so we need to scan the entire table
-                //In this case, all filters are slow
-                if (slowLookupFilter instanceof NoRowLookupFilter) {
+                //In this case, either all filters are slow or there are no filters
+                if (slowLookupFilter instanceof NoLookupFilter) {
                     //if no filter needs to be performed
                     iterator = table.getAllRecordsIterator();
                     //iterator = table.getAllRecords().iterator();

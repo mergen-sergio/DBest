@@ -21,7 +21,7 @@ public class Explode implements IOperator {
 
     @Override
     @SuppressWarnings(value = "deprecation")
-    public void executeOperation(mxCell jCell, List<String> arguments) {
+    public void executeOperation(mxCell jCell, List<String> arguments, String alias) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(jCell);
 
         if (optionalCell.isEmpty()) return;

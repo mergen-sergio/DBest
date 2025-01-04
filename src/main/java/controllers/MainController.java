@@ -44,6 +44,7 @@ import gui.frames.forms.importexport.ImportAsForm;
 import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
 import gui.frames.main.MainFrame;
+import ibd.query.SingleSource;
 import utils.RandomUtils;
 
 import javax.swing.*;
@@ -87,7 +88,7 @@ public class MainController extends MainFrame {
     private static int currentTableYPosition = 0;
 
     private boolean isTableCellSelected = false;
-    
+
     public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
 
@@ -134,11 +135,10 @@ public class MainController extends MainFrame {
 
         // Set the selection stroke to a solid line
         mxSwingConstants.VERTEX_SELECTION_STROKE = new BasicStroke(2.0f);
-        
-        
+
         // Add mouse listener for rectangle selection
-            graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
-                @Override
+        graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent e) {
                 // Get starting point in screen coordinates
                 startPoint = e.getLocationOnScreen(); // Store starting point
@@ -178,25 +178,23 @@ public class MainController extends MainFrame {
                 }
             }
         });
-    
 
-            // Add mouse motion listener for real-time rectangle drawing
-            graphComponent.getGraphControl().addMouseMotionListener(new MouseAdapter() {
-                @Override
-                public void mouseDragged(MouseEvent e) {
-                    if (startPoint != null) {
-                        Point endPoint = e.getPoint();
-                        selectionRectangle = new Rectangle(
-                                Math.min(startPoint.x, endPoint.x),
-                                Math.min(startPoint.y, endPoint.y),
-                                Math.abs(startPoint.x - endPoint.x),
-                                Math.abs(startPoint.y - endPoint.y)
-                        );
-                        graphComponent.getGraphControl().repaint(); // Refresh while dragging
-                    }
+        // Add mouse motion listener for real-time rectangle drawing
+        graphComponent.getGraphControl().addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (startPoint != null) {
+                    Point endPoint = e.getPoint();
+                    selectionRectangle = new Rectangle(
+                            Math.min(startPoint.x, endPoint.x),
+                            Math.min(startPoint.y, endPoint.y),
+                            Math.abs(startPoint.x - endPoint.x),
+                            Math.abs(startPoint.y - endPoint.y)
+                    );
+                    graphComponent.getGraphControl().repaint(); // Refresh while dragging
                 }
-            });
-
+            }
+        });
 
 //        // Definir um listener para mudanças na seleção
 //        graph.getSelectionModel().addListener(mxEvent.CHANGE, new mxEventSource.mxIEventListener() {
@@ -434,14 +432,14 @@ public class MainController extends MainFrame {
 
             }
 
-            if (cell.isOperationCell()) {
-                this.popupMenuJCell.remove(this.renameOperatorMenuItem);
-            }
+//            if (cell.isOperationCell() && !cell.hasSingleSource()) {
+//                this.popupMenuJCell.remove(this.renameOperatorMenuItem);
+//            }
 
             if (cell instanceof OperationCell operationCell && !operationCell.hasBeenInitialized()) {
                 this.popupMenuJCell.remove(this.runQueryMenuItem);
                 this.popupMenuJCell.remove(this.operationsMenuItem);
-                this.popupMenuJCell.remove(this.editMenuItem);
+                //this.popupMenuJCell.remove(this.editMenuItem);
                 this.popupMenuJCell.remove(this.exportTableMenuItem);
                 this.popupMenuJCell.remove(this.saveQueryMenuItem);
             }
@@ -526,10 +524,13 @@ public class MainController extends MainFrame {
 
     private void executeAsOperator(mxCell cell) {
 
-        if (CellUtils.getActiveCell(cell).isEmpty()
-                || !CellUtils.getActiveCell(cell).get().isTableCell()) {
-            return;
-        }
+//        if (CellUtils.getActiveCell(cell).isEmpty()
+//                || !(CellUtils.getActiveCell(cell).get().isTableCell()
+//                || CellUtils.getActiveCell(cell).get().hasSingleSource()
+//                )
+//                ) {
+//            return;
+//        }
 
         AtomicReference<Boolean> cancelService = new AtomicReference<>(false);
 
@@ -541,13 +542,19 @@ public class MainController extends MainFrame {
     }
 
     public static void executeAsOperator(mxCell cell, String text) {
-        if (CellUtils.getActiveCell(cell).isEmpty()
-                || !CellUtils.getActiveCell(cell).get().isTableCell()) {
-            return;
+//        if (CellUtils.getActiveCell(cell).isEmpty()
+//                || !(CellUtils.getActiveCell(cell).get().isTableCell()
+//                || CellUtils.getActiveCell(cell).get().hasSingleSource()
+//                )) {
+//            return;
+//        }
+        Cell cell_ = CellUtils.getActiveCell(cell).get();
+        
+        if (cell_ instanceof TableCell)
+            ((TableCell)cell_ ).asOperator(text);
+        else{
+            ((OperationCell)cell_ ).asOperator(text);
         }
-
-        ((TableCell) CellUtils.getActiveCell(cell).get()).asOperator(text);
-
     }
 
     public void onBottomMenuItemClicked(ActionEvent event, Button<?> clickedButton, String style) throws Exception {
@@ -570,13 +577,13 @@ public class MainController extends MainFrame {
                     .getActiveCell(this.jCell)
                     .ifPresent(cell -> new ExportFile().exportToDsl(cell.getTree()));
         } else if (menuItem == this.editMenuItem) {
-            CellUtils
-                    .getActiveCell(this.jCell)
-                    .ifPresent(cell -> {
-                        OperationCell operationCell = (OperationCell) cell;
-                        operationCell.editOperation(this.jCell);
-                        TreeUtils.recalculateContent(operationCell);
-                    });
+            Optional<Cell> activeCell = CellUtils.getActiveCell(this.jCell);
+            if (activeCell.isPresent()) {
+                Cell cell = activeCell.get();
+                OperationCell operationCell = (OperationCell) cell;
+                operationCell.editOperation(this.jCell);
+                TreeUtils.recalculateContent(operationCell);
+            }
         } else if (menuItem == this.removeMenuItem) {
             if (this.jCell != null) {
                 this.executeRemoveCellCommand(this.jCell);
@@ -587,8 +594,8 @@ public class MainController extends MainFrame {
         } else if (menuItem == this.unmarkCellMenuItem) {
             CellUtils.unmarkCell(this.jCell);
         } else if (menuItem == this.selectionMenuItem) {
-            createOperationAction = OperationType.SELECTION.getAction();
-            style = OperationType.SELECTION.displayName;
+            createOperationAction = OperationType.FILTER.getAction();
+            style = OperationType.FILTER.displayName;
         } else if (menuItem == this.projectionMenuItem) {
             createOperationAction = OperationType.PROJECTION.getAction();
             style = OperationType.PROJECTION.displayName;
@@ -812,14 +819,15 @@ public class MainController extends MainFrame {
             Robot robot = new Robot();
             Point locationOnScreen = getLocationOnScreen();
             Rectangle screenRect = new Rectangle(locationOnScreen.x + selectionRectangle.x, locationOnScreen.y + selectionRectangle.y,
-                                                 selectionRectangle.width, selectionRectangle.height);
+                    selectionRectangle.width, selectionRectangle.height);
             BufferedImage screenImage = robot.createScreenCapture(screenRect);
             ImageIO.write(screenImage, "png", new File(filePath));
             System.out.println("Screenshot saved successfully.");
         } catch (AWTException | IOException e) {
             e.printStackTrace();
         }
-}
+    }
+
     @Override
     public void keyPressed(KeyEvent event) {
         int keyCode = event.getKeyCode();
@@ -1042,13 +1050,17 @@ public class MainController extends MainFrame {
                         x, y, width, 30, CellType.OPERATION.id
                 );
 
-        List<Cell> parents = new ArrayList<>(List.of(operationExpression.getSource().getCell()));
+        List<Cell> parents = new ArrayList<>();
 
+        if (operationExpression.getSource()!=null)
+        {
+            parents.addAll(List.of(operationExpression.getSource().getCell()));
+        }
         if (operationExpression instanceof BinaryExpression binaryExpression) {
             parents.add(binaryExpression.getSource2().getCell());
         }
 
-        operationExpression.setCell(new OperationCell(jCell, type, parents, operationExpression.getArguments()));
+        operationExpression.setCell(new OperationCell(jCell, type, parents, operationExpression.getArguments(), operationExpression.getAlias()));
 
         OperationCell cell = operationExpression.getCell();
 

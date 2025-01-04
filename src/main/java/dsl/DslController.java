@@ -212,6 +212,9 @@ public class DslController {
                     solveExpression(binaryExpression.getSource2());
                 }
             }
+            MainController.putOperationCell(operationExpression);
+        System.out.println("query parser: expression: "+operationExpression.getType().getFormattedDisplayName());
+
 
         } else if (expression instanceof Relation relation) {
 
@@ -219,12 +222,10 @@ public class DslController {
             return;
 
         } else {
-            throw new InputException("expression is null");
+            //throw new InputException("expression is null");
         }
 
-        MainController.putOperationCell(operationExpression);
-        System.out.println("query parser: expression: "+operationExpression.getType().getFormattedDisplayName());
-
+        
     }
 
     private static void createTable(Relation relation) {

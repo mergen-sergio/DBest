@@ -265,9 +265,10 @@ public class DslParser {
             return new ibd.query.unaryop.AutoIncrement(child1, "autoIncrement",arguments.get(0));
         }
         if (operationExpression.getType() == OperationType.PROJECTION) {
-            return new ibd.query.unaryop.Projection(child1, "projection", arguments.toArray(new String[0]));
+            //return new ibd.query.unaryop.Projection(child1, "projection", arguments.toArray(new String[0]));
+            return new ibd.query.unaryop.Projection(child1,  arguments.toArray(new String[0]));
         }
-        if (operationExpression.getType() == OperationType.SELECTION) {
+        if (operationExpression.getType() == OperationType.FILTER) {
             String expression = arguments.get(0);
             BooleanExpression booleanExpression = BooleanExpressionRecognizer.recognize(expression);
             LookupFilter filter = ExpressionConverter.convert(booleanExpression);

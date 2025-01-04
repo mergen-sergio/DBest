@@ -36,8 +36,16 @@ public final class UnaryExpression extends OperationExpression {
             setArguments(List.of(input.substring(input.indexOf("[") + 1, input.indexOf("]")).split(",")));
 
         }
+        
+        String type = input.substring(0, endIndex);
+        int index = type.indexOf(":");
+        if (index!=-1){
+            String alias = type.substring(index+1, type.length()).trim();
+            setAlias(alias);
+            type = type.substring(0, index);
+        }
 
-        setType(OperationType.fromString(input.substring(0, endIndex).toLowerCase()));
+        setType(OperationType.fromString(type));
 
         int beginSourceIndex = 0;
 

@@ -47,14 +47,14 @@ public class Difference extends Set {
         Tuple rightTuple;
         //the iterator over the operation on the left side
         Iterator<Tuple> leftTuples;
-        //the iterator over the operation on the left side
+        //the iterator over the operation on the right side
         Iterator<Tuple> rightTuples;
 
         public DifferenceIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
 
             leftTuples = leftOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
-            rightTuples = rightOperation.lookUp(processedTuples, false); //iterate over all tuples from the left side
+            rightTuples = rightOperation.lookUp(processedTuples, false); //iterate over all tuples from the right side
         }
 
         @Override

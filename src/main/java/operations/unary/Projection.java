@@ -17,7 +17,7 @@ import java.util.Optional;
 public class Projection implements IOperator {
 
     @Override
-    public void executeOperation(mxCell jCell, List<String> arguments) {
+    public void executeOperation(mxCell jCell, List<String> arguments, String alias) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(jCell);
 
         if (optionalCell.isEmpty()) return;
@@ -59,7 +59,7 @@ public class Projection implements IOperator {
 
         ibd.query.Operation filterColumns = null;
         try {
-            filterColumns = new ibd.query.unaryop.Projection(operator, "projection", fixedArguments.toArray(new String[0]));
+            filterColumns = new ibd.query.unaryop.Projection(operator, fixedArguments.toArray(new String[0]));
         } catch (Exception ex) {
             ex.printStackTrace();
         }

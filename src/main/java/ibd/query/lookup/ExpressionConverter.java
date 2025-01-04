@@ -51,9 +51,12 @@ public class ExpressionConverter {
         if (element instanceof Variable) {
             String leftColumn = getQualifiedColumnName((Variable) element);
             return new ColumnElement(leftColumn);
-        } else {
+        } else if (element instanceof Value){
             Comparable value = getValue((Value) element);
             return new LiteralElement(value);
+        }
+        else {
+            return new LiteralElement(null);
         }
     }
 

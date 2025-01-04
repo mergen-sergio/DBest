@@ -12,6 +12,7 @@ import entities.utils.RootFinder;
 import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
 import ibd.query.Operation;
+import ibd.query.SingleSource;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -30,6 +31,8 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     protected final String style;
 
     protected String name;
+    
+    protected String alias="";
 
     protected final mxCell jCell;
 
@@ -46,7 +49,7 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     protected Cell(String name, mxCell jCell, int height) {
 
         this.columns = new ArrayList<>();
-        this.name = name;
+        this.name = name.trim();
         this.jCell = jCell;
         this.width = Math.max(CellUtils.getCellWidth(jCell), ConstantController.TABLE_CELL_WIDTH);
         this.height = height;
@@ -140,6 +143,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     public List<String> getColumnNames() {
         return this.getColumns().stream().map(x -> x.NAME).toList();
     }
+    
+    public String getAlias() {
+        return this.alias;
+    }
 
     public boolean canBeParent(){
 
@@ -147,7 +154,7 @@ public abstract sealed class Cell permits TableCell, OperationCell {
 
         OperationCell operationCell = (OperationCell) this;
 
-        return operationCell.hasBeenInitialized() && !operationCell.hasError() && !operationCell.hasParentErrors();
+        return operationCell.getType().allwaysAllowConnections || (operationCell.hasBeenInitialized() && !operationCell.hasError() && !operationCell.hasParentErrors());
 
     }
 
@@ -231,6 +238,17 @@ public abstract sealed class Cell permits TableCell, OperationCell {
 
     public boolean isOperationCell(){
         return this instanceof OperationCell;
+    }
+    
+    public boolean alwaysAllowConnections(){
+        return false;
+    }
+    
+    public boolean hasSingleSource(){
+        if (operator==null) return false;
+        if (operator instanceof SingleSource) return true;
+        
+        return false;
     }
 
     @Override

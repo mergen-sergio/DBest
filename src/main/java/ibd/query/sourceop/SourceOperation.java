@@ -7,6 +7,7 @@ package ibd.query.sourceop;
 
 import ibd.query.Operation;
 import ibd.query.ReferedDataSource;
+import ibd.query.SingleSource;
 
 
 /**
@@ -14,31 +15,33 @@ import ibd.query.ReferedDataSource;
  * The data source has as alias. The alias is used by other operations to identify rows that come from a specific data source
  * @author Sergio
  */
-public abstract class SourceOperation extends Operation{
+public abstract class SourceOperation extends Operation implements SingleSource{
     
     //the alias of the data source accessed by this source operation
-    String dataSourceAlias;
+    //String dataSourceAlias;
     
     /**
      *
      * @param dataSourceAlias the alias of the data source accessed by this source operation
      */
     public SourceOperation(String dataSourceAlias){
-        this.dataSourceAlias = dataSourceAlias;
+        this.alias = dataSourceAlias;
         
     }
     
-    public void asName(String newName){
-        this.dataSourceAlias = newName;
-    }
-    
-    /**
-     * 
-     * @return the alias of the data source accessed by this source operation
-     */
-    public String getDataSourceAlias() {
-    return dataSourceAlias;
-    }
+//    @Override
+//    public void setDataSourceAlias(String newName){
+//        this.dataSourceAlias = newName;
+//    }
+//    
+//    /**
+//     * 
+//     * @return the alias of the data source accessed by this source operation
+//     */
+//    @Override
+//    public String getDataSourceAlias() {
+//    return dataSourceAlias;
+//    }
     
     /**
      * 
@@ -55,7 +58,7 @@ public abstract class SourceOperation extends Operation{
     public void setDataSourcesInfo() throws Exception {
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
-        dataSources[0].alias = dataSourceAlias;
+        dataSources[0].alias = alias;
     }
     
     
@@ -67,7 +70,7 @@ public abstract class SourceOperation extends Operation{
      */
     @Override
      public String toString(){
-         return "["+dataSourceAlias+"]";
+         return "["+alias+"]";
      }
     
 }

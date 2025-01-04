@@ -10,7 +10,6 @@ import entities.utils.cells.CellUtils;
 import lib.booleanexpression.entities.elements.Element;
 import lib.booleanexpression.entities.elements.Null;
 import lib.booleanexpression.entities.elements.Value;
-import lib.booleanexpression.entities.elements.Variable;
 import lib.booleanexpression.entities.expressions.AtomicExpression;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
 import lib.booleanexpression.entities.expressions.LogicalExpression;
@@ -21,7 +20,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -31,6 +29,7 @@ import static booleanexpression.Utils.getElement;
 import entities.Column;
 import entities.cells.OperationCell;
 import gui.frames.forms.operations.OperationForm;
+import ibd.table.prototype.query.fields.BooleanField;
 import ibd.table.prototype.query.fields.DoubleField;
 import ibd.table.prototype.query.fields.FloatField;
 import ibd.table.prototype.query.fields.IntegerField;
@@ -62,12 +61,17 @@ public class BooleanExpressionRecognizer {
         StringBuilder logicalExpressionStringBuilder = new StringBuilder();
         logicalExpressionStringBuilder.append(" ( ");
 
+        boolean first = true;
         for (int i = 0; i < numberOfExpressions; i++) {
-            logicalExpressionStringBuilder.append(this.recognizer(logicalExpression.getExpressions().get(i)));
-
-            if (i != numberOfExpressions - 1) {
+            BooleanExpression exp = logicalExpression.getExpressions().get(i);
+            if (exp==null) continue;
+            if (!first) {
                 logicalExpressionStringBuilder.append(operator);
             }
+            logicalExpressionStringBuilder.append(this.recognizer(exp));
+
+            
+            first = false;
         }
 
         logicalExpressionStringBuilder.append(" ) ");
@@ -95,7 +99,11 @@ public class BooleanExpressionRecognizer {
                 return String.valueOf(field.getDouble());
             } else if (value.getField() instanceof StringField field) {
                 return String.format("'%s'", field.getString());
-            } else {
+            } 
+            else if (value.getField() instanceof BooleanField field) {
+                return String.valueOf(field.getBoolean());
+            } 
+            else {
                 throw new IllegalStateException(String.format("Unexpected value: %s", value.getField()));
             }
         } else if (element instanceof Null) {
@@ -115,7 +123,7 @@ public class BooleanExpressionRecognizer {
         parser.removeErrorListeners();
 
         ErrorListener errorListener = new ErrorListener();
-
+        ErrorListener.getErrors().clear();
         parser.addErrorListener(errorListener);
 
         ParseTreeWalker walker = new ParseTreeWalker();
@@ -124,7 +132,7 @@ public class BooleanExpressionRecognizer {
         walker.walk(listener, parser.command());
 
         if (!ErrorListener.getErrors().isEmpty()) {
-            throw new BooleanExpressionException(ConstantController.getString("booleanExpression.error.invalidFormat"));
+            //throw new BooleanExpressionException(ConstantController.getString("booleanExpression.error.invalidFormat"));
         }
 
         return recognize(text);

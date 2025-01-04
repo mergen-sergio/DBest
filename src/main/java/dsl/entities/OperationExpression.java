@@ -7,13 +7,14 @@ import enums.OperationType;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract sealed class OperationExpression extends dsl.entities.Expression<OperationCell> permits UnaryExpression, BinaryExpression {
+public abstract sealed class OperationExpression extends dsl.entities.Expression<OperationCell> permits UnaryExpression, BinaryExpression, NullaryExpression {
 
     private OperationType type;
     private OperationArity arity;
     private final List<String> arguments = new ArrayList<>();
     private dsl.entities.Expression<?> source;
     private OperationCell cell = null;
+    private String alias = "";
 
     public OperationExpression(String command) {
         super(command);
@@ -64,6 +65,14 @@ public abstract sealed class OperationExpression extends dsl.entities.Expression
 
     public OperationType getType() {
         return type;
+    }
+    
+    public String getAlias() {
+        return alias;
+    }
+    
+     public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public OperationArity getArity() {

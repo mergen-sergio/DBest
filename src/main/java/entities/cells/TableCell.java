@@ -88,7 +88,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
     }
 
     public void asOperator(String newName){
-        sourceOperator.asName(newName);
+        sourceOperator.setDataSourceAlias(newName);
         this.name = newName;
         jCell.setValue(newName);
         adjustWidthSize();
@@ -98,7 +98,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
 
     public void adjustWidthSize(){
         this.width = Math.max(CellUtils.getCellWidth(jCell), ConstantController.TABLE_CELL_WIDTH);
-        changeCellName(jCell, firstName+" ("+name+")", ConstantController.TABLE_CELL_WIDTH);
+        changeCellName(jCell, firstName+":"+name, ConstantController.TABLE_CELL_WIDTH);
 
     }
     private void changeSourceNames(String newName){

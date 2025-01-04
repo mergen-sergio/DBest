@@ -156,7 +156,9 @@ public class ComparatorFrame extends JFrame implements ActionListener {
 
         for (Cell cell : markedCells) {
 
-            columnNames.add(cell.getName());
+            if (cell.getAlias().isBlank())
+                columnNames.add(cell.getName());
+            else columnNames.add(cell.getAlias());
 
             Pair<Integer, CellStats> currentStats = tuplesDone.get(cell) ? Pair.of(0, emptyStats) : cell.getCellStats(tuplesToRead, CellStats.getTotalCurrentStats());
             if (!first) {

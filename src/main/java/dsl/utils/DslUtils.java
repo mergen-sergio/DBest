@@ -5,6 +5,7 @@ import controllers.MainController;
 import dsl.DslController;
 import dsl.entities.BinaryExpression;
 import dsl.entities.Expression;
+import dsl.entities.NullaryExpression;
 import dsl.entities.Relation;
 import dsl.entities.UnaryExpression;
 import dsl.enums.CommandType;
@@ -17,15 +18,12 @@ import enums.OperationArity;
 import enums.OperationType;
 import exceptions.dsl.InputException;
 import ibd.table.Table;
-import java.io.IOException;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class DslUtils {
 
@@ -48,7 +46,7 @@ public class DslUtils {
     }
 
     public static Expression<?> expressionRecognizer(String input, Map<String, Table> tables) throws InputException {
-
+        input = input.trim();
         if (input.contains("(")) {
 
             int endIndex = input.indexOf('(');
@@ -57,10 +55,13 @@ public class DslUtils {
                 endIndex = Math.min(input.indexOf('['), endIndex);
             }
 
-            if (OperationType.fromString(input.substring(0, endIndex).toLowerCase()).arity == OperationArity.UNARY) {
+            OperationArity arity = OperationType.fromString(input.substring(0, endIndex).toLowerCase()).arity;
+            if ( arity== OperationArity.UNARY) {
                 return new UnaryExpression(input, tables);
             }
-
+            else if (arity==OperationArity.NULLARY)
+                return new NullaryExpression(input, tables);
+            
             return new BinaryExpression(input, tables);
         }
 
@@ -218,16 +219,28 @@ public class DslUtils {
 
             raw = operationCell.getType().dslSyntax;
 
+            int in = raw.indexOf('[');
+            if (in==-1)
+                in = raw.indexOf('(');
+            String toBeReplaced = raw.substring(0,in);
+            String replacement = toBeReplaced;
+            if (!operationCell.getAlias().isBlank())
+                replacement = replacement+":"+operationCell.getAlias();
+            
+            raw = raw.replace(toBeReplaced, replacement);
+            
             raw = raw.replace("[args]", OperationType.OPERATIONS_WITHOUT_FORM.contains(operationCell.getType()) ? ""
                     : operationCell.getArguments().toString());
 
             if (operationCell.getArity() == OperationArity.UNARY) {
                 raw = raw.replace("source", generateExpression(cell.getParents().get(0)));
-            } else {
+            } else if (operationCell.getArity() == OperationArity.BINARY){
 
                 raw = raw.replace("source1", generateExpression(cell.getParents().get(0)));
                 raw = raw.replace("source2", generateExpression(cell.getParents().get(1)));
-
+            }
+            else {
+            
             }
 
         } else if (cell instanceof TableCell tableCell) {

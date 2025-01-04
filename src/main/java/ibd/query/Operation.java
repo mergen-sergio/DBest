@@ -109,6 +109,15 @@ public abstract class Operation {
     protected boolean hasDelegatedFilters = true;
 
     private boolean runFromHere = false;
+    
+    protected String alias = "";
+    
+    public void setDataSourceAlias(String alias){
+        this.alias = alias;
+    }
+    public String getDataSourceAlias(){
+        return alias;
+    }
 
     /**
      * Sets information regarding the tuples that need to be retrieved, based on

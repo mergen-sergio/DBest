@@ -10,11 +10,16 @@ import entities.cells.OperationCell;
 import entities.utils.cells.CellRepository;
 import entities.utils.cells.CellUtils;
 import enums.CellType;
+import enums.OperationType;
 import gui.frames.main.MainFrame;
+import ibd.query.lookup.NoLookupFilter;
+import ibd.query.unaryop.filter.Condition;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.awt.event.MouseEvent;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
@@ -123,8 +128,16 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
                 );
 
             this.cellReference.set(this.mxCell);
-            new OperationCell(this.mxCell, createOperationAction.getOperationType());
-
+            OperationCell operationCell = new OperationCell(this.mxCell, createOperationAction.getOperationType());
+            if (createOperationAction.getOperationType()==OperationType.CONDITION)
+            {
+                try {
+                    Condition condition = new Condition(new NoLookupFilter());
+                    operationCell.setOperator(condition);
+                } catch (Exception ex) {
+                }
+            }
+            
             if (createOperationAction.hasParent() && this.edgeReference != null) {
                 this.edgeReference.get().addParent(createOperationAction.getParent());
                 this.edgeReference.get().addChild(this.mxCell);

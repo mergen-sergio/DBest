@@ -111,24 +111,35 @@ public class ComparisonTypes {
      */
     public static boolean match(Comparable value1, Comparable value2, int comparisonType) {
 
-        if (comparisonType == ComparisonTypes.IS_NULL && value1==null) return true;
-        if (comparisonType == ComparisonTypes.IS_NOT_NULL && value1!=null) return true;
-        
-        if (value2==null) return false;
-        
+        ibd.query.QueryStats.COMPARE_FILTER++;
+        if (value1==null && value2==null){
+            if (comparisonType == ComparisonTypes.IS_NULL) return true;
+            return false;
+        }
+        if (value1==null || value2==null){
+            if (comparisonType == ComparisonTypes.IS_NOT_NULL) return true; 
+            return false;
+        }
+//        if (comparisonType == ComparisonTypes.IS_NULL && value1==null) return true;
+//        if (comparisonType == ComparisonTypes.IS_NOT_NULL && value1!=null) return true;
+//        
+//        if (value2==null) return false;
 
         int resp = value1.compareTo(value2);
-        if (resp == 0 && (comparisonType == ComparisonTypes.EQUAL
+        if (resp == 0){
+            if (comparisonType == ComparisonTypes.EQUAL
+                || comparisonType == ComparisonTypes.IS_NULL
                 || comparisonType == ComparisonTypes.LOWER_EQUAL_THAN
-                || comparisonType == ComparisonTypes.GREATER_EQUAL_THAN)) {
-            return true;
+                || comparisonType == ComparisonTypes.GREATER_EQUAL_THAN) {
+            return true;}
+            else return false;
         } else if (resp < 0 && (comparisonType == ComparisonTypes.LOWER_THAN
                 || comparisonType == ComparisonTypes.LOWER_EQUAL_THAN)) {
             return true;
         } else if (resp > 0 && (comparisonType == ComparisonTypes.GREATER_THAN
                 || comparisonType == ComparisonTypes.GREATER_EQUAL_THAN)) {
             return true;
-        } else if (resp != 0 && comparisonType == ComparisonTypes.DIFF) {
+        } else if (resp != 0 && (comparisonType == ComparisonTypes.DIFF || comparisonType == ComparisonTypes.IS_NOT_NULL)) {
             return true;
         } else {
             return false;

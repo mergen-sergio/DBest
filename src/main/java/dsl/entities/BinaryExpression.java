@@ -55,7 +55,15 @@ public final class BinaryExpression extends OperationExpression {
 
 		}
 		
-		setType(OperationType.fromString(input.substring(0, endIndex).toLowerCase()));
+                String type = input.substring(0, endIndex);
+                int index = type.indexOf(":");
+                if (index!=-1){
+                    String alias = type.substring(index+1, type.length()).trim();
+                    setAlias(alias);
+                    type = type.substring(0, index);
+                }
+                
+		setType(OperationType.fromString(type));
 		
 		int sourcePosition = findFirstUnbracketedParenthesis(input) + 1;
 		int commaPosition = DslUtils.findCommaPosition(input.substring(sourcePosition))

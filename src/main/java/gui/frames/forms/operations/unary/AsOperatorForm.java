@@ -85,6 +85,7 @@ public class AsOperatorForm extends FormBase implements ActionListener, IFormCon
     }
 
     private void closeWindow() {
+        cancelService.set(true);
         dispose();
     }
 

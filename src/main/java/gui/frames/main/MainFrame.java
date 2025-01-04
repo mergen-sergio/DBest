@@ -39,6 +39,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JPanel  semiJoinOperatorsPanel;
     protected JPanel  antiJoinOperatorsPanel;
     protected JPanel  setOperatorsPanel;
+    protected JPanel  logicalOperatorsPanel;
+    protected JPanel  ETLOperatorsPanel;
+    protected JPanel  algebraOperatorsPanel;
+    protected JPanel  removeOperatorsPanel;
+    protected JPanel  otherOperatorsPanel;
 
     protected static mxGraph tablesGraph;
 
@@ -105,7 +110,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JMenuItem intersectionMenuItem;
     
     protected JMenuItem differenceMenuItem;
-
+    
     //protected JMenuItem importTableMenuItem;
     
     //protected JMenuItem openCSVTableMenuItem;
@@ -161,6 +166,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.semiJoinOperatorsPanel = new JPanel();
         this.antiJoinOperatorsPanel = new JPanel();
         this.setOperatorsPanel = new JPanel();
+        this.logicalOperatorsPanel = new JPanel();
+        this.ETLOperatorsPanel = new JPanel();
+        this.algebraOperatorsPanel = new JPanel();
+        this.removeOperatorsPanel = new JPanel();
+        this.otherOperatorsPanel = new JPanel();;
         tablesGraph = new mxGraph();
         this.tablesComponent = new mxGraphComponent(tablesGraph);
         tablesPanel = new JPanel();
@@ -179,7 +189,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.markCellMenuItem = new JMenuItem(ConstantController.getString("cell.mark"));
         this.unmarkCellMenuItem = new JMenuItem(ConstantController.getString("cell.unmark"));
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
-        this.selectionMenuItem = new JMenuItem(OperationType.SELECTION.displayName);
+        this.selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
         this.filterColumnMenuItem = new JMenuItem(OperationType.SELECT_COLUMNS.displayName);
         this.sortMenuItem = new JMenuItem(OperationType.SORT.displayName);
@@ -393,20 +403,36 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     private void addOperationButtons() {
         mxStylesheet stylesheet = graph.getStylesheet();
 
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SELECTION, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DUPLICATE_REMOVAL, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.operationsPanel));
+        
+        
+        
         this.buttons.add(new OperationButton(stylesheet, OperationType.SORT, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.operationsPanel));
+        
+        addGroupButton(this.algebraOperatorsPanel, "Rel. Algebra Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.algebraOperatorsPanel));
+        
+                
+        addGroupButton(this.removeOperatorsPanel, "Remove Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.removeOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.removeOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.removeOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.removeOperatorsPanel));
         
         
-        this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.EXPLODE, this, this.operationsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AUTO_INCREMENT, this, this.operationsPanel));
+        addGroupButton(this.ETLOperatorsPanel, "ETL Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.EXPLODE, this, this.ETLOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AUTO_INCREMENT, this, this.ETLOperatorsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
         
         addGroupButton(this.indexOperatorsPanel, "Index Operators");
@@ -462,7 +488,18 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.setOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.setOperatorsPanel));
 
-                
+        addGroupButton(this.logicalOperatorsPanel, "Logical Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.AND, this, this.logicalOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.OR, this, this.logicalOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.XOR, this, this.logicalOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CONDITION, this, this.logicalOperatorsPanel));        
+        this.buttons.add(new OperationButton(stylesheet, OperationType.IF, this, this.logicalOperatorsPanel));        
+        
+        addGroupButton(this.otherOperatorsPanel, "Other Operators");
+        this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.otherOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.otherOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.otherOperatorsPanel));
+        
         //this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
         

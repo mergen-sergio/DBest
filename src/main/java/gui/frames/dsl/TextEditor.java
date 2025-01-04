@@ -61,7 +61,7 @@ public class TextEditor extends JFrame implements ActionListener {
 
     private final JButton importButton = new JButton();
 
-    private final JMenuItem selectionMenuItem = new JMenuItem(OperationType.SELECTION.displayName);
+    private final JMenuItem selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
 
     private final JMenuItem projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
 

@@ -72,13 +72,13 @@ public class FullTableScan extends SourceOperation {
 
     @Override
     public String toString() {
-        return "[" + dataSourceAlias + "] Table Scan";
+        return "[" + alias + "] Table Scan";
     }
     
     @Override
     public Map<String, List<String>> getContentInfo() {
         HashMap<String,List<String>> map = new LinkedHashMap<>();
-        map.put(dataSourceAlias,new ArrayList<>(columns));
+        map.put(alias,new ArrayList<>(columns));
         return map;
     }
 

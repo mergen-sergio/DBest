@@ -643,7 +643,7 @@ public class MainMovie {
         terms2.addTerm("movie_cast.movie_id", "movie1.movie_id");
         NestedLoopJoin join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
+        Projection proj1 = new Projection(join2, new String[]{"movie1.title"});
 
         SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCrew = new Filter(scanPersonCrew, filter2);
@@ -656,7 +656,7 @@ public class MainMovie {
         terms4.addTerm("movie_crew.movie_id", "movie2.movie_id");
         NestedLoopJoin join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
+        Projection proj2 = new Projection(join4,  new String[]{"movie2.title"});
 
         Union union = new Union(proj1, proj2);
 
@@ -879,7 +879,7 @@ public class MainMovie {
         terms2.addTerm("movie_cast_index.movie_id", "movie1.movie_id");
         NestedLoopJoin join2 = new NestedLoopJoin(join1, scanMovie1, terms2);
 
-        Projection proj1 = new Projection(join2, "p_cast", new String[]{"movie1.title"});
+        Projection proj1 = new Projection(join2,  new String[]{"movie1.title"});
 
         SingleColumnLookupFilter filter2 = new SingleColumnLookupFilter(new ColumnElement("person_crew.person_name"), ComparisonTypes.EQUAL, new LiteralElement("\"Brad Pitt\""));
         Filter filterCrew = new Filter(scanPersonCrew, filter2);
@@ -892,7 +892,7 @@ public class MainMovie {
         terms4.addTerm("movie_crew_index.movie_id", "movie2.movie_id");
         NestedLoopJoin join4 = new NestedLoopJoin(join3, scanMovie2, terms4);
 
-        Projection proj2 = new Projection(join4, "p_crew", new String[]{"movie2.title"});
+        Projection proj2 = new Projection(join4,  new String[]{"movie2.title"});
 
         Union union = new Union(proj1, proj2);
 

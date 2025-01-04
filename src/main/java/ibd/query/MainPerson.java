@@ -129,8 +129,8 @@ public class MainPerson {
         SingleColumnLookupFilter lookupFilter2 = new SingleColumnLookupFilter(new ColumnElement(col), LOWER_EQUAL_THAN, new LiteralElement(value2));
         Filter filter2 = new Filter(scan2, lookupFilter2);
 
-        Projection proj1 = new Projection(filter1, "p1", new String[]{col});
-        Projection proj2 = new Projection(filter2, "p2", new String[]{col});
+        Projection proj1 = new Projection(filter1, new String[]{col});
+        Projection proj2 = new Projection(filter2, new String[]{col});
         Difference dif = new Difference(proj1, proj2);
 
 //        SingleColumnLookupFilterByValue lookupFilter3 = new SingleColumnLookupFilterByValue(col, EQUAL, 46);

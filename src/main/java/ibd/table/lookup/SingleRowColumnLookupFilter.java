@@ -50,7 +50,7 @@ public abstract class SingleRowColumnLookupFilter implements RowLookupFilter{
      */
     @Override
     public boolean match(LinkedDataRow row) {
-        ibd.query.QueryStats.COMPARE_FILTER++;
+        
         //compares the left side column against a right side value
         //return ComparisonTypes.match(tuple.rows[tupleIndex].getValue(column.getColumnName()), value, comparisonType);
         //System.out.println(tuple.rows[tupleIndex].getValue(colIndex));

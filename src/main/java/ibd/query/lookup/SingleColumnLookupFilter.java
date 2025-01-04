@@ -82,7 +82,7 @@ public class SingleColumnLookupFilter implements LookupFilter{
     
     @Override
     public boolean match(Tuple tuple) {
-        ibd.query.QueryStats.COMPARE_FILTER++;
+        //ibd.query.QueryStats.COMPARE_FILTER++;
         //compares the left side column against a right side value
         //return ComparisonTypes.match(tuple.rows[tupleIndex].getValue(column.getColumnName()), value, comparisonType);
         //System.out.println(tuple.rows[tupleIndex].getValue(colIndex));

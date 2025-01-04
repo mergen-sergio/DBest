@@ -90,10 +90,12 @@ public class Aggregation implements IOperator {
     public static final List<String> PREFIXES = Arrays.stream(Function.values()).map(Function::getPrefix).toList();
 
     @Override
-    public void executeOperation(mxCell jCell, List<String> arguments) {
+    public void executeOperation(mxCell jCell, List<String> arguments, String alias) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(jCell);
 
-        if (optionalCell.isEmpty()) return;
+        if (optionalCell.isEmpty()) {
+            return;
+        }
 
         OperationCell cell = (OperationCell) optionalCell.get();
         OperationErrorType errorType = null;
@@ -119,9 +121,9 @@ public class Aggregation implements IOperator {
 
             errorType = OperationErrorType.PARENT_WITHOUT_COLUMN;
             OperationErrorVerifier.parentContainsColumns(
-                cell.getParents().get(0).getColumnSourcesAndNames(),
-                arguments.stream().map(x -> Utils.replaceIfStartsWithIgnoreCase(x, PREFIXES, "")).toList(),
-                List.of("*")
+                    cell.getParents().get(0).getColumnSourcesAndNames(),
+                    arguments.stream().map(x -> Utils.replaceIfStartsWithIgnoreCase(x, PREFIXES, "")).toList(),
+                    List.of("*")
             );
 
             errorType = OperationErrorType.NO_PREFIX;
@@ -132,29 +134,36 @@ public class Aggregation implements IOperator {
             cell.setError(errorType);
         }
 
-        if (errorType != null) return;
+        if (errorType != null) {
+            return;
+        }
 
         Cell parentCell = cell.getParents().get(0);
 
         ibd.query.Operation operator = parentCell.getOperator();
 
         String fixedArgument = arguments
-            .get(0)
-            .substring(0, Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()) + Column.composeSourceAndName(parentCell.getSourceNameByColumnName(arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length())), arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()));
+                .get(0)
+                .substring(0, Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()) + Column.composeSourceAndName(parentCell.getSourceNameByColumnName(arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length())), arguments.get(0).substring(Utils.getFirstMatchingPrefixIgnoreCase(arguments.get(0), PREFIXES).length()));
 
         List<AggregationType> aggregations = AggregationType.getAggregationTypes(fixedArgument);
-        
+
         //ibd.query.Operation readyOperator = new GroupOperator(operator, Column.removeName(groupBy), Column.removeSource(groupBy), aggregations);
-        ibd.query.Operation readyOperator = null;
         try {
             //readyOperator = new ibd.query.unaryop.AllAggregation(operator, "aggregate",  aggregateCol, aggregateType);
-            readyOperator = new ibd.query.unaryop.aggregation.AllAggregation(operator, "aggregate",  aggregations);
+            ibd.query.unaryop.aggregation.AllAggregation readyOperator = new ibd.query.unaryop.aggregation.AllAggregation(operator, alias, aggregations);
+            String formattedAlias = "";
+            alias = readyOperator.getDataSourceAlias();
+            if (!alias.isBlank()) {
+                formattedAlias = ":" + alias;
+            }
+
+            String operationName = String.format("%s%s %s", cell.getType().symbol, formattedAlias, arguments);
+
+            Operation.operationSetter(cell, operationName, arguments, readyOperator);
         } catch (Exception ex) {
             Logger.getLogger(Group.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        String operationName = String.format("%s %s", cell.getType().symbol, arguments);
-
-        Operation.operationSetter(cell, operationName, arguments, readyOperator);
     }
 }
