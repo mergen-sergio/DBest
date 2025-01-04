@@ -1,3 +1,9 @@
+<div align="left">
+    <a href="./README.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./03 - working-with-CSV.md">Next</a>
+</div>
 
 ## Data Sources
 
@@ -11,3 +17,11 @@ The current version supports three main types of data sources:
 
 The proprietary format is an indexed .dat file.  A set of columns is defined as keys, and the remaining columns are the stored values. The index allows reading the records in key order and it provides efficient lookups for equality and range queries over the key columns.
 
+<br>
+
+<div align="left">
+    <a href="./README.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./03 - working-with-CSV.md">Next</a>
+</div>
