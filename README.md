@@ -36,4 +36,8 @@ These indicators help users understand the efficiency of their query plans, enab
 
 ---
 
+## Getting Started
+
+Please read the [tutorial](tutorial/README.md) to get started with DBest.  
+You can also find the data used in the tutorial [here](tutorial/).
 
