@@ -69,60 +69,85 @@ When creating composite indexes:
    - Double-click the node to view tuples ordered by the key column(s).
 ---
 
-
-
 ## Example: Creating a Clustered Primary Index and a Non-Clustered Secondary Index
 
-This tutorial already uses .dat index files generated from CSV files. Nevertheless, we will show the process of creating these indexes from scratch. 
-
-### Creating a Clustered Primary Index:
-1. Open the CSV file for the movie database.
-2. Drag the movie node into the query editor.
-3. Use the **Unique Index** option.
-4. Select `movie_id` as the key column.
-5. Select `movie` as the file name.
-
-The image below shows the configuration window for defining the key/value parts of the index.
-
-![Index Example](assets/images/pk-index-creation.png)
-
-The `movie_id` column becomes the key, while the remaining columns are stored in the value part. The created file (`movie.dat`) allows querying the `movies` data, sorted by `movie_id`.
+This tutorial utilizes pre-generated `.dat` index files derived from CSV data. However, the following steps demonstrate how to create these indexes manually.
 
 ---
 
-### Creating a Non-Clustered Secondary Index:
-1. Load the `movie.dat` file into the tool
-2. Drag the movie data node into the query editor.
+### Creating a Clustered Primary Index
+
+1. Open the CSV file containing the movie database.
+2. Drag the `movie` node into the query editor.
+3. Choose the **"Unique Index"** option.
+4. Select `movie_id` as the key column.
+5. Name the file as `movie`.
+
+The image below shows the configuration window for setting the key and value parts of the index:
+
+![Primary Index Creation](assets/images/pk-index-creation.png)
+
+- **Key**: The `movie_id` column serves as the key.
+- **Value**: All remaining columns are stored in the value part.  
+
+The resulting file (`movie.dat`) allows querying the `movies` data, ordered by `movie_id`.
+
+---
+
+### Creating a Non-Clustered Secondary Index
+
+1. Load the `movie.dat` file into the tool.
+2. Drag the `movie` data node into the query editor.
 3. Build a query tree to project the `year` and `movie_id` columns.
 4. Export the projection node as an index using the **"Non-Unique Index"** option.
 5. Select `year` as the key column.
-6. Select `idx_year` as the file name.
+6. Name the file as `idx_year`.
 
-The image below shows the configuration window for defining the key/value parts of the secondary index.
+The image below illustrates the configuration for defining the key/value parts of the secondary index:
 
-![Index Example](assets/images/fk-index-creation.png)
+![Secondary Index Creation](assets/images/fk-index-creation.png)
 
-The `year` column becomes the key, and `movie_id` becomes the value. If a **unique index** were created instead, any records with duplicate `year` values would be excluded.
+- **Key**: The `year` column becomes the key.
+- **Value**: The `movie_id` column is stored as the value.  
 
-The image below shows a query tree where a filter on the `year` column is connected to the index node.
+If a **unique index** is chosen instead, any rows with duplicate `year` values will be excluded.
 
-![Index Example](assets/images/querying-year-index.png)
+---
 
-The filter uses the B+ tree to perform efficient key searches. For selective queries, the number of disk page accesses is significantly lower compared to sequential access. To analyze this, run the query and view the **Cost panel**, which displays the number of disk pages loaded.
+### Using the Secondary Index
 
-Running a query on this index(`idx_year`) displays only the `year` and `movie_id`  columns, ordered by `year`. To access other columns (e.g., `title`), **join the secondary index** with the primary index using `movie_id` as the join predicate.
+The image below shows a query tree where a filter on the `year` column is connected to the secondary index node:
 
-The image below shows an example query tree where:
-- The filter on `year` efficiently retrieves movies from the secondary index.
-- The join operator accesses additional information from the primary index.
+![Querying Secondary Index](assets/images/querying-year-index.png)
 
+- The filter leverages the B+ tree to perform efficient key lookups.
+- For highly selective queries, the number of disk page accesses is significantly reduced compared to sequential scanning.
 
-![Index Example](assets/images/fk-index-join.png)
+After running the query, the **Cost panel** displays the number of disk pages accessed, providing insights into query efficiency.  
+Queries executed on the `idx_year` index return only the `year` and `movie_id` columns, ordered by `year`.
 
+---
 
-To avoid joins, you can create a **clustered secondary index**, where all tuple information is stored in the value part. This eliminates the need for a primary index join but duplicates the data node content, increasing memory usage. Carefully decide based on redundancy, query performance, and update costs.
+### Joining Secondary and Primary Indexes
 
-An alternative is to include only the most important columns in the value part of a secondary index. This reduces redundancy and update costs while improving query performance for those specific columns. Indexes that store all columns required for a query in the key/value part are called **Covering indexes**.
+To access additional columns (e.g., `title`), perform a join between the secondary index and the primary index using `movie_id` as the join predicate.  
+
+The image below shows an example query tree:
+
+![Join Example](assets/images/fk-index-join.png)
+
+- The filter on `year` retrieves movies efficiently from the secondary index.
+- The join operator accesses full details from the primary index.
+
+---
+
+### Clustered Secondary Indexes
+
+To avoid performing joins, consider creating a **clustered secondary index** where all tuple information is stored in the value part. While this eliminates the need for a primary index join, it duplicates data content, leading to increased memory usage. Carefully weigh redundancy, query performance, and update costs when deciding.
+
+Alternatively, you can include only the most critical columns in the value part of a secondary index. This approach reduces redundancy and update costs while optimizing query performance for specific columns.  
+Indexes designed to store all columns needed for a query within the key/value parts are referred to as **Covering Indexes**.
+
 
 
 
