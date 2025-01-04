@@ -12,6 +12,11 @@ With DBest, you can:
 - Use DBest for educational purposes to teach students about query optimization.
 - Integrate data from heterogeneous data sources.
 
+<br>
+
+---
+
+<br>
 
 ## DBest as a Query Execution Tool
 
