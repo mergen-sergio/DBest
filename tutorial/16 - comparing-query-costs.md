@@ -1,3 +1,8 @@
+<div align="left">
+    <a href="./15 - using-boolean-expressions.md">Previous</a>
+</div>
+
+
 # Query Plan Comparison and Efficiency
 
 When executing queries, multiple **query plans** may be logically equivalent, meaning they produce the same result set regardless of the stored data. However, these plans can differ in efficiency, influenced by execution time and memory usage. Efficiency depends on the amount of data processed and the logic applied by each operator.
@@ -81,3 +86,9 @@ Query plan comparisons provide valuable insights:
 - **Optimization Opportunities:** Detect inefficiencies in operator placement or logic.
 
 By advancing records incrementally, you can evaluate the effort required to fetch the next tuple and uncover optimization opportunities for improved query execution.
+
+<br>
+<div align="left">
+    <a href="./15 - using-boolean-expressions.md">Previous</a>
+</div>
+
