@@ -18,7 +18,7 @@ You can view an operator’s schemas by **running a query** over the node to see
 
 The example below displays the result set obtained by joining the `movie` and `movie_cast` data nodes, with column names prefixed by their respective schema names.
  
-<img src="assets/images/join-schemas.png" alt="Schemas Constructed by a Join" width="700"/>
+<img src="assets/images/join-schemas.png" alt="Schemas Constructed by a Join" width="900"/>
 
 ---
 
