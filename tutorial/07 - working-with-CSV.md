@@ -1,8 +1,8 @@
 <div align="left">
-    <a href="./02 - operators.md">Previous</a>
+    <a href="./06 - other-query-options.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./04 - working-with-temp-tables.md">Next</a>
+  <a href="./09 - working-with-temp-tables.md">Next</a>
 </div>
 
 # Working with CSV Files in DBest
@@ -44,8 +44,8 @@ Both methods allow you to navigate through the records efficiently.
 <br>
 
 <div align="left">
-    <a href="./02 - operators.md">Previous</a>
+    <a href="./06 - other-query-options.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./04 - working-with-temp-tables.md">Next</a>
+  <a href="./09 - working-with-temp-tables.md">Next</a>
 </div>
