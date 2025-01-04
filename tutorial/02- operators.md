@@ -57,3 +57,13 @@ In DBest, you can build query execution plans by using a variety of operators. T
 - **Intersect**
     - Sorted
     - Hashed
+ 
+
+<table style="width: 100%">
+  <tr>
+    <td style="text-align: left; width: 50%"><a href="./page1.md">&lt; Previous</a></td>
+    <td style="text-align: right; width: 50%"><a href="./page3.md">Next &gt;</a></td>
+  </tr>
+</table>
+
+
