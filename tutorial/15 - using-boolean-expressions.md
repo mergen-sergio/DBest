@@ -1,3 +1,11 @@
+<div align="left">
+    <a href="./14 - join-algorithms.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./16 - comparing-query-costs.md">Next</a>
+</div>
+
+
 ## Boolean Expressions and the Filter Operator
 
 A **boolean expression** is a structure composed of smaller expressions that evaluate to either `true` or `false`. 
@@ -99,5 +107,13 @@ In this query tree:
   
 This approach showcases the flexibility of boolean operators in constructing complex expressions.
 
+<br>
+
+<div align="left">
+    <a href="./14 - join-algorithms.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./16 - comparing-query-costs.md">Next</a>
+</div>
 
 
