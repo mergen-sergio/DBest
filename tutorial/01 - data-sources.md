@@ -1,5 +1,5 @@
 <div align="left">
-    <a href="./README.md">Previous</a>
+    <a href="../README.md">Previous</a>
 </div>
 <div align="right">
   <a href="./03 - working-with-CSV.md">Next</a>
@@ -20,7 +20,7 @@ The proprietary format is an indexed .dat file.  A set of columns is defined as 
 <br>
 
 <div align="left">
-    <a href="./README.md">Previous</a>
+    <a href="../README.md">Previous</a>
 </div>
 <div align="right">
   <a href="./03 - working-with-CSV.md">Next</a>
