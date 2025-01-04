@@ -6,6 +6,8 @@ In DBest, a **query tree** consists of two types of nodes:
 
 A query tree is constructed by adding nodes to the editor, connecting them, and configuring their properties.
 
+The image below shows the tool. THe left panel contains the data nodes, while the right panel contains the available operators. 
+
 ## Adding Nodes to the Editor
 
 1. **Adding Operator Nodes**:
