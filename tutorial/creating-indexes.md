@@ -84,14 +84,14 @@ The image below shows a query tree where a filter on the `year` column is connec
 - The filter leverages the B+ tree to perform efficient key lookups.
 - For highly selective queries, the number of disk page accesses is significantly reduced compared to sequential scanning.
 
-After running the query, the **Cost panel** displays the number of disk pages accessed, providing insights into query efficiency.  
-Queries executed on the `idx_year` index return only the `year` and `movie_id` columns, ordered by `year`.
+After running the query, the Cost panel (accessible via the button above the result set, next to the "Tuples Loaded" information) displays the number of disk pages accessed, offering valuable insights into query efficiency.
+
 
 ---
 
 ## Joining Secondary and Primary Indexes
 
-To access additional columns (e.g., `title`), perform a join between the secondary index and the primary index using `movie_id` as the join predicate.  
+Queries executed on the `idx_year` index return only the `year` and `movie_id` columns, ordered by `year`. To access additional columns (e.g., `title`), perform a join between the secondary index and the primary index using `movie_id` as the join predicate.  
 
 The image below shows an example query tree:
 
