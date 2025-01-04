@@ -96,7 +96,7 @@ All `.dat` files are indexed, and some act as non-clustered indexes (identified 
   - The `movie_id` column in `idx_year` serves as a reference to the clustered `movie.dat` file.  
   - By using the `movie_id`, you can query the `movie.dat` file to retrieve all associated columns from the `movie` table.
 
-DBest utilizes these indexes to facilitate efficient data access. For additional information about DBest's indexing strategy, refer to the following link: [DBest Indexing Strategy](10%20-%20understanding-indexes).
+DBest utilizes these indexes to facilitate efficient data access. For additional information about DBest's indexing strategy, refer to the following link: [DBest Indexing Strategy](10%20-%20understanding-indexes.md).
 
 <br>
 
