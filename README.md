@@ -1,4 +1,4 @@
-<img src="./assets/images/dbest-logo.png" alt="Logo do DBest" width="256">
+<img src="./assets/images/dbest-logo2.png" alt="Logo do DBest" width="256">
 
 # Database Basics for Engaging Students and Teachers (DBest)
 
@@ -60,93 +60,6 @@ With DBest, you can:
 ---
 
 
-## Available Operators
-
-In DBest, you can build query execution plans by using a variety of operators. These operators are designed to help you manipulate and filter data as it flows through your query plan. They are similar to the operators you would find in a typical Database Management System (DBMS). Below is a list of the common operators available in DBest, with a special focus on **join** operators, as these play a critical role in most database queries.
-
-- **Selection**
-- **Projection**
-- **Scan** 
-- **Materialized**
-     - Hash
-     - Memoize
-     - Binary Search Tree 
-- **Inner Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Left Outer Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Outer Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Full Outer Join**
-    - Hash Join
-    - Merge Join
-- **Left Semi Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Semi Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Left Anti Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Anti Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Cross Join**
-- **Aggregation**
-- **Sorting**
-- **Group By**
-    - Sorted
-    - Hashed
-- **Append**
-- **Union**
-    - Sorted
-    - Hashed
-- **Difference**
-    - Sorted
-    - Hashed
-- **Intersect**
-    - Sorted
-    - Hashed
-
-## Data Sources
-
-In DBest, a **data source** refers to a collection of records. Each record contains a set of columns. Each column within a record has a specific **data type**, which determines the kind of values it can hold. 
-
-The current version supports three main types of data sources:
-
-1. **CSV Files**
-2. **Memory Tables**
-3. **Proprietary Format (B+ Tree)**
-
-A B+ tree data source is indexed. A set of columns is defined as keys, and the remaining columns are the stored values. The index allows reading the records in key order and it provides efficient lookups for equality and range queries over the key columns.
-
-
-## Exporting Result Sets
-
-In DBest, the result sets produced by the query operators can be exported in two formats:
-
-1. **CSV Format**
-2. **Proprietary B+ Tree Format**
-
-These export options provide flexibility depending on how you want to use or store the resulting data after query execution.
-
-The **Proprietary B+ Tree export** option allows the result set to be saved in DBest's optimized **B+ Tree format**. This format is ideal for use cases where you need to perform efficient range queries or lookups on the exported data.
-
-- **Indexing**: The B+ Tree format indexes a set of columns, which enables efficient searches and range queries. When exporting to the B+ Tree format, users can define the key columns that will be indexed for quick access.
-- **Use Case**: This is particularly useful when preparing data once, so it can later be reused for fast, repeated queries that require sorting, equality checks, or range searches.
-
----
 
 ### Key Considerations
 
