@@ -1,5 +1,5 @@
 <div align="left">
-    <a href="./03 - working-with-temp-tables.md">Previous</a>
+    <a href="./03 - working-with-CSV.md">Previous</a>
 </div>
 <div align="right">
   <a href="./05 - creating-query-tree.md">Next</a>
@@ -44,7 +44,7 @@ Temporary tables in DBest make it easy to experiment with structured data withou
 <br>
 
 <div align="left">
-    <a href="./03 - working-with-temp-tables.md">Previous</a>
+    <a href="./03 - working-with-CSV.md">Previous</a>
 </div>
 <div align="right">
   <a href="./05 - creating-query-tree.md">Next</a>
