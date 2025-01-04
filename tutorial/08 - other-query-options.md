@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./07 - running-queries.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./09 - understanding-schemas.md">Next</a>
+</div>
+
 # Node Options in the Query Tree
 
 In addition to running a query, you can perform various actions on the nodes of a query tree. To access these options, **right-click** on a node. The available options are:
@@ -27,3 +34,12 @@ In addition to running a query, you can perform various actions on the nodes of 
 
 - **Mark**: Marks a node for comparison.  
   - Query indicators of marked nodes can be compared via the **"Comparator"** menu at the bottom of the interface.
+
+<br>
+
+<div align="left">
+    <a href="./07 - running-queries.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./09 - understanding-schemas.md">Next</a>
+</div>
