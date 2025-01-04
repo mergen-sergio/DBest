@@ -5,7 +5,7 @@
   <a href="./02 - operators.md">Next</a>
 </div>
 
-# Movie Database Example
+# Tutorial Data
 
 The examples in this tutorial are based on a movie database, available at the following GitHub repository:  
 [https://github.com/bbrumm/databasestar](https://github.com/bbrumm/databasestar)  
