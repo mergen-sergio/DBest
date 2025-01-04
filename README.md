@@ -34,7 +34,12 @@ While DBest does not optimize queries, it provides **query cost indicators** to 
 
 These indicators help users understand the efficiency of their query plans, enabling them to make informed decisions about how to optimize their plans manually if needed.
 
+<br>
+
 ---
+
+<br>
+
 
 ## Getting Started
 
@@ -49,12 +54,17 @@ To get started with DBest, follow these steps:
 3. **Access Sample Data:**  
    Practice using the tool with sample data provided in the tutorial. You can download the dataset [here](data/01a - tutorial-data.md).
 
+<br>
+
+---
+
+<br>
 
 ## About DBest
 
 DBest began as a project under the guidance of **Professor Sergio Mergen**, initially designed to teach database internals. Over time, it evolved to cover additional topics, including relational algebra, broadening its educational scope. Today, DBest also serves as a practical tool for seamlessly integrating data sources.
 
-Special acknowledgment goes to **Rhuan Moreira Maciel** and **Luiz Henrique Broch Lago**, whose early contributions were instrumental in the development and growth of the tool.
+Special acknowledgment goes to **Rhuan Moreira Maciel** and **Luiz Henrique Broch Lago**, whose early contributions were important in the development and growth of the tool.
 
 
 
