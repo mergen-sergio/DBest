@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./08 - other-query-options.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./10 - understanding-indexes.md">Next</a>
+</div>
+
 ## Operator Schemas in DBest
 
 In DBest, every operator can have **multiple schemas**, as operations combine schemas from the underlying parts of the query tree. These schemas collectively define the structure of the operator’s output data. The schemas are derived from the connected nodes and are influenced by the type of operation performed.
@@ -56,4 +63,11 @@ Proper naming ensures clarity and prevents conflicts in complex query plans. Thi
 - The property window shows schema-related details to assist in configuring the operation.
 - Invalid properties are flagged to maintain the integrity of the query tree.
 
+<br>
 
+<div align="left">
+    <a href="./08 - other-query-options.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./10 - understanding-indexes.md">Next</a>
+</div>
