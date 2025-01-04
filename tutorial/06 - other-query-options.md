@@ -1,8 +1,8 @@
 <div align="left">
-    <a href="./07 - running-queries.md">Previous</a>
+    <a href="./05 - running-queries.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./09 - understanding-schemas.md">Next</a>
+  <a href="./07 - working-with-CSV.md">Next</a>
 </div>
 
 # Node Options in the Query Tree
@@ -38,8 +38,8 @@ In addition to running a query, you can perform various actions on the nodes of 
 <br>
 
 <div align="left">
-    <a href="./07 - running-queries.md">Previous</a>
+    <a href="./05 - running-queries.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./09 - understanding-schemas.md">Next</a>
+  <a href="./07 - working-with-CSV.md">Next</a>
 </div>
