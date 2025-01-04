@@ -14,3 +14,15 @@ The **Proprietary B+ Tree export** option allows the result set to be saved in D
 - **Use Case**: This is particularly useful when preparing data once, so it can later be reused for fast, repeated queries that require sorting, equality checks, or range searches.
 
 ---
+
+
+
+
+## Dependências externas
+
+| Nome                                                         | Descrição                                                                        |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------- |
+| [For Your Information Database (FYI Database)][fyi-database] | Utilizado como o banco de dados principal                                        |
+| [ANTLR4][antlr4]                                             | Utilizado para validar as entradas possíveis da DSL desenvolvida para o software |
+| [JGraphX][jgraphx]                                           | Utilizado para construir os nós visuais e suas conexões                          |
+| [Data Faker][data-faker]                                     | Utilizado para gerar dados e popular as tabelas criadas na ferramenta            |
