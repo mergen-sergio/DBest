@@ -35,8 +35,18 @@ A clustered index is typically built on the **primary key** column(s), which uni
 ### Secondary Index (Non-Clustered)
 Non-clustered indexes, or **secondary indexes**, are built on columns other than the primary key. During querying, the secondary index is typically joined with the primary index to retrieve full tuple information.
 
+<br>
 
+---
 
+<br>
 
+## Key Considerations
+
+- **No Concurrent Updates**: DBest is not designed for concurrent updates or multi-user write operations. The system is optimized for batch processing and query execution rather than real-time data updates. This means that once data is loaded or a B+ Tree is created, it is expected to remain static during query execution.
+  
+- **Pre-Processing B+ Tree**: Since DBest does not support concurrent updates, a B+ Tree can be **prepared once**—i.e., indexed and stored for later use. Once created, the B+ Tree can be reused across multiple queries, enabling efficient range queries and lookups without needing to rebuild the index each time. This approach provides significant performance improvements when querying large datasets, as the B+ Tree can quickly resolve range and equality queries over the indexed columns.
+
+- **Custom Updates via Java Code**: While DBest is not designed for concurrent updates, **records can be updated manually by writing custom Java code**. If you need to modify the data in a dataset or B+ Tree after it has been loaded, you can write Java code to perform these updates. 
 
 
