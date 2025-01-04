@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./05 - creating-query-tree.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./07 - running-queries.md">Next</a>
+</div>
+
 ## Getting Started with DBest Operators
 
 The **DBest** tool provides a wide range of operators that allow users to create complex queries. To get started, focus on the foundational operators of relational algebra, such as:  
@@ -61,3 +68,12 @@ Start with the classic operators to build a solid foundation. Once comfortable w
 1. **Start Small:** Use small data sources initially to prevent inefficiencies that may cause the tool to hang.  
 2. **Experiment:** Rearrange operators and observe how they affect the result set and query performance.  
 3. **Learn by Doing:** Focus on understanding the purpose and behavior of each basic operator before experimenting with advanced operators.
+
+<br>
+
+<div align="left">
+    <a href="./05 - creating-query-tree.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./07 - running-queries.md">Next</a>
+</div>
