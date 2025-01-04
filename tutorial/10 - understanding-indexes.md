@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./09 - understanding-schemas.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./11 - creating-indexes.md">Next</a>
+</div>
+
 # Working with Indexes in DBest
 
 In DBest, **data nodes** can be indexed or non-indexed. Non-indexed data nodes, such as memory tables or CSV files, provide **sequential access** to their tuples. When performing a lookup, all tuples must be traversed to find matching results. To improve performance, DBest supports indexed data nodes in the form of **B+ trees**, enabling **efficient lookups** and **ordered access** over key columns.
@@ -41,7 +48,7 @@ Non-clustered indexes, or **secondary indexes**, are built on columns other than
 
 <br>
 
-## Key Considerations
+## Notes
 
 - **No Concurrent Updates**: DBest is not designed for concurrent updates or multi-user write operations. The system is optimized for batch processing and query execution rather than real-time data updates. This means that once data is loaded or a B+ Tree is created, it is expected to remain static during query execution.
   
@@ -50,3 +57,11 @@ Non-clustered indexes, or **secondary indexes**, are built on columns other than
 - **Custom Updates via Java Code**: While DBest is not designed for concurrent updates, **records can be updated manually by writing custom Java code**. If you need to modify the data in a dataset or B+ Tree after it has been loaded, you can write Java code to perform these updates. 
 
 
+<br>
+
+<div align="left">
+    <a href="./09 - understanding-schemas.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./11 - creating-indexes.md">Next</a>
+</div>
