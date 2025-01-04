@@ -44,9 +44,6 @@ After connecting nodes, a **property window** will open for the operator. You ca
 
 For **binary operators**, the property window only becomes available after both child nodes are connected. Properties can only be edited if the node is valid and supports configuration.
 
----
-
-### Operator Properties
 
 The required properties vary depending on the operator type. Examples include:  
 - **Projection Operator**: Allows selection of columns to project, based on the schema of its child node.  
