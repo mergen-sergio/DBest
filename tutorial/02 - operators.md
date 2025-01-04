@@ -1,5 +1,5 @@
 <div align="left">
-    <a href="./01 - data-sources.md">Previous</a>
+    <a href="./01a - tutorial-data.md">Previous</a>
 </div>
 <div align="right">
   <a href="./03 - working-with-CSV.md">Next</a>
@@ -68,7 +68,7 @@ In DBest, you can build query execution plans by using a variety of operators. T
 <br><br>
  
 <div align="left">
-    <a href="./01 - data-sources.md">Previous</a>
+    <a href="./01a - tutorial-data.md">Previous</a>
 </div>
 <div align="right">
   <a href="./03 - working-with-CSV.md">Next</a>
