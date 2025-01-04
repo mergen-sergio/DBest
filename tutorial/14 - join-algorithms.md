@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./13 - join-types.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./15 - using-boolean-expressions.md">Next</a>
+</div>
+
 # Join Algorithms 
 
 ## 1. **Nested Loop Join**
@@ -71,3 +78,12 @@ The image below compares two query trees using Merge Join:
 ---
 
 By understanding the nuances of these join algorithms, their optimal scenarios, and trade-offs, you can design efficient query plans to maximize relational query performance.
+
+<br>
+
+<div align="left">
+    <a href="./13 - join-types.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./15 - using-boolean-expressions.md">Next</a>
+</div>
