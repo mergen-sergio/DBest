@@ -2,7 +2,7 @@
     <a href="../README.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./03 - working-with-CSV.md">Next</a>
+  <a href="./01a - tutorial-data.md">Next</a>
 </div>
 
 ## Data Sources
@@ -23,5 +23,5 @@ The proprietary format is an indexed .dat file.  A set of columns is defined as 
     <a href="../README.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./03 - working-with-CSV.md">Next</a>
+  <a href="./01a - tutorial-data.md">Next</a>
 </div>
