@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./04 - working-with-temp-tables.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./06 - using-basic-operators.md">Next</a>
+</div>
+
 # Creating a Query Tree in DBest
 
 In DBest, a **query tree** is composed of two types of nodes:  
@@ -46,5 +53,12 @@ The required properties vary depending on the operator type. Examples include:
 - **Join Operator**: Requires a join predicate and shows columns from the left and right child nodes.  
 - **Filter Operator**: Prompts you to define a boolean expression that must be satisfied, based on columns from its child node.
 
+<br>
 
+<div align="left">
+    <a href="./04 - working-with-temp-tables.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./06 - using-basic-operators.md">Next</a>
+</div>
 
