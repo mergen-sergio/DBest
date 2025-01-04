@@ -7,15 +7,29 @@
 
 ## Data Sources
 
-In DBest, a **data source** refers to a collection of records. Each record contains a set of columns. Each column within a record has a specific **data type**, which determines the kind of values it can hold. 
+In DBest, a **data source** refers to a collection of records, where each record consists of a set of columns. Each column has a specific **data type** that determines the kind of values it can store.
 
-The current version supports three main types of data sources:
+The following primitive data types are supported:  
+`STRING`, `INT`, `LONG`, `DOUBLE`, `FLOAT`, and `BOOLEAN`.
+
+### Supported Data Source Types
+
+DBest currently supports three main types of data sources:
 
 1. **CSV Files**
 2. **Memory Tables**
 3. **Proprietary Format (B+ Tree)**
 
-The proprietary format is an indexed .dat file.  A set of columns is defined as keys, and the remaining columns are the stored values. The index allows reading the records in key order and it provides efficient lookups for equality and range queries over the key columns.
+#### Proprietary Format (B+ Tree)
+
+The proprietary format uses indexed `.dat` files. In this format:  
+- A set of columns is designated as **keys**.  
+- The remaining columns are stored as **values**.  
+
+This indexing structure enables:  
+- Reading records in **key order**.  
+- Efficient lookups for both **equality** and **range queries** on key columns.
+
 
 <br>
 
