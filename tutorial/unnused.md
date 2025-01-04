@@ -17,6 +17,29 @@ The **Proprietary B+ Tree export** option allows the result set to be saved in D
 
 
 
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+   - [Creating a Query Plan](#creating-a-query-plan)
+   - [Executing a Query Plan](#executing-a-query-plan)
+   - [Optimizing Query Performance](#optimizing-query-performance)
+5. [Contributing](#contributing)
+6. [License](#license)
+7. [Acknowledgments](#acknowledgments)
+
+
+
+### Example Workflow
+1. **Step 1**: Open a CSV for a large dataset and define the datatypes of each column.
+2. **Step 2**: Create a query plan over the CSV file to select the columns of interest
+3. **Step 3**: Export the result set as a B+ tree, indexing specific columns (e.g., `Age`, `Salary`) for efficient querying. Export multiple times if different indexes are needed.
+1. **Step 4**: Prepare a B+ Tree from a large dataset, indexing specific columns (e.g., `Age`, `Salary`) for efficient querying.
+2. **Step 5**: Open the B+ Tree and used it in multiple queries to perform range queries, sorting, or lookups without rebuilding the index each time.
+
+
 
 ## Dependências externas
 
