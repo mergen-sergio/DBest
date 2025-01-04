@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./01 - data-sources.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./02 - operators.md">Next</a>
+</div>
+
 # Movie Database Example
 
 The examples in this tutorial are based on a movie database, available at the following GitHub repository:  
@@ -97,7 +104,14 @@ All `.dat` files are indexed, and some act as non-clustered indexes (identified 
 
 DBest utilizes these indexes to facilitate efficient data access. For additional information about DBest's indexing strategy, refer to the following link: [DBest Indexing Strategy](xxx).
 
+<br>
 
+<div align="left">
+    <a href="./01 - data-sources.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./02 - operators.md">Next</a>
+</div>
 
 
 
