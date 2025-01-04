@@ -1,4 +1,4 @@
-## Node Options in the Query Tree
+# Node Options in the Query Tree
 
 In addition to running a query, you can perform various actions on the nodes of a query tree. To access these options, **right-click** on a node. The available options are:
 
