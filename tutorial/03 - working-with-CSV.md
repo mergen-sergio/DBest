@@ -1,8 +1,13 @@
-
+<div align="left">
+    <a href="./02 - operators.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./04 - working-with-temp-tables.md">Next</a>
+</div>
 
 # Working with CSV Files in DBest
 
-DBest provides robust support for working with CSV files. Follow these steps to import and manage CSV files in the tool:
+DBest provides support for working with CSV files. Follow these steps to import and manage CSV files in the tool:
 
 ## Opening a CSV File
 - Use the **"Open CSV"** option in the menu and select the desired CSV file.
@@ -24,7 +29,7 @@ Upon completing the importation process, DBest generates a **header file** in th
 - Is named after the CSV file, with a `.head` extension (e.g., `data.csv` creates `data.head`).
 - Stores metadata such as the delimiter and column types used during import.
 
-This header file allows for faster re-importation of the CSV file. You can reopen it using the **"Open Header"** menu option or by dragging and dropping it into the tree editor panel.
+This header file allows for faster re-importation of the CSV file. You can reopen it using the **"Open DBest header file "** menu option or by dragging and dropping it into the tree editor panel.
 
 ## Using the CSV Node in the Tree Editor
 Once imported, the CSV node will appear in the **left-side panel**. To work with it:
@@ -35,4 +40,13 @@ Once imported, the CSV node will appear in the **left-side panel**. To work with
 
 Both methods allow you to navigate through the records efficiently.
 
-With these steps, you’re ready to efficiently import and query your CSV files in DBest!
+With these steps, you’re ready to import and query your CSV files in DBest!
+
+<br>
+
+<div align="left">
+    <a href="./02 - operators.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./04 - working-with-temp-tables.md">Next</a>
+</div>

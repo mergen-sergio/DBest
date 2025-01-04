@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./03 - working-with-CSV.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./05 - creating-query-tree.md">Next</a>
+</div>
+
 # Working with Temporary Tables in DBest
 
 DBest provides support for **temporary tables**, offering a quick way to generate data for use within a query tree.
@@ -33,3 +40,12 @@ Once the table is created:
 - The table is now ready to be used within your query tree.
 
 Temporary tables in DBest make it easy to experiment with structured data without relying on external sources.
+
+<br>
+
+<div align="left">
+    <a href="./03 - working-with-CSV.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./05 - creating-query-tree.md">Next</a>
+</div>

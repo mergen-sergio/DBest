@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./12 - equi-joins.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./14 - join-algorithms.md">Next</a>
+</div>
+
 # Join Types
 
 There are several types of joins, each serving different purposes: **Inner Join**, **Outer Join**, **Semi Join**, and **Anti Join**.
@@ -70,3 +77,12 @@ The **Anti Join** retrieves tuples from one side when no matches exist on the ot
 The example below shows the **Nested Loop Anti Join** between `movie` and `movie_cast`. Only movies without cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
 
 <img src="assets/images/anti-join.png" alt="Nested Loop Left Anti Join Illustration" width="600"/>
+
+<br>
+
+<div align="left">
+    <a href="./12 - equi-joins.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./14 - join-algorithms.md">Next</a>
+</div>

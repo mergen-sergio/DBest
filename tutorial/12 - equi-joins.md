@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./11 - creating-indexes.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./13 - join-types.md">Next</a>
+</div>
+
 # Joins in Relational Table Queries
 
 A **join** is one of the most important operations in relational table queries, connecting tables through **primary key/foreign key relationships**. There are two basic types of joins: **Equi-joins** and **Non-equi-joins**.
@@ -47,5 +54,12 @@ The query below demonstrates finding matches between the `movie_cast` and `movie
 - Initially, the filter must contain a placeholder term (e.g., `1=1`) to allow its creation in the tool.
 - Once connected to the join, the filter can be edited, replacing the placeholder with the proper join terms that reference the outer-side columns.
 
----
+<br>
+
+<div align="left">
+    <a href="./11 - creating-indexes.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./13 - join-types.md">Next</a>
+</div>
 
