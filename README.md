@@ -28,21 +28,12 @@ In DBest:
 
 While DBest does not optimize queries, it provides **query cost indicators** to help users analyze the performance of their query execution:
 
-- **Execution Time**: DBest tracks the time it takes to execute each operator and the overall query plan.
+<!-- - **Execution Time**: DBest tracks the time it takes to execute each operator and the overall query plan. -->
 - **Memory Usage**: DBest provides information on memory usage during query execution, helping users identify areas where memory may become a bottleneck.
 - **Operator Costs**: Each operator in the query plan has an associated cost, and DBest can collect and report on the cost of executing individual operators, allowing users to identify expensive operations and adjust their query plans accordingly.
 
 These indicators help users understand the efficiency of their query plans, enabling them to make informed decisions about how to optimize their plans manually if needed.
 
 ---
-
-### Key Takeaways
-
-- **Manual Query Plan Creation**: DBest requires the user to create the query plan manually, using a visual interface or through other tools that DBest provides.
-- **No Query Optimization**: Unlike traditional DBMSs, DBest does not automatically analyze or optimize query plans.
-- **Query Execution and Cost Reporting**: DBest focuses on executing the user-defined query plan and provides useful cost indicators (such as execution time and memory usage) to help users evaluate the performance of their queries.
-
-DBest is designed as a **query execution tool** for those who want to experiment with and explore the execution of predefined query plans. It is not intended for use cases that require automatic query optimization or real-time query tuning.
-
 
 
