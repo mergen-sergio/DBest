@@ -1,4 +1,12 @@
 
+## Key Takeaways
+
+- **Manual Query Plan Creation**: DBest requires the user to create the query plan manually, using a visual interface or through other tools that DBest provides.
+- **No Query Optimization**: Unlike traditional DBMSs, DBest does not automatically analyze or optimize query plans.
+- **Query Execution and Cost Reporting**: DBest focuses on executing the user-defined query plan and provides useful cost indicators to help users evaluate the performance of their queries.
+
+
+
 ## Exporting Result Sets
 
 In DBest, the result sets produced by the query operators can be exported in two formats:
