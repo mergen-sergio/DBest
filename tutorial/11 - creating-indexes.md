@@ -1,3 +1,9 @@
+<div align="left">
+    <a href="./10 - understanding-indexes.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./12 - equi-joins.md">Next</a>
+</div>
 
 # Creating and Using an Index
 
@@ -112,3 +118,12 @@ To avoid performing joins, consider creating a **clustered secondary index** whe
 
 Alternatively, you can include only the most critical columns in the value part of a secondary index. This approach reduces redundancy and update costs while optimizing query performance for specific columns.  
 Indexes designed to store all columns needed for a query within the key/value parts are referred to as **Covering Indexes**.
+
+<br>
+
+<div align="left">
+    <a href="./10 - understanding-indexes.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./12 - equi-joins.md">Next</a>
+</div>
