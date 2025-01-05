@@ -13,7 +13,6 @@ import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.TwoColumnsLookupFilter;
 import ibd.query.unaryop.UnaryOperation;
 import java.util.Iterator;
 import java.util.List;

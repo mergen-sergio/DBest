@@ -9,12 +9,10 @@ import ibd.query.binaryop.BinaryOperation;
 import ibd.query.binaryop.join.Join;
 import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
-import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.NoLookupFilter;
 import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.query.lookup.TwoColumnsLookupFilter;
 import ibd.table.prototype.column.Column;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -234,9 +232,7 @@ public abstract class Operation {
 
         } else if (filter instanceof SingleColumnLookupFilter) {
             setTupleIndex((SingleColumnLookupFilter) filter);
-        } else if (filter instanceof TwoColumnsLookupFilter) {
-            setTupleIndex((TwoColumnsLookupFilter) filter);
-        }
+        } 
     }
 
     //sets the tuple indexes for all parts of this composite filter
@@ -283,20 +279,7 @@ public abstract class Operation {
         
     }
 
-    private void setTupleIndex(TwoColumnsLookupFilter filter) {
-        try {
-
-            //sets the tuple index of the left-side comparison column 
-            setColumnLocation(filter.getLeftColumn());
-            //filter.setLeftTupleIndex(tupleIndex);
-
-            //sets the tuple index of the right-side comparison column
-            setColumnLocation(filter.getRightColumn());
-            //filter.setRightTupleIndex(tupleIndex);
-
-        } catch (Exception ex) {
-        }
-    }
+    
 
     
     /**

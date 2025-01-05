@@ -36,7 +36,7 @@ public class ConstantController {
 
     public static final String LESS_THAN_OR_EQUAL_SYMBOL = "≤";
 
-    public static final String APPLICATION_TITLE = "DBest: Database Basics for Engaging Students and Teachers";
+    public static final String APPLICATION_TITLE = "DBest: Database Engine for Seamless Transformations";
 
     public static final int TABLE_CELL_HEIGHT = 30;
 

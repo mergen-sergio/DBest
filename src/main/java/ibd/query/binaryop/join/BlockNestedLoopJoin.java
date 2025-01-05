@@ -8,13 +8,17 @@ package ibd.query.binaryop.join;
 import ibd.query.Operation;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.TwoColumnsLookupFilter;
+import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.table.ComparisonTypes;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Performs a block nested loop join between the left and the right operations
@@ -121,11 +125,22 @@ public class BlockNestedLoopJoin extends Join {
          * defines the lookup filter conditions used to find out if the current left tuple 
         correspond with the current right tuple
          */
-        private CompositeLookupFilter createFilter() {
+        private CompositeLookupFilter createFilter()  {
             CompositeLookupFilter filter = new CompositeLookupFilter(CompositeLookupFilter.AND);
             for (JoinTerm term : joinPredicate.getTerms()) {
-                TwoColumnsLookupFilter f = new TwoColumnsLookupFilter(term.getLeftColumnDescriptor(), term.getRightColumnDescriptor(), ComparisonTypes.EQUAL);
-                filter.addFilter(f);
+                Element elem1;
+                Element elem2;
+                try {
+                    elem1 = new ColumnElement(term.getLeftColumnDescriptor());
+                    elem2 = new ColumnElement(term.getRightColumnDescriptor());
+                    SingleColumnLookupFilter f = new SingleColumnLookupFilter(elem1, ComparisonTypes.EQUAL, elem2);
+                    filter.addFilter(f);
+                } catch (Exception ex) {
+                    Logger.getLogger(BlockNestedLoopJoin.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                 
+                
+                
             }
             return filter;
         }
