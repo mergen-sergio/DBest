@@ -28,8 +28,8 @@ When creating composite indexes:
 
 ## Using the Index:
 1. **Load the index**:
-   - Use the appropriate menu item in the **top menu**, or
-   - Drag and drop the index file into the query editor.
+   - Use the **'Open Indexed Data'** option in the top menu. 
+   - Alternatively, drag and drop the files directly into the editor.
 2. The node will appear in the left panel.
 3. **Query the index**:
    - Drag the indexed node into the query editor.

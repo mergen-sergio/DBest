@@ -1,5 +1,5 @@
 <div align="left">
-    <a href="./08 - other-query-options.md">Previous</a>
+    <a href="./08 - working-with-temp-tables.md">Previous</a>
 </div>
 <div align="right">
   <a href="./10 - understanding-indexes.md">Next</a>
@@ -66,7 +66,7 @@ Proper naming ensures clarity and prevents conflicts in complex query plans. Thi
 <br>
 
 <div align="left">
-    <a href="./08 - other-query-options.md">Previous</a>
+    <a href="./08 - working-with-temp-tables.md">Previous</a>
 </div>
 <div align="right">
   <a href="./10 - understanding-indexes.md">Next</a>

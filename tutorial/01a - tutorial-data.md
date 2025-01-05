@@ -16,16 +16,10 @@ The SQL files published in the repository were converted into DBest-indexed `.da
 
 The .dat files can be found [here](https://github.com/mergen-sergio/DBest/tree/main/tutorial/assets/data). Unzip the files before loading them into the tool. 
 
-## Using the `.dat` Files
-
-To work with the `.dat` files:
-1. Use the **'Open Indexed Data'** option in the top menu.  
-2. Alternatively, drag and drop the files directly into the editor.
-
-This approach ensures efficient access the the movie database and supports the examples discussed throughout the tutorial.
 
 
-## Understanding the movie database
+
+## The movie database schema
 
 Below is the schema of the database, presented in SQL-like format:
 
@@ -102,7 +96,7 @@ All `.dat` files are indexed, and some act as non-clustered indexes (identified 
   - The `movie_id` column in `idx_year` serves as a reference to the clustered `movie.dat` file.  
   - By using the `movie_id`, you can query the `movie.dat` file to retrieve all associated columns from the `movie` table.
 
-DBest utilizes these indexes to facilitate efficient data access. For additional information about DBest's indexing strategy, refer to the following link: [DBest Indexing Strategy](xxx).
+DBest utilizes these indexes to facilitate efficient data access. For additional information about DBest's indexing strategy, refer to the following link: [DBest Indexing Strategy](10%20-%20understanding-indexes.md).
 
 <br>
 

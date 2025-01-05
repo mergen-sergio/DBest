@@ -1,8 +1,8 @@
 <div align="left">
-    <a href="./04 - working-with-temp-tables.md">Previous</a>
+    <a href="./02 - operators.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./06 - using-basic-operators.md">Next</a>
+  <a href="./04 - using-basic-operators.md">Next</a>
 </div>
 
 # Creating a Query Tree in DBest
@@ -44,9 +44,6 @@ After connecting nodes, a **property window** will open for the operator. You ca
 
 For **binary operators**, the property window only becomes available after both child nodes are connected. Properties can only be edited if the node is valid and supports configuration.
 
----
-
-### Operator Properties
 
 The required properties vary depending on the operator type. Examples include:  
 - **Projection Operator**: Allows selection of columns to project, based on the schema of its child node.  
@@ -56,9 +53,9 @@ The required properties vary depending on the operator type. Examples include:
 <br>
 
 <div align="left">
-    <a href="./04 - working-with-temp-tables.md">Previous</a>
+    <a href="./02 - operators.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./06 - using-basic-operators.md">Next</a>
+  <a href="./04 - using-basic-operators.md">Next</a>
 </div>
 

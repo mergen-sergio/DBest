@@ -2,7 +2,7 @@
     <a href="./01a - tutorial-data.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./03 - working-with-CSV.md">Next</a>
+  <a href="./03 - creating-query-tree.md">Next</a>
 </div>
 
 
@@ -71,5 +71,5 @@ In DBest, you can build query execution plans by using a variety of operators. T
     <a href="./01a - tutorial-data.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./03 - working-with-CSV.md">Next</a>
+  <a href="./03 - creating-query-tree.md">Next</a>
 </div>

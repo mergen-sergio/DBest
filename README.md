@@ -1,17 +1,17 @@
 <img src="./assets/images/dbest-logo2.png" alt="Logo do DBest" width="256">
 
-# Database Basics for Engaging Students and Teachers (DBest)
+# Database Engine for Seamless Transformations (DBest)
+
+**DBest** is an interactive database engine designed for creating, visualizing, and executing query plans. This engine enables users to design query execution plans through an intuitive drag-and-drop interface, making it easier to understand query execution, optimize performance, and integrate diverse data sources. DBest is ideal for teaching, data integration, and enhancing query efficiency.
 
 
-**DBest** is an interactive tool for creating and visualizing database query execution plans. It allows users to design query plans by dragging and dropping operators, providing a user-friendly interface to understand query execution, optimize performance, and integrate heterogeneous data sources. It is suitable for teaching, data integration, and improving query performance.
-
-With DBest, you can:
-- Create complex query execution plans through a drag-and-drop interface.
-- Visualize query execution trees and operators.
-- Optimize queries by adjusting execution paths.
-- Use DBest for educational purposes to teach students about query optimization.
-- Integrate data from heterogeneous data sources.
-
+Key features of the DBest engine include:  
+- **Creating Query Plans**: Build complex query execution plans using a drag-and-drop interface.  
+- **Visualizing Execution Trees**: Gain clear insights into query structures and operator relationships.  
+- **Optimizing Performance**: Improve query efficiency by adjusting execution paths.  
+- **Teaching Database Concepts**: Provide students with practical tools to learn query optimization and database internals.  
+- **Integrating Data Sources**: Seamlessly combine data from heterogeneous data sources
+  
 <br>
 
 ---

@@ -1,8 +1,8 @@
 <div align="left">
-    <a href="./05 - creating-query-tree.md">Previous</a>
+    <a href="./03 - creating-query-tree.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./07 - running-queries.md">Next</a>
+  <a href="./05 - running-queries.md">Next</a>
 </div>
 
 ## Getting Started with DBest Operators
@@ -61,7 +61,6 @@ The example above demonstrated basic operators. However, many operators have var
 Start with the classic operators to build a solid foundation. Once comfortable with the basics, experiment with these variations to better understand their use cases and performance implications.
 
 
----
 
 ### Tips for Beginners
 
@@ -72,8 +71,8 @@ Start with the classic operators to build a solid foundation. Once comfortable w
 <br>
 
 <div align="left">
-    <a href="./05 - creating-query-tree.md">Previous</a>
+    <a href="./03 - creating-query-tree.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./07 - running-queries.md">Next</a>
+  <a href="./05 - running-queries.md">Next</a>
 </div>
