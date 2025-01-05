@@ -11,7 +11,7 @@ Key features of the DBest engine include:
 - **Optimizing Performance**: Improve query efficiency by adjusting execution paths.  
 - **Teaching Database Concepts**: Provide students with practical tools to learn query optimization and database internals.  
 - **Integrating Data Sources**: Seamlessly combine data from heterogeneous data sources
-- 
+  
 <br>
 
 ---
