@@ -9,6 +9,4 @@ package ibd.query;
  * @author ferna
  */
 public interface SingleSource {
-    public void setDataSourceAlias(String sourceAlias);
-    public String getDataSourceAlias();
 }

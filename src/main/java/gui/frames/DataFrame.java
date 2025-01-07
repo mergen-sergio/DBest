@@ -65,38 +65,12 @@ public class DataFrame extends JDialog implements ActionListener {
     private final long INITIAL_RECORDS_READ = Parameters.RECORDS_READ;
     
     private final long INITIAL_NEXT_CALLS = QueryStats.NEXT_CALLS;
-
-    private final long INITIAL_DISTINCT_TUPLE = QueryStats.COMPARE_DISTINCT_TUPLE;
-
-    private final long INITIAL_IO_SEEK_WRITE_TIME = Parameters.IO_SEEK_WRITE_TIME;
-
-    private final long INITIAL_IO_WRITE_TIME = Parameters.IO_WRITE_TIME;
-
-    private final long INITIAL_IO_SEEK_READ_TIME = Parameters.IO_SEEK_READ_TIME;
-
-    private final long INITIAL_IO_READ_TIME = Parameters.IO_READ_TIME;
-
-    private final long INITIAL_IO_SYNC_TIME = Parameters.IO_SYNC_TIME;
-
-    private final long INITIAL_IO_TOTAL_TIME = Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME;
-
-    private final long INITIAL_BLOCKS_LOADED = Parameters.BLOCKS_LOADED;
     
+    private final long INITIAL_MEMORY_USAGE = QueryStats.MEMORY_USED;
+
     private final long INITIAL_BLOCKS_ACCESSED = Parameters.BLOCKS_ACCESSED;
-
-    private final long INITIAL_BLOCKS_SAVED = Parameters.BLOCKS_SAVED;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_BLOCKS = Parameters.MEMORY_ALLOCATED_BY_BLOCKS;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_DIRECT_BLOCKS = Parameters.MEMORY_ALLOCATED_BY_DIRECT_BLOCKS;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_INDIRECT_BLOCKS = Parameters.MEMORY_ALLOCATED_BY_INDIRECT_BLOCKS;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_RECORDS = Parameters.MEMORY_ALLOCATED_BY_RECORDS;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_COMMITTABLE_BLOCKS = Parameters.MEMORY_ALLOCATED_BY_COMMITTABLE_BLOCKS;
-
-    public final long INITIAL_MEMORY_ALLOCATED_BY_BYTE_ARRAY = Parameters.MEMORY_ALLOCATED_BY_BYTE_ARRAY;
+    
+    private final long INITIAL_BLOCKS_LOADED = Parameters.BLOCKS_LOADED;
 
     private final List<Map<String, String>> rows;
 
@@ -392,49 +366,20 @@ public class DataFrame extends JDialog implements ActionListener {
                 .append(" = ")
                 .append(QueryStats.COMPARE_FILTER - this.INITIAL_COMPARE_FILTER)
                 .append("\n")
-                .append(ConstantController.getString("RECORDS_READ"))
-                .append(" = ")
-                .append(Parameters.RECORDS_READ - this.INITIAL_RECORDS_READ)
-                .append("\n")
                 .append(ConstantController.getString("NEXT_CALLS"))
                 .append(" = ")
                 .append(QueryStats.NEXT_CALLS - this.INITIAL_NEXT_CALLS)
                 .append("\n")
-                .append(ConstantController.getString("COMPARE_DISTINCT_TUPLE"))
+                .append(ConstantController.getString("MEMORY_USED"))
                 .append(" = ")
-                .append(QueryStats.COMPARE_DISTINCT_TUPLE - this.INITIAL_DISTINCT_TUPLE)
+                .append(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE)
                 .append("\n\n")
                 .append(ConstantController.getString("dataframe.disk"))
                 .append(":")
                 .append("\n")
-                .append(ConstantController.getString("IO_SEEK_WRITE_TIME"))
+                .append(ConstantController.getString("RECORDS_READ"))
                 .append(" = ")
-                .append((Parameters.IO_SEEK_WRITE_TIME - this.INITIAL_IO_SEEK_WRITE_TIME) / 1000000f)
-                .append("ms")
-                .append("\n")
-                .append(ConstantController.getString("IO_WRITE_TIME"))
-                .append(" = ").append((Parameters.IO_WRITE_TIME - this.INITIAL_IO_WRITE_TIME) / 1000000f)
-                .append("ms")
-                .append("\n")
-                .append(ConstantController.getString("IO_SEEK_READ_TIME"))
-                .append(" = ")
-                .append((Parameters.IO_SEEK_READ_TIME - this.INITIAL_IO_SEEK_READ_TIME) / 1000000f)
-                .append("ms")
-                .append("\n")
-                .append(ConstantController.getString("IO_READ_TIME"))
-                .append(" = ")
-                .append((Parameters.IO_READ_TIME - this.INITIAL_IO_READ_TIME) / 1000000f)
-                .append("ms")
-                .append("\n")
-                .append(ConstantController.getString("IO_SYNC_TIME"))
-                .append(" = ")
-                .append((Parameters.IO_SYNC_TIME - this.INITIAL_IO_SYNC_TIME) / 1000000f)
-                .append("ms")
-                .append("\n")
-                .append(ConstantController.getString("IO_TOTAL_TIME"))
-                .append(" = ")
-                .append((Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME - this.INITIAL_IO_TOTAL_TIME) / 1000000f)
-                .append("ms")
+                .append(Parameters.RECORDS_READ - this.INITIAL_RECORDS_READ)
                 .append("\n")
                 .append(ConstantController.getString("BLOCKS_LOADED"))
                 .append(" = ")
@@ -444,9 +389,6 @@ public class DataFrame extends JDialog implements ActionListener {
                 .append(" = ")
                 .append(Parameters.BLOCKS_ACCESSED - this.INITIAL_BLOCKS_ACCESSED)
                 .append("\n")
-                .append(ConstantController.getString("BLOCKS_SAVED"))
-                .append(" = ")
-                .append(Parameters.BLOCKS_SAVED - this.INITIAL_BLOCKS_SAVED)
                 .append("\n");
 
         this.textPane.setText(sb.toString());

@@ -354,7 +354,9 @@ public final class OperationCell extends Cell {
         this.alias = newName;
         jCell.setValue(newName);
         adjustWidthSize();
-        changeSourceNames(newName);
+        if (operator instanceof SingleSource){
+            changeSourceNames(newName);
+        }
         TreeUtils.updateTreeBelow(this);
     }
     

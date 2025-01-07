@@ -59,6 +59,11 @@ public class NestedLoopSemiJoin extends LookupJoin {
     }
     
     @Override
+    public ReferedDataSource[] getChildDataSources() throws Exception {
+        return copyChildDataSources(this);
+    } 
+    
+    @Override
     public Map<String, List<String>> getContentInfo() {
         return getLeftOperation().getContentInfo();
     }

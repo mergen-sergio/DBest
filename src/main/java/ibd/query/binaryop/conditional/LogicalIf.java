@@ -64,7 +64,7 @@ public class LogicalIf extends BinaryOperation {
         ReferedDataSource left[] = getLeftOperation().getDataSources();
         dataSources = new ReferedDataSource[left.length];
         System.arraycopy(left, 0, dataSources, 0, left.length);
-
+        
     }
     
     @Override

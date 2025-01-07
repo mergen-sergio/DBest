@@ -6,6 +6,7 @@
 package ibd.query;
 
 import ibd.query.binaryop.BinaryOperation;
+import ibd.query.binaryop.conditional.Exists;
 import ibd.query.binaryop.join.Join;
 import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
@@ -19,6 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An operation in this context is defined as a data transformation step within
@@ -62,7 +65,7 @@ public abstract class Operation {
      * can be located and used by the transformation process.
      */
     protected ReferedDataSource[] dataSources;
-
+    
     /**
      * The `processedOperations` variable contains a list of all operations that
      * execute prior to the current operation. This list provides access to all
@@ -151,6 +154,10 @@ public abstract class Operation {
      * @throws Exception
      */
     public ReferedDataSource[] getDataSources() throws Exception {
+        return dataSources;
+    }
+    
+    public ReferedDataSource[] getChildDataSources() throws Exception {
         return dataSources;
     }
 
@@ -347,7 +354,7 @@ public abstract class Operation {
         if (tableName == null) {
             return 0;
         } else {
-            ReferedDataSource[] dataSources_ = getDataSources();
+            ReferedDataSource[] dataSources_ = getChildDataSources();
             for (int i = 0; i < dataSources_.length; i++) {
                 if (dataSources_[i].alias.equals(tableName)) {
                     return i;
@@ -369,7 +376,7 @@ public abstract class Operation {
         if (tableName == null) {
             return null;
         } else {
-            ReferedDataSource[] dataSources_ = getDataSources();
+            ReferedDataSource[] dataSources_ = getChildDataSources();
             for (int i = 0; i < dataSources_.length; i++) {
                 if (dataSources_[i].alias.equals(tableName)) {
                     return dataSources_[i];
@@ -469,7 +476,7 @@ public abstract class Operation {
         if (columnDescriptor.getTableName() == null) {
             colLoc.tupleIndex = 0;
             colLoc.rowIndex = 0;
-            ReferedDataSource[] dataSources_ = getDataSources();
+            ReferedDataSource[] dataSources_ = getChildDataSources();
             Column col = dataSources_[0].prototype.getColumn(columnDescriptor.getColumnName());
             if (col==null)
                 throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
@@ -478,7 +485,7 @@ public abstract class Operation {
         } else {
             int rowIndex = getRowIndex(columnDescriptor.getTableName());
             if (rowIndex != -1) {
-                Column col = getDataSources()[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
+                Column col = getChildDataSources()[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
                 if (col==null)
                     throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
                 colLoc.rowIndex = rowIndex;
@@ -714,6 +721,30 @@ public abstract class Operation {
 
         //runs the query using with an empty list of processed operations and no delegated filters .
         return lookUp(new ArrayList(), false);
+    }
+    
+    public static ReferedDataSource[] copyChildDataSources(BinaryOperation operation){
+    try {
+        ReferedDataSource left[];
+        
+            left = operation.getLeftOperation().getDataSources();
+        
+        ReferedDataSource right[] = operation.getRightOperation().getDataSources();
+        ReferedDataSource dataSources[] = new ReferedDataSource[left.length + right.length];
+        int count = 0;
+        for (int i = 0; i < left.length; i++) {
+            dataSources[count] = left[i];
+            count++;
+        }
+        for (int i = 0; i < right.length; i++) {
+            dataSources[count] = right[i];
+            count++;
+        }
+        return dataSources;
+        } catch (Exception ex) {
+            Logger.getLogger(Exists.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    return null;
     }
 
     /**

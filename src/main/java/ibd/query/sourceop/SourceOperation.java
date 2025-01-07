@@ -62,7 +62,6 @@ public abstract class SourceOperation extends Operation implements SingleSource{
     }
     
     
-   
     
     /**
      *

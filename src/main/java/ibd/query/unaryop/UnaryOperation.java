@@ -78,7 +78,7 @@ public abstract class UnaryOperation extends Operation {
         System.arraycopy(s, 0, dataSources, 0, s.length);
 
     }
-
+    
     @Override
     public final void setProcessedOperations() {
         super.setProcessedOperations();

@@ -87,18 +87,7 @@ public abstract class Join extends BinaryOperation {
         getLeftOperation().setDataSourcesInfo();
         getRightOperation().setDataSourcesInfo();
 
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
-        ReferedDataSource right[] = getRightOperation().getDataSources();
-        dataSources = new ReferedDataSource[left.length + right.length];
-        int count = 0;
-        for (int i = 0; i < left.length; i++) {
-            dataSources[count] = left[i];
-            count++;
-        }
-        for (int i = 0; i < right.length; i++) {
-            dataSources[count] = right[i];
-            count++;
-        }
+        dataSources = copyChildDataSources(this);
 
     }
     

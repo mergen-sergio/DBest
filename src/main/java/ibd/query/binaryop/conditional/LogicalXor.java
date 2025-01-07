@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author Sergio
  */
-public class LogicalXor extends BinaryOperation {//implements SingleSource {
+public class LogicalXor extends BinaryOperation implements SingleSource {
 
     //String tableName = "condition";
     String colName = "EVAL";

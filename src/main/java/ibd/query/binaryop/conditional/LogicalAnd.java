@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author Sergio
  */
-public class LogicalAnd extends BinaryOperation {//implements SingleSource{
+public class LogicalAnd extends BinaryOperation implements SingleSource{
 
     
     //String tableName = "condition";

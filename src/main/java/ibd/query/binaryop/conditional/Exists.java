@@ -10,9 +10,12 @@ import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
 import ibd.query.binaryop.BinaryOperation;
+import ibd.query.unaryop.UnaryOperation;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Performs a difference between the left and the right operations.
@@ -94,21 +97,10 @@ public class Exists extends BinaryOperation {
         getLeftOperation().setDataSourcesInfo();
         getRightOperation().setDataSourcesInfo();
 
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
-        ReferedDataSource right[] = getRightOperation().getDataSources();
-        dataSources = new ReferedDataSource[left.length + right.length];
-        int count = 0;
-        for (int i = 0; i < left.length; i++) {
-            dataSources[count] = left[i];
-            count++;
-        }
-        for (int i = 0; i < right.length; i++) {
-            dataSources[count] = right[i];
-            count++;
-        }
-
+        dataSources = copyChildDataSources(this);
+        
     }
-
+    
     /**
      * {@inheritDoc }
      *
