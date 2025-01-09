@@ -517,6 +517,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.console")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_CONSOLE)));
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.textEditor")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_TEXT_EDITOR)));
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.comparator")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_COMPARATOR)));
+        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.connections")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_CONNECTIONS)));
     }
 
     private void setTablesSavedGraphConfig() {

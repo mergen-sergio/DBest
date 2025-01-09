@@ -5,10 +5,12 @@ import com.google.gson.JsonObject;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import controllers.ConstantController;
+import database.jdbc.ConnectionConfig;
 import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.Cell;
 import entities.cells.FYITableCell;
+import entities.cells.JDBCTableCell;
 import entities.cells.MemoryTableCell;
 import entities.cells.TableCell;
 import enums.CellType;
@@ -83,7 +85,10 @@ public class TableCreator {
             case FYI_TABLE ->
                 new FYITableCell(tableName,
                 table, new File(path));
-
+            // TODO: Review unreachable statement
+            case JDBC_TABLE ->
+                new JDBCTableCell(tableName,
+                table, new File(path));
         };
 
     }
@@ -339,6 +344,39 @@ public class TableCreator {
         }
 
         return prototype;
+    }
+
+    /**
+     * TODO: Review deletion of headerFile parameter && Review child logic, must be a better way
+     */
+    public static JDBCTableCell createJDBCTable(
+        String tableName, ConnectionConfig connectionConfig, boolean mustExport
+    ) {
+        Header header = new Header(null, tableName);
+        String tableType = connectionConfig.getTableType();
+        header.set(Header.TABLE_TYPE, tableType);
+        header.set("connection-url", connectionConfig.connectionURL);
+        header.set("connection-user", connectionConfig.username);
+        header.set("connection-password", connectionConfig.password);
+
+        Table table = null;
+        mxCell jCell = null;
+        try {
+            table = openTable(header, false);
+            table.open();
+            table.saveHeader(String.format("%s%s", tableName, FileType.HEADER.extension));
+
+            jCell = (mxCell) MainFrame
+                .getGraph()
+                .insertVertex(
+                    MainFrame.getGraph().getDefaultParent(), null, tableName, 0, 0,
+                    ConstantController.TABLE_CELL_WIDTH, ConstantController.TABLE_CELL_HEIGHT, CellType.JDBC_TABLE.id
+                );
+        } catch (Exception e) {
+            Logger.getLogger(TableCreator.class.getName()).log(Level.SEVERE, null, e);
+        }
+
+        return new JDBCTableCell(jCell, tableName, table, null);
     }
 
     private static ibd.table.prototype.column.Column createColumn(entities.Column column, int size, short flags) {

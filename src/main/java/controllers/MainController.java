@@ -43,6 +43,7 @@ import gui.frames.forms.importexport.ExportAsForm;
 import gui.frames.forms.importexport.ImportAsForm;
 import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
+import gui.frames.jdbc.ConnectionsFrame;
 import gui.frames.main.MainFrame;
 import ibd.query.SingleSource;
 import utils.RandomUtils;
@@ -84,6 +85,8 @@ public class MainController extends MainFrame {
     public static ConsoleFrame consoleFrame = null;
 
     public static ComparatorFrame comparatorFrame = null;
+
+    public static ConnectionsFrame connectionsFrame = null;
 
     private static int currentTableYPosition = 0;
 
@@ -321,6 +324,9 @@ public class MainController extends MainFrame {
                     this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
                 case CREATE_TABLE_CELL ->
                     this.createNewTable(CurrentAction.ActionType.CREATE_TABLE_CELL);
+
+                case OPEN_CONNECTIONS ->
+                    this.openConnections();
                 case OPEN_CONSOLE ->
                     this.openConsole();
                 case OPEN_TEXT_EDITOR ->
@@ -332,7 +338,6 @@ public class MainController extends MainFrame {
                         Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-
             }
 
             if (clickedButton instanceof OperationButton clickedOperationButton) {
@@ -687,6 +692,16 @@ public class MainController extends MainFrame {
 
         }
 
+    }
+
+    private void openConnections() {
+        if (connectionsFrame == null) {
+            connectionsFrame = new ConnectionsFrame();
+            return;
+        }
+        connectionsFrame.setLocationRelativeTo(null);
+        connectionsFrame.setExtendedState(Frame.NORMAL);
+        connectionsFrame.toFront();
     }
 
     private void openConsole() {

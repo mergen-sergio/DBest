@@ -9,6 +9,7 @@ import controllers.MainController;
 
 import entities.cells.CSVTableCell;
 import entities.cells.FYITableCell;
+import entities.cells.JDBCTableCell;
 import entities.cells.MemoryTableCell;
 import entities.cells.TableCell;
 import entities.utils.cells.CellUtils;
@@ -53,6 +54,8 @@ public class InsertTableCellCommand extends BaseUndoableRedoableCommand {
 
         else if (tableCell instanceof MemoryTableCell memoryTableCell)
             new MemoryTableCell(memoryTableCell, this.jCellReference.get());
+        else if(tableCell instanceof JDBCTableCell jdbcTableCell)
+             new JDBCTableCell(jdbcTableCell, this.jCellReference.get());
 
     }
 
