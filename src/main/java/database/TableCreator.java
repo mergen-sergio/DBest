@@ -27,6 +27,10 @@ import gui.frames.main.MainFrame;
 import ibd.table.btree.BTreeTable;
 import ibd.table.csv.CSVTable;
 import ibd.table.Table;
+import ibd.table.jdbc.JDBCTable;
+import ibd.table.jdbc.MySQLTable;
+import ibd.table.jdbc.OracleTable;
+import ibd.table.jdbc.PostgreSQLTable;
 import ibd.table.memory.MemoryTable;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
@@ -109,6 +113,12 @@ public class TableCreator {
                 new CSVTable(header);
             case "MemoryTable" ->
                 new MemoryTable(header);
+            case "MySQLTable" ->
+                new MySQLTable(header);
+            case "OracleTable" ->
+                new OracleTable(header);
+            case "PostgreSQLTable" ->
+                new PostgreSQLTable(header);
             default ->
                 new BTreeTable(header, null, null, cacheSize);
         };

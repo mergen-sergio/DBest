@@ -36,5 +36,7 @@ public class TableSelectionPanel extends JPanel {
                 MainController.saveTable(tableCell);
             }
         });
+
+        setPreferredSize(new Dimension(200, 300));
     }
 }
