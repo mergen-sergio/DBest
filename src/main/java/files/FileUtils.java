@@ -41,7 +41,7 @@ public class FileUtils {
 
     public static Path getDBestLogo() throws Exception{
 
-        File assets = new File("assets\\images");
+        File assets = new File("assets/images");
 
 //        File images = (Objects.requireNonNull(Arrays.stream(Objects.requireNonNull(assets.listFiles()))
 //                .filter(x -> x.getName().equals("dbest-logo.png")).findFirst().orElseThrow()));
