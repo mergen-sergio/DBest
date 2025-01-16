@@ -324,9 +324,6 @@ public class MainController extends MainFrame {
                     this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
                 case CREATE_TABLE_CELL ->
                     this.createNewTable(CurrentAction.ActionType.CREATE_TABLE_CELL);
-
-                case OPEN_CONNECTIONS ->
-                    this.openConnections();
                 case OPEN_CONSOLE ->
                     this.openConsole();
                 case OPEN_TEXT_EDITOR ->
@@ -369,7 +366,9 @@ public class MainController extends MainFrame {
 //        if (source == this.importTableTopMenuBarItem) {
 //            this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
 //        } else 
-        if (source == this.openCSVTableTopMenuBarItem) {
+        if (source == this.openDatabaseConnectionTopMenuBarItem) {
+            openConnections();
+        } else if (source == this.openCSVTableTopMenuBarItem) {
             openCSV();
         } else if (source == this.openBTreeTableTopMenuBarItem) {
             new ImportFile(FileType.DAT, new AtomicReference<>(false));

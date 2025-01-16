@@ -3,8 +3,8 @@ package gui.frames.jdbc;
 import controllers.ConstantController;
 import controllers.MainController;
 
-import java.awt.*;
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -15,8 +15,8 @@ public class ConnectionsFrame extends JFrame {
     }
 
     private void initGUI() {
+        setSize(1000, 600);
         setResizable(false);
-        setSize(400, 300);
         setLocationRelativeTo(null);
         setTitle(ConstantController.getString("connections"));
 
@@ -27,17 +27,26 @@ public class ConnectionsFrame extends JFrame {
             }
         });
 
-        ConnectionPanel rightPanel = new ConnectionPanel();
+        ConnectionPanel connectionPanel = new ConnectionPanel();
         ConnectionListPanel leftPanel = new ConnectionListPanel();
+        TablesPanel tablesPanel = new TablesPanel();
 
-        // FIXME: Not the best approach probably
-        rightPanel.setLeftPanel(leftPanel);
-        leftPanel.setRightPanel(rightPanel);
-        leftPanel.setPreferredSize(new Dimension(100, getHeight()));
+        connectionPanel.setLeftPanel(leftPanel);
+        leftPanel.setRightPanel(connectionPanel);
+        leftPanel.setTablesPanel(tablesPanel);
 
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(leftPanel, BorderLayout.WEST);
-        getContentPane().add(rightPanel, BorderLayout.CENTER);
+        JSplitPane mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainSplitPane.setLeftComponent(leftPanel);
+
+        JSplitPane rightSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        rightSplitPane.setLeftComponent(connectionPanel);
+        rightSplitPane.setRightComponent(tablesPanel);
+
+        mainSplitPane.setRightComponent(rightSplitPane);
+
+        rightSplitPane.setDividerLocation(350);
+
+        getContentPane().add(mainSplitPane);
 
         setVisible(true);
         pack();

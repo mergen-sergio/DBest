@@ -124,7 +124,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JMenuBar topMenuBar = new JMenuBar();
 
     //protected JMenuItem importTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.importTable"));
-    
+
+    protected JMenuItem openDatabaseConnectionTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openDatabaseConnection"));
+
     protected JMenuItem openCSVTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openCSVTable"));
     
     protected JMenuItem openBTreeTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openBTreeTable"));
@@ -295,6 +297,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.topMenuBar.add(fileMenu);
 
         //fileMenu.add(this.importTableTopMenuBarItem);
+        fileMenu.add(this.openDatabaseConnectionTopMenuBarItem);
         fileMenu.add(this.openCSVTableTopMenuBarItem);
         fileMenu.add(this.openBTreeTableTopMenuBarItem);
         fileMenu.add(this.openHeadFileTableTopMenuBarItem);
@@ -302,6 +305,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         fileMenu.add(this.openQueryTopMenuBarItem);
 
         //this.importTableTopMenuBarItem.addActionListener(this);
+        this.openDatabaseConnectionTopMenuBarItem.addActionListener(this);
         this.openCSVTableTopMenuBarItem.addActionListener(this);
         this.openBTreeTableTopMenuBarItem.addActionListener(this);
         this.openHeadFileTableTopMenuBarItem.addActionListener(this);
@@ -517,7 +521,6 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.console")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_CONSOLE)));
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.textEditor")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_TEXT_EDITOR)));
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.comparator")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_COMPARATOR)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.connections")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_CONNECTIONS)));
     }
 
     private void setTablesSavedGraphConfig() {

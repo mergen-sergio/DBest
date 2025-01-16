@@ -356,11 +356,8 @@ public class TableCreator {
         return prototype;
     }
 
-    /**
-     * TODO: Review deletion of headerFile parameter && Review child logic, must be a better way
-     */
     public static JDBCTableCell createJDBCTable(
-        String tableName, ConnectionConfig connectionConfig, boolean mustExport
+        String tableName, ConnectionConfig connectionConfig, Boolean mustExport
     ) {
         Header header = new Header(null, tableName);
         String tableType = connectionConfig.getTableType();
@@ -375,6 +372,10 @@ public class TableCreator {
             table = openTable(header, false);
             table.open();
             table.saveHeader(String.format("%s%s", tableName, FileType.HEADER.extension));
+
+            if (mustExport) {
+                return new JDBCTableCell(new mxCell(tableName, new mxGeometry(), ConstantController.J_CELL_FYI_TABLE_STYLE), tableName, table, null);
+            }
 
             jCell = (mxCell) MainFrame
                 .getGraph()

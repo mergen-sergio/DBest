@@ -34,50 +34,55 @@ public class ConnectionPanel extends JPanel {
     }
 
     private void initGUI() {
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        Dimension fieldDimension = new Dimension(200, 25);
+        setLayout(new BorderLayout());
+        setBorder(new EmptyBorder(20, 5, 20, 5));
+
+        JPanel fieldsPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+
+        fieldsPanel.add(new JLabel("Driver"), gbc);
+        gbc.gridy++;
         driverComboBox = new JComboBox<>(JDBCDriver.values());
-        driverComboBox.setAlignmentX(Component.CENTER_ALIGNMENT);
-        JLabel hostLabel = new JLabel(ConstantController.getString("connections.frame.field.host"));
-        hostLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        hostTextField = new JTextField();
-        hostTextField.setMaximumSize(fieldDimension);
-        JLabel databaseLabel = new JLabel(ConstantController.getString("connections.frame.field.database"));
-        databaseLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        databaseTextField = new JTextField();
-        databaseTextField.setMaximumSize(fieldDimension);
-        JLabel userLabel = new JLabel(ConstantController.getString("connections.frame.field.user"));
-        userLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        userTextField = new JTextField();
-        userTextField.setMaximumSize(fieldDimension);
-        JLabel passwordLabel = new JLabel(ConstantController.getString("connections.frame.field.password"));
-        passwordLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        passwordField = new JPasswordField();
-        passwordField.setMaximumSize(fieldDimension);
-        JLabel connectionURLLabel = new JLabel(ConstantController.getString("connections.frame.field.connectionURL"));
-        connectionURLLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        connectionURLField = new JTextField();
-        connectionURLField.setMaximumSize(fieldDimension);
+        fieldsPanel.add(driverComboBox, gbc);
+
+        gbc.gridy++;
+        fieldsPanel.add(new JLabel(ConstantController.getString("connections.frame.field.host")), gbc);
+        gbc.gridy++;
+        hostTextField = new JTextField(20);
+        fieldsPanel.add(hostTextField, gbc);
+
+        gbc.gridy++;
+        fieldsPanel.add(new JLabel(ConstantController.getString("connections.frame.field.database")), gbc);
+        gbc.gridy++;
+        databaseTextField = new JTextField(20);
+        fieldsPanel.add(databaseTextField, gbc);
+
+        gbc.gridy++;
+        fieldsPanel.add(new JLabel(ConstantController.getString("connections.frame.field.user")), gbc);
+        gbc.gridy++;
+        userTextField = new JTextField(20);
+        fieldsPanel.add(userTextField, gbc);
+
+        gbc.gridy++;
+        fieldsPanel.add(new JLabel(ConstantController.getString("connections.frame.field.password")), gbc);
+        gbc.gridy++;
+        passwordField = new JPasswordField(20);
+        fieldsPanel.add(passwordField, gbc);
+
+        gbc.gridy++;
+        fieldsPanel.add(new JLabel(ConstantController.getString("connections.frame.field.connectionURL")), gbc);
+        gbc.gridy++;
+        connectionURLField = new JTextField(20);
         connectionURLField.setEditable(false);
-        setBorder(new EmptyBorder(20, 10, 20, 10));
-        add(driverComboBox);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(hostLabel);
-        add(hostTextField);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(databaseLabel);
-        add(databaseTextField);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(userLabel);
-        add(userTextField);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(passwordLabel);
-        add(passwordField);
-        add(Box.createRigidArea(new Dimension(0, 5)));
-        add(connectionURLLabel);
-        add(connectionURLField);
+        fieldsPanel.add(connectionURLField, gbc);
+
+        add(fieldsPanel, BorderLayout.CENTER);
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JButton saveButton = new JButton(ConstantController.getString("save"));
         JButton testButton = new JButton(ConstantController.getString("test"));
         JButton deleteButton = new JButton(ConstantController.getString("delete"));
@@ -86,10 +91,9 @@ public class ConnectionPanel extends JPanel {
         buttonPanel.add(saveButton);
         buttonPanel.add(testButton);
         buttonPanel.add(deleteButton);
-        add(buttonPanel);
-        JButton tablesButton = new JButton(ConstantController.getString("tables"));
-        tablesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        add(tablesButton);
+
+        add(buttonPanel, BorderLayout.SOUTH);
+
         saveButton.addActionListener(e -> {
             // TODO: Here we create a new connection file instead of updating to re-generate the
             if (leftPanel.getCurrentConnection() != null) {
@@ -136,21 +140,7 @@ public class ConnectionPanel extends JPanel {
                 if (choice == JOptionPane.YES_OPTION) {
                     connectionConfig.delete();
                     leftPanel.updateConnectionList();
-                }
-            }
-        });
-        tablesButton.addActionListener(e -> {
-            ConnectionConfig connectionConfig = leftPanel.getCurrentConnection();
-            if (connectionConfig != null) {
-                if (connectionConfig.test()) {
-                    TableSelectionPanel tableSelectionPanel = new TableSelectionPanel(connectionConfig);
-                    JDialog tableSelectionDialog = new JDialog();
-                    tableSelectionDialog.add(tableSelectionPanel);
-                    tableSelectionDialog.pack();
-                    tableSelectionDialog.setLocationRelativeTo(null);
-                    tableSelectionDialog.setVisible(true);
-                } else {
-                    displayTestResult(false);
+                    displayConnectionDetails(null);
                 }
             }
         });
@@ -168,6 +158,7 @@ public class ConnectionPanel extends JPanel {
             databaseTextField.setText("");
             userTextField.setText("");
             passwordField.setText("");
+            connectionURLField.setText("");
         }
     }
 
