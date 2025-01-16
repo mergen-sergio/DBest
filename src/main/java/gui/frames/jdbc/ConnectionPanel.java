@@ -117,10 +117,11 @@ public class ConnectionPanel extends JPanel {
             }
 
             connectionConfig.save();
+            leftPanel.updateConnectionList();
             leftPanel.setCurrentConnection(connectionConfig);
+            displayConnectionDetails(connectionConfig);
             boolean connectionIsValid = connectionConfig.test();
             displayTestResult(connectionIsValid);
-            leftPanel.updateConnectionList();
         });
         testButton.addActionListener(e -> {
             ConnectionConfig connectionConfig = leftPanel.getCurrentConnection();
