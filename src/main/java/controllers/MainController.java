@@ -43,6 +43,7 @@ import gui.frames.forms.importexport.ExportAsForm;
 import gui.frames.forms.importexport.ImportAsForm;
 import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
+import gui.frames.jdbc.ConnectionsFrame;
 import gui.frames.main.MainFrame;
 import ibd.query.SingleSource;
 import utils.RandomUtils;
@@ -84,6 +85,8 @@ public class MainController extends MainFrame {
     public static ConsoleFrame consoleFrame = null;
 
     public static ComparatorFrame comparatorFrame = null;
+
+    public static ConnectionsFrame connectionsFrame = null;
 
     private static int currentTableYPosition = 0;
 
@@ -332,7 +335,6 @@ public class MainController extends MainFrame {
                         Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-
             }
 
             if (clickedButton instanceof OperationButton clickedOperationButton) {
@@ -364,7 +366,9 @@ public class MainController extends MainFrame {
 //        if (source == this.importTableTopMenuBarItem) {
 //            this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
 //        } else 
-        if (source == this.openCSVTableTopMenuBarItem) {
+        if (source == this.openDatabaseConnectionTopMenuBarItem) {
+            openConnections();
+        } else if (source == this.openCSVTableTopMenuBarItem) {
             openCSV();
         } else if (source == this.openBTreeTableTopMenuBarItem) {
             new ImportFile(FileType.DAT, new AtomicReference<>(false));
@@ -687,6 +691,16 @@ public class MainController extends MainFrame {
 
         }
 
+    }
+
+    private void openConnections() {
+        if (connectionsFrame == null) {
+            connectionsFrame = new ConnectionsFrame();
+            return;
+        }
+        connectionsFrame.setLocationRelativeTo(null);
+        connectionsFrame.setExtendedState(Frame.NORMAL);
+        connectionsFrame.toFront();
     }
 
     private void openConsole() {

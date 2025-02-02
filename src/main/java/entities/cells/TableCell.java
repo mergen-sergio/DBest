@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import ibd.table.prototype.Prototype;
 
-public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITableCell, MemoryTableCell {
+public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITableCell, JDBCTableCell, MemoryTableCell {
 
     private final String firstName;
 

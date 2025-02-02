@@ -76,10 +76,8 @@ public class LinkedDataRow extends DataRow {
         Column col = prototype.getColumn(colIndex);
         setValue(col, data);
     }
-    
+
     private void setValue(Column col, Comparable data) {
-        
-        
         if (col==null || data ==null){
             return;
         }

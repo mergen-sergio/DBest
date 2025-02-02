@@ -5,10 +5,12 @@ import com.google.gson.JsonObject;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import controllers.ConstantController;
+import database.jdbc.ConnectionConfig;
 import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.Cell;
 import entities.cells.FYITableCell;
+import entities.cells.JDBCTableCell;
 import entities.cells.MemoryTableCell;
 import entities.cells.TableCell;
 import enums.CellType;
@@ -25,6 +27,10 @@ import gui.frames.main.MainFrame;
 import ibd.table.btree.BTreeTable;
 import ibd.table.csv.CSVTable;
 import ibd.table.Table;
+import ibd.table.jdbc.JDBCTable;
+import ibd.table.jdbc.MySQLTable;
+import ibd.table.jdbc.OracleTable;
+import ibd.table.jdbc.PostgreSQLTable;
 import ibd.table.memory.MemoryTable;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
@@ -83,7 +89,10 @@ public class TableCreator {
             case FYI_TABLE ->
                 new FYITableCell(tableName,
                 table, new File(path));
-
+            // TODO: Review unreachable statement
+            case JDBC_TABLE ->
+                new JDBCTableCell(tableName,
+                table, new File(path));
         };
 
     }
@@ -104,6 +113,12 @@ public class TableCreator {
                 new CSVTable(header);
             case "MemoryTable" ->
                 new MemoryTable(header);
+            case "MySQLTable" ->
+                new MySQLTable(header);
+            case "OracleTable" ->
+                new OracleTable(header);
+            case "PostgreSQLTable" ->
+                new PostgreSQLTable(header);
             default ->
                 new BTreeTable(header, null, null, cacheSize);
         };
@@ -339,6 +354,40 @@ public class TableCreator {
         }
 
         return prototype;
+    }
+
+    public static JDBCTableCell createJDBCTable(
+        String tableName, ConnectionConfig connectionConfig, Boolean mustExport
+    ) {
+        Header header = new Header(null, tableName);
+        String tableType = connectionConfig.getTableType();
+        header.set(Header.TABLE_TYPE, tableType);
+        header.set("connection-url", connectionConfig.connectionURL);
+        header.set("connection-user", connectionConfig.username);
+        header.set("connection-password", connectionConfig.password);
+
+        Table table = null;
+        mxCell jCell = null;
+        try {
+            table = openTable(header, false);
+            table.open();
+            table.saveHeader(String.format("%s%s", tableName, FileType.HEADER.extension));
+
+            if (mustExport) {
+                return new JDBCTableCell(new mxCell(tableName, new mxGeometry(), ConstantController.J_CELL_FYI_TABLE_STYLE), tableName, table, null);
+            }
+
+            jCell = (mxCell) MainFrame
+                .getGraph()
+                .insertVertex(
+                    MainFrame.getGraph().getDefaultParent(), null, tableName, 0, 0,
+                    ConstantController.TABLE_CELL_WIDTH, ConstantController.TABLE_CELL_HEIGHT, CellType.JDBC_TABLE.id
+                );
+        } catch (Exception e) {
+            Logger.getLogger(TableCreator.class.getName()).log(Level.SEVERE, null, e);
+        }
+
+        return new JDBCTableCell(jCell, tableName, table, null);
     }
 
     private static ibd.table.prototype.column.Column createColumn(entities.Column column, int size, short flags) {
