@@ -45,6 +45,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -177,18 +179,7 @@ public class ImportFile {
     }
 
     private static String readQuery(File fileName) throws IOException {
-        StringBuilder content = new StringBuilder();
-        FileInputStream fis = new FileInputStream(fileName);
-        int ch;
-        while ((ch = fis.read()) != -1) {
-            content.append((char) ch);
-
-            // Add a newline character after each line
-            if (ch == '\n') {
-                content.append('\n');
-            }
-        }
-        return content.toString();
+        return Files.readString(fileName.toPath(), StandardCharsets.UTF_8);
     }
 
     public static boolean importQuery(File fileName) {

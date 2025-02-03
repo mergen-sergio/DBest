@@ -217,7 +217,7 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
         itemTableName.add(Box.createHorizontalGlue());
         itemFromRow.add(new JLabel(String.format("%s:", ConstantController.getString("csvRecognizer.beginRow"))));
 
-        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, this.jTable.getRowCount() - 2, 1);
+        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, Math.max(1, this.jTable.getRowCount() - 2), 1);
 
         this.fromRowSpinner.setModel(spinnerModel);
         this.fromRowSpinner.setValue(1);
