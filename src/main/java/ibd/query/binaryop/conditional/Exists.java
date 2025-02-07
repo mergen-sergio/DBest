@@ -10,12 +10,9 @@ import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
 import ibd.query.binaryop.BinaryOperation;
-import ibd.query.unaryop.UnaryOperation;
 import ibd.table.prototype.LinkedDataRow;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Performs a difference between the left and the right operations.
@@ -60,7 +57,7 @@ public class Exists extends BinaryOperation {
 
     protected void setNullLeftTuple() throws Exception {
 
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         nullLeftTuple = new Tuple();
         nullLeftTuple.rows = new LinkedDataRow[left.length];
         for (int i = 0; i < left.length; i++) {
@@ -73,7 +70,7 @@ public class Exists extends BinaryOperation {
 
     protected void setNullRightTuple() throws Exception {
 
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {
@@ -84,23 +81,6 @@ public class Exists extends BinaryOperation {
 
     }
 
-    /**
-     * {@inheritDoc }
-     * the data sources array is a concatenation of the data sources that come
-     * from the left and the right subtrees
-     *
-     * @throws Exception
-     */
-    @Override
-    public void setDataSourcesInfo() throws Exception {
-
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
-
-        dataSources = copyChildDataSources(this);
-        
-    }
-    
     /**
      * {@inheritDoc }
      *

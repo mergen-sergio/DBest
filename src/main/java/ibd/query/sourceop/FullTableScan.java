@@ -50,9 +50,15 @@ public class FullTableScan extends SourceOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
-        super.setDataSourcesInfo();
+    public void setExposedDataSources() throws Exception {
+        super.setExposedDataSources();
         dataSources[0].prototype = table.getPrototype();
+    }
+    
+    @Override
+    public void setConnectedDataSources() throws Exception {
+        super.setConnectedDataSources();
+        connectedDataSources[0].prototype = table.getPrototype();
     }
 
     @Override

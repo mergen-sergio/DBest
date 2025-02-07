@@ -69,7 +69,7 @@ public class MergeLeftOuterJoin extends Join {
     protected void setNullRightTuple() throws Exception {
         //flowOperations = new ArrayList();
 
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {

@@ -176,7 +176,7 @@ public class DataFrame extends JDialog implements ActionListener {
 //                }
 //            }
             
-            ReferedDataSource sources[] = this.cell.getOperator().getDataSources();
+            ReferedDataSource sources[] = this.cell.getOperator().getExposedDataSources();
             for (ReferedDataSource source : sources) {
                 List<ibd.table.prototype.column.Column> columns = source.prototype.getColumns();
                 for (ibd.table.prototype.column.Column column : columns) {

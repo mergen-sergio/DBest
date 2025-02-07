@@ -62,20 +62,21 @@ public class LogicalXor extends BinaryOperation implements SingleSource {
      *
      * @throws java.lang.Exception
      */
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         prototype.addColumn(new BooleanColumn(colName));
-        dataSources[0].prototype = prototype;
 
         fixedTrueTuple = new Tuple();
-        LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
+        LinkedDataRow row = new LinkedDataRow(prototype, false);
         row.setValue(0, true);
         fixedTrueTuple.setSourceRows(new LinkedDataRow[]{row});
 
         fixedFalseTuple = new Tuple();
-        row = new LinkedDataRow(dataSources[0].prototype, false);
+        row = new LinkedDataRow(prototype, false);
         row.setValue(0, false);
         fixedFalseTuple.setSourceRows(new LinkedDataRow[]{row});
+        
+        return prototype;
     }
 
     @Override
@@ -88,11 +89,11 @@ public class LogicalXor extends BinaryOperation implements SingleSource {
     }
 
     private boolean isBooleanCondition(Operation op) throws Exception {
-        if (op.getDataSources().length > 1) {
+        if (op.getExposedDataSources().length > 1) {
             return false;
         }
 
-        ReferedDataSource source = op.getDataSources()[0];
+        ReferedDataSource source = op.getExposedDataSources()[0];
         if (source.prototype.size() > 1) {
             return false;
         }
@@ -107,22 +108,19 @@ public class LogicalXor extends BinaryOperation implements SingleSource {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
-
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+    public void setExposedDataSources() throws Exception {
 
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
 
         //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
-        setPrototype();
+        dataSources[0].prototype = setPrototype();
 
         leftSideIsCondition = isBooleanCondition(getLeftOperation());
         rightSideIsCondition = isBooleanCondition(getRightOperation());
     }
-
+    
     @Override
     public void setDataSourceAlias(String sourceAlias) {
         this.alias = sourceAlias;

@@ -10,10 +10,7 @@ import ibd.query.UnpagedOperationIterator;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
 import ibd.query.binaryop.join.JoinPredicate;
-import ibd.query.binaryop.join.JoinTerm;
 import ibd.query.binaryop.join.LookupJoin;
-import ibd.query.lookup.LookupFilter;
-import ibd.query.lookup.SingleColumnLookupFilter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,21 +44,15 @@ public class NestedLoopSemiJoin extends LookupJoin {
      * @throws Exception
      */
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setExposedDataSources() throws Exception {
 
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
 
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[left.length];
         System.arraycopy(left, 0, dataSources, 0, left.length);
 
     }
     
-    @Override
-    public ReferedDataSource[] getChildDataSources() throws Exception {
-        return copyChildDataSources(this);
-    } 
     
     @Override
     public Map<String, List<String>> getContentInfo() {

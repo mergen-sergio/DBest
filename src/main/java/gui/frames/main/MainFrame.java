@@ -199,10 +199,10 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.groupMenuItem = new JMenuItem(OperationType.GROUP.displayName);
         this.renameMenuItem = new JMenuItem(OperationType.RENAME.displayName);
 //        this.indexerMenuItem = new JMenuItem(OperationType.INDEXER.displayName);
-        this.joinMenuItem = new JMenuItem(OperationType.JOIN.displayName);
-        this.semiJoinMenuItem = new JMenuItem(OperationType.SEMI_JOIN.displayName);
-        this.leftJoinMenuItem = new JMenuItem(OperationType.LEFT_OUTER_JOIN.displayName);
-        this.rightJoinMenuItem = new JMenuItem(OperationType.RIGHT_OUTER_JOIN.displayName);
+        this.joinMenuItem = new JMenuItem(OperationType.NESTED_LOOP_JOIN.displayName);
+        this.semiJoinMenuItem = new JMenuItem(OperationType.NESTED_LOOP_LEFT_SEMI_JOIN.displayName);
+        this.leftJoinMenuItem = new JMenuItem(OperationType.NESTED_LOOP_LEFT_OUTER_JOIN.displayName);
+        this.rightJoinMenuItem = new JMenuItem(OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN.displayName);
         this.cartesianProductMenuItem = new JMenuItem(OperationType.CARTESIAN_PRODUCT.displayName);
         this.unionMenuItem = new JMenuItem(OperationType.UNION.displayName);
         this.intersectionMenuItem = new JMenuItem(OperationType.INTERSECTION.displayName);
@@ -416,13 +416,21 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_SEMI_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.algebraOperatorsPanel));
+        
+        
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_UNION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_INTERSECTION, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.algebraOperatorsPanel));
+        //this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.algebraOperatorsPanel));
         
                 
         addGroupButton(this.removeOperatorsPanel, "Remove Operators");
@@ -452,12 +460,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         
         
         addGroupButton(this.innerJoinOperatorsPanel, "Inner Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.JOIN, this, this.innerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.innerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_JOIN, this, this.innerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_JOIN, this, this.innerJoinOperatorsPanel));
         
         addGroupButton(this.outerJoinOperatorsPanel, "Outer Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
@@ -468,7 +476,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         
         addGroupButton(this.semiJoinOperatorsPanel, "Semi Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SEMI_JOIN, this, this.semiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
@@ -476,7 +484,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         
         
         addGroupButton(this.antiJoinOperatorsPanel, "Anti Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.ANTI_JOIN, this, this.antiJoinOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));

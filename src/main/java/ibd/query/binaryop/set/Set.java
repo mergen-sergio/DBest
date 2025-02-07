@@ -24,22 +24,20 @@ public abstract class Set extends BinaryOperation {
     }
 
     
-    /**
-     * {@inheritDoc }
-     * the data sources array  is a copy of the data sources
-     * that come from the left subtree
-     *
-     * @throws Exception
-     */
+    
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
         
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
+        connectedDataSources = new ReferedDataSource[left.length];
+        System.arraycopy(left, 0, connectedDataSources, 0, left.length);
 
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
-        dataSources = new ReferedDataSource[left.length];
-        System.arraycopy(left, 0, dataSources, 0, left.length);
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        dataSources = connectedDataSources;
 
     }
     

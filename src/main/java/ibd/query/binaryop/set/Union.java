@@ -43,7 +43,7 @@ public class Union extends Set implements SingleSource{
             this.alias = "union";
     }
     
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         int leftSize = getColumnsSize(leftOperation);
         int rightSize = getColumnsSize(rightOperation);
@@ -51,7 +51,7 @@ public class Union extends Set implements SingleSource{
 
         int currentColumn = 0;
 
-        for (ReferedDataSource dataSource : getLeftOperation().getDataSources()) {
+        for (ReferedDataSource dataSource : getLeftOperation().getExposedDataSources()) {
             List<Column> columns = dataSource.prototype.getColumns();
             int columnsToCopy = Math.min(columns.size(), minSize - currentColumn);
 
@@ -66,29 +66,33 @@ public class Union extends Set implements SingleSource{
                 break;
             }
         }
-
-        dataSources[0].prototype = prototype;
+        return prototype;
+        
     }
 
     protected int getColumnsSize(Operation op) throws Exception {
         int colSize = 0;
-        for (ReferedDataSource dataSource : op.getDataSources()) {
+        for (ReferedDataSource dataSource : op.getExposedDataSources()) {
             colSize += dataSource.prototype.getColumns().size();
         }
         return colSize;
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
 
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+        connectedDataSources = new ReferedDataSource[1];
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
 
-        dataSources = new ReferedDataSource[1];
-        dataSources[0] = new ReferedDataSource();
-        dataSources[0].alias = alias;
+        connectedDataSources[0].prototype = setPrototype();
 
-        setPrototype();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        dataSources = connectedDataSources;
 
     }
 

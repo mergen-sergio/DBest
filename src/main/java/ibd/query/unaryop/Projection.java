@@ -73,21 +73,58 @@ public class Projection extends UnaryOperation {
      * The tuples produced by a this operation contains a single schema, which contains all the projected columns.This function sets this schema.
      * @throws java.lang.Exception
      */
-    protected void setPrototypes() throws Exception {
+    protected void setConnectedPrototypes() throws Exception {
         TreeMap<Integer, Prototype> prototypes = new TreeMap();
         TreeMap<Integer, String> aliases = new TreeMap();
         TreeMap<Integer, List<ColumnDescriptor>> columnsByRow_ = new TreeMap();
         for (ColumnDescriptor col : projectionColumns) {
             childOperation.setColumnLocation(col);
             int rowIndex = col.getColumnLocation().rowIndex;
-            Column originalCol = childOperation.getDataSources()[rowIndex].prototype.getColumn(col.getColumnName());
+            Column originalCol = childOperation.getExposedDataSources()[rowIndex].prototype.getColumn(col.getColumnName());
             Column newCol = Prototype.cloneColumn(originalCol);
             Prototype prototype = prototypes.get(rowIndex);
             List<ColumnDescriptor> rowCols = columnsByRow_.get(rowIndex);
             if (prototype==null){
                 prototype = new Prototype();
                 prototypes.put(rowIndex, prototype);
-                aliases.put(rowIndex, childOperation.getDataSources()[rowIndex].alias);
+                aliases.put(rowIndex, childOperation.getExposedDataSources()[rowIndex].alias);
+                rowCols = new ArrayList();
+                columnsByRow_.put(rowIndex, rowCols);
+            }
+            prototype.addColumn(newCol);
+            rowCols.add(col);
+        }
+        connectedDataSources = new ReferedDataSource[prototypes.size()];
+        
+        // Access in key order
+        int x = 0;
+        for (Map.Entry<Integer, Prototype> entry : prototypes.entrySet()) {
+            connectedDataSources[x] = new ReferedDataSource();
+            connectedDataSources[x].prototype = entry.getValue();
+            String alias = aliases.get(entry.getKey());
+            connectedDataSources[x].alias = alias;
+            List<ColumnDescriptor> cols = columnsByRow_.get(entry.getKey());
+            columnsByRow.put(x, cols);
+            x++;
+        }
+
+    }
+    
+    protected void setExposedPrototypes() throws Exception {
+        TreeMap<Integer, Prototype> prototypes = new TreeMap();
+        TreeMap<Integer, String> aliases = new TreeMap();
+        TreeMap<Integer, List<ColumnDescriptor>> columnsByRow_ = new TreeMap();
+        for (ColumnDescriptor col : projectionColumns) {
+            childOperation.setColumnLocation(col);
+            int rowIndex = col.getColumnLocation().rowIndex;
+            Column originalCol = childOperation.getExposedDataSources()[rowIndex].prototype.getColumn(col.getColumnName());
+            Column newCol = Prototype.cloneColumn(originalCol);
+            Prototype prototype = prototypes.get(rowIndex);
+            List<ColumnDescriptor> rowCols = columnsByRow_.get(rowIndex);
+            if (prototype==null){
+                prototype = new Prototype();
+                prototypes.put(rowIndex, prototype);
+                aliases.put(rowIndex, childOperation.getExposedDataSources()[rowIndex].alias);
                 rowCols = new ArrayList();
                 columnsByRow_.put(rowIndex, rowCols);
             }
@@ -130,12 +167,17 @@ public class Projection extends UnaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
 
-        childOperation.setDataSourcesInfo();
-        
         //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
-        setPrototypes();
+        setConnectedPrototypes();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
+        setExposedPrototypes();
     }
 
     @Override

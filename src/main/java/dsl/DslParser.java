@@ -306,7 +306,7 @@ public class DslParser {
         if (operationExpression.getType() == OperationType.CARTESIAN_PRODUCT) {
             return new ibd.query.binaryop.join.CrossJoin(child1, child2);
         }
-        if (operationExpression.getType() == OperationType.JOIN) {
+        if (operationExpression.getType() == OperationType.NESTED_LOOP_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.NestedLoopJoin(child1, child2, joinPredicate);
         }
@@ -318,11 +318,11 @@ public class DslParser {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.MergeJoin(child1, child2, joinPredicate);
         }
-        if (operationExpression.getType() == OperationType.LEFT_OUTER_JOIN) {
+        if (operationExpression.getType() == OperationType.NESTED_LOOP_LEFT_OUTER_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.outer.NestedLoopLeftJoin(child1, child2, joinPredicate);
         }
-        if (operationExpression.getType() == OperationType.RIGHT_OUTER_JOIN) {
+        if (operationExpression.getType() == OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.outer.NestedLoopRightJoin(child1, child2, joinPredicate);
         }
@@ -350,7 +350,7 @@ public class DslParser {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.outer.MergeFullOuterJoin(child1, child2, joinPredicate);
         }
-        if (operationExpression.getType() == OperationType.SEMI_JOIN) {
+        if (operationExpression.getType() == OperationType.NESTED_LOOP_LEFT_SEMI_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.semi.NestedLoopSemiJoin(child1, child2, joinPredicate);
         }
@@ -370,7 +370,7 @@ public class DslParser {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.semi.MergeRightSemiJoin(child1, child2, joinPredicate);
         }
-        if (operationExpression.getType() == OperationType.ANTI_JOIN) {
+        if (operationExpression.getType() == OperationType.NESTED_LOOP_LEFT_ANTI_JOIN) {
             JoinPredicate joinPredicate = Join.createJoinPredicate(arguments);
             return new ibd.query.binaryop.join.anti.NestedLoopLeftAntiJoin(child1, child2, joinPredicate);
         }

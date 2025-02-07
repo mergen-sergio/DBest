@@ -53,7 +53,7 @@ public class NestedLoopLeftJoin extends LookupJoin {
 
 
     protected void setNullRightTuple() throws Exception {
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {

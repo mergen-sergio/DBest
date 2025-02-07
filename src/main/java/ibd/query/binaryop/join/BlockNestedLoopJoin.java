@@ -61,7 +61,7 @@ public class BlockNestedLoopJoin extends Join {
         for (JoinTerm term : joinPredicate.getTerms()) {
             leftOperation.setColumnLocation(term.getLeftColumnDescriptor());
             rightOperation.setColumnLocation(term.getRightColumnDescriptor());
-            term.getRightColumnDescriptor().getColumnLocation().rowIndex += leftOperation.getDataSources().length;
+            term.getRightColumnDescriptor().getColumnLocation().rowIndex += leftOperation.getExposedDataSources().length;
         }
     }
 

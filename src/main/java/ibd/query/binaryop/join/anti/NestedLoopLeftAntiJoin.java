@@ -34,20 +34,12 @@ public class NestedLoopLeftAntiJoin extends LookupJoin {
         super(leftOperation, rightOperation, joinPredicate);
     }
 
-    /**
-     * {@inheritDoc }
-     * the data sources array is a copy of the data sources that come from the
-     * left subtree
-     *
-     * @throws Exception
-     */
+    
+    
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setExposedDataSources() throws Exception {
 
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
-
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[left.length];
         System.arraycopy(left, 0, dataSources, 0, left.length);
 

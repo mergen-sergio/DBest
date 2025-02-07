@@ -95,16 +95,16 @@ public class RemoveColumns extends UnaryOperation {
      * The tuples produced by this operation contains a single schema, which contains all the projected columns.This function sets this schema.
      * @throws java.lang.Exception
      */
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         for (ColumnDescriptor col : columnsToProject) {
             childOperation.setColumnLocation(col);
-            Column originalCol = childOperation.getDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
+            Column originalCol = childOperation.getExposedDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
             Column newCol = Prototype.cloneColumn(originalCol);
             prototype.addColumn(newCol);
         }
-
-        dataSources[0].prototype = prototype;
+        return prototype;
+        
     }
 
     @Override
@@ -112,7 +112,7 @@ public class RemoveColumns extends UnaryOperation {
         HashMap<String, List<String>> map = new LinkedHashMap<>();
         if (columnsToProject == null || columnsToProject.isEmpty()) {
             try {
-                setDataSourcesInfo();
+                setConnectedDataSources();
                 setProjectedColumns();
             } catch (Exception ex) {
             }
@@ -130,7 +130,7 @@ public class RemoveColumns extends UnaryOperation {
      * sets the columns that need to be projected
      */
     private void setProjectedColumns() throws Exception {
-        ReferedDataSource childSources[] = getChildOperation().getDataSources();
+        ReferedDataSource childSources[] = getChildOperation().getExposedDataSources();
         columnsToProject = new ArrayList();
         for (ReferedDataSource dataSource : childSources) {
 
@@ -158,16 +158,20 @@ public class RemoveColumns extends UnaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
         
-        childOperation.setDataSourcesInfo();
-        
-        dataSources = new ReferedDataSource[1];
-        dataSources[0] = new ReferedDataSource();
-        dataSources[0].alias = alias;
+        connectedDataSources = new ReferedDataSource[1];
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
 
         setProjectedColumns();
-        setPrototype();
+        connectedDataSources[0].prototype = setPrototype();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+        
+        dataSources = connectedDataSources;
     }
 
     @Override

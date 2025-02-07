@@ -59,7 +59,7 @@ public class HashFullOuterJoin extends HashJoin {
      * @throws java.lang.Exception
      */
     protected void setNullLeftTuple() throws Exception {
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         nullLeftTuple = new Tuple();
         nullLeftTuple.rows = new LinkedDataRow[left.length];
         for (int i = 0; i < left.length; i++) {
@@ -77,7 +77,7 @@ public class HashFullOuterJoin extends HashJoin {
      * @throws java.lang.Exception
      */
     protected void setNullRightTuple() throws Exception {
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         nullRightTuple = new Tuple();
         nullRightTuple.rows = new LinkedDataRow[right.length];
         for (int i = 0; i < right.length; i++) {

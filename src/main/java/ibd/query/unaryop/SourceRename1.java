@@ -30,7 +30,6 @@ import java.util.Map;
  */
 public class SourceRename1 extends UnaryOperation {
 
-    String alias;
     List<ColumnDescriptor> columns;
 
     /**
@@ -49,7 +48,7 @@ public class SourceRename1 extends UnaryOperation {
     //Columns with the same name are added to the columns lists, but they 
     //produce errors when the list is converted into a schema
     private void setColumns() throws Exception {
-        ReferedDataSource childSources[] = getChildOperation().getDataSources();
+        ReferedDataSource childSources[] = getChildOperation().getExposedDataSources();
         columns = new ArrayList();
         for (ReferedDataSource dataSource : childSources) {
             for (Column col : dataSource.prototype.getColumns()) {
@@ -79,16 +78,16 @@ public class SourceRename1 extends UnaryOperation {
     }
 
     //sets the schema of the collapsed data source by taking its collected columns
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         for (ColumnDescriptor col : columns) {
             childOperation.setColumnLocation(col);
-            Column originalCol = childOperation.getDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
+            Column originalCol = childOperation.getExposedDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
             Column newCol = Prototype.cloneColumn(originalCol);
             prototype.addColumn(newCol);
         }
-
-        dataSources[0].prototype = prototype;
+        return prototype;
+        
     }
 
     @Override
@@ -100,7 +99,7 @@ public class SourceRename1 extends UnaryOperation {
             //they are only set when the operation is run from the first time
             //in this case, we need to define the data sources info by hand in order to get the content info
             if (columns == null || columns.size() == 0) {
-                setDataSourcesInfo();
+                setConnectedDataSources();
                 setColumns();
             }
         } catch (Exception ex) {
@@ -119,16 +118,21 @@ public class SourceRename1 extends UnaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
         
-        childOperation.setDataSourcesInfo();
-        
-        dataSources = new ReferedDataSource[1];
-        dataSources[0] = new ReferedDataSource();
-        dataSources[0].alias = alias;
+        connectedDataSources = new ReferedDataSource[1];
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
 
         setColumns();
-        setPrototype();
+        connectedDataSources[0].prototype = setPrototype();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        dataSources = connectedDataSources;
+
     }
 
     @Override

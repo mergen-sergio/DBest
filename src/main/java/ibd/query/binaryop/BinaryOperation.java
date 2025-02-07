@@ -6,8 +6,12 @@
 package ibd.query.binaryop;
 
 import ibd.query.Operation;
+import ibd.query.ReferedDataSource;
+import ibd.query.binaryop.conditional.Exists;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -134,6 +138,28 @@ public abstract class BinaryOperation extends Operation {
         }
         return Stream.concat(lTable.entrySet().stream(), rTable.entrySet().stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
+    
+    @Override
+    public void setConnectedDataSources() throws Exception {
+        
+        try {
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
+        connectedDataSources = new ReferedDataSource[left.length + right.length];
+        int count = 0;
+        for (int i = 0; i < left.length; i++) {
+            connectedDataSources[count] = left[i];
+            count++;
+        }
+        for (int i = 0; i < right.length; i++) {
+            connectedDataSources[count] = right[i];
+            count++;
+        }
+        } catch (Exception ex) {
+            Logger.getLogger(Exists.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
+    }
+    
 
 }

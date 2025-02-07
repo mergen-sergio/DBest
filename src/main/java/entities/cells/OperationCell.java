@@ -292,8 +292,8 @@ public final class OperationCell extends Cell {
         columns.clear();
         ReferedDataSource dataSources[] = null;
         try {
-            this.getOperator().setDataSourcesInfo();
-            dataSources = this.getOperator().getDataSources();
+            this.getOperator().prepareAllDataSources();
+            dataSources = this.getOperator().getExposedDataSources();
         } catch (Exception ex) {
         }
         for (int i = 0; i < dataSources.length; i++) {

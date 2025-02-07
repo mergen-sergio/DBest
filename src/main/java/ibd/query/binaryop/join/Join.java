@@ -74,22 +74,7 @@ public abstract class Join extends BinaryOperation {
         }
     }
     
-    /**
-     * {@inheritDoc }
-     * the data sources array  is a concatenation of the data sources
-     * that come from the left and the right subtrees
-     *
-     * @throws Exception
-     */
-    @Override
-    public void setDataSourcesInfo() throws Exception {
-        
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
-
-        dataSources = copyChildDataSources(this);
-
-    }
+   
     
     public abstract String getJoinAlgorithm();
     

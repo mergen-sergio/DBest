@@ -49,12 +49,9 @@ public class MergeRightSemiJoin extends Join {
      * @throws Exception
      */
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setExposedDataSources() throws Exception {
 
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
-
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[right.length];
         System.arraycopy(right, 0, dataSources, 0, right.length);
 

@@ -15,13 +15,7 @@ import ibd.query.lookup.Element;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
-import ibd.table.prototype.LinkedDataRow;
-import ibd.table.prototype.Prototype;
-import ibd.table.prototype.column.BooleanColumn;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,12 +50,9 @@ public class LogicalIf extends BinaryOperation {
     
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setExposedDataSources() throws Exception {
         
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
-
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[left.length];
         System.arraycopy(left, 0, dataSources, 0, left.length);
         

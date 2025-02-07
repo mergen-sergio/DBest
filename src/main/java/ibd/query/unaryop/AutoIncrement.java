@@ -69,13 +69,28 @@ public class AutoIncrement extends UnaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
-        childOperation.setDataSourcesInfo();
+    public void setConnectedDataSources() throws Exception {
         
         //the data sources reached are the ones reached by the child operation 
         //plus the auto-increment source defined by this operation
         
-        ReferedDataSource s[] = childOperation.getDataSources();
+        ReferedDataSource s[] = childOperation.getExposedDataSources();
+        connectedDataSources = new ReferedDataSource[s.length+1];
+        System.arraycopy(s, 0, connectedDataSources, 1, s.length);
+   
+        //the first data source is the auto-increment source, so the first column that appears is the auto-increment column
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
+        connectedDataSources[0].prototype = createPrototype();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+        
+        //the data sources reached are the ones reached by the child operation 
+        //plus the auto-increment source defined by this operation
+        
+        ReferedDataSource s[] = childOperation.getExposedDataSources();
         dataSources = new ReferedDataSource[s.length+1];
         System.arraycopy(s, 0, dataSources, 1, s.length);
    

@@ -212,18 +212,23 @@ public class Aggregation extends UnaryOperation implements SingleSource{
      * @throws Exception
      */
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
         
-        childOperation.setDataSourcesInfo();
-        
-        dataSources = new ReferedDataSource[1];
-        dataSources[0] = new ReferedDataSource();
-        dataSources[0].alias = alias;
+        connectedDataSources = new ReferedDataSource[1];
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
 
         createPrototype();
-        dataSources[0].prototype = prototype;
+        connectedDataSources[0].prototype = prototype;
     }
 
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        dataSources = connectedDataSources;
+
+    }
+    
     @Override
     public Map<String, List<String>> getContentInfo() {
         HashMap<String, List<String>> map = new LinkedHashMap<>();

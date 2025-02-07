@@ -32,18 +32,15 @@ public class HashRightSemiJoin extends HashJoin {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
-
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+    public void setExposedDataSources() throws Exception {
 
         //only data sources from the right side are used to produce returning tuples
-        ReferedDataSource right[] = getRightOperation().getDataSources();
+        ReferedDataSource right[] = getRightOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[right.length];
         System.arraycopy(right, 0, dataSources, 0, right.length);
 
     }
-
+    
     @Override
     public Map<String, List<String>> getContentInfo() {
         //only data sources from the right side are used to produce returning tuples

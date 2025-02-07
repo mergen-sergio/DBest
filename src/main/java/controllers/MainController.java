@@ -604,14 +604,14 @@ public class MainController extends MainFrame {
             createOperationAction = OperationType.PROJECTION.getAction();
             style = OperationType.PROJECTION.displayName;
         } else if (menuItem == this.joinMenuItem) {
-            createOperationAction = OperationType.JOIN.getAction();
-            style = OperationType.JOIN.displayName;
+            createOperationAction = OperationType.NESTED_LOOP_JOIN.getAction();
+            style = OperationType.NESTED_LOOP_JOIN.displayName;
         } else if (menuItem == this.leftJoinMenuItem) {
-            createOperationAction = OperationType.LEFT_OUTER_JOIN.getAction();
-            style = OperationType.LEFT_OUTER_JOIN.displayName;
+            createOperationAction = OperationType.NESTED_LOOP_LEFT_OUTER_JOIN.getAction();
+            style = OperationType.NESTED_LOOP_LEFT_OUTER_JOIN.displayName;
         } else if (menuItem == this.rightJoinMenuItem) {
-            createOperationAction = OperationType.RIGHT_OUTER_JOIN.getAction();
-            style = OperationType.RIGHT_OUTER_JOIN.displayName;
+            createOperationAction = OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN.getAction();
+            style = OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN.displayName;
         } else if (menuItem == this.cartesianProductMenuItem) {
             createOperationAction = OperationType.CARTESIAN_PRODUCT.getAction();
             style = OperationType.CARTESIAN_PRODUCT.displayName;

@@ -36,18 +36,15 @@ public class HashLeftAntiJoin extends HashJoin {
     }
     
     @Override
-    public void setDataSourcesInfo() throws Exception {
-
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+    public void setExposedDataSources() throws Exception {
 
         //only data sources from the left side are used to produce returning tuples
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         dataSources = new ReferedDataSource[left.length];
         System.arraycopy(left, 0, dataSources, 0, left.length);
 
     }
-
+    
     @Override
     public Map<String, List<String>> getContentInfo() {
         //only data sources from the left side are used to produce returning tuples

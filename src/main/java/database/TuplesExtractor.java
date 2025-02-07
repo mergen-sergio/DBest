@@ -130,7 +130,7 @@ public class TuplesExtractor {
             int rowIndex = 0;
             ReferedDataSource[] dataSources = null;
             try {
-                dataSources = operator.getDataSources();
+                dataSources = operator.getExposedDataSources();
             } catch (Exception ex) {
             }
             for (LinkedDataRow row1 : tuple.rows) {

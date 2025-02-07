@@ -41,12 +41,11 @@ public class SourceRename extends UnaryOperation {
     
     
     @Override
-    public void setDataSourcesInfo() throws Exception {
-        childOperation.setDataSourcesInfo();
+    public void setConnectedDataSources() throws Exception {
         
         
-        ReferedDataSource s[] = childOperation.getDataSources();
-        dataSources = new ReferedDataSource[s.length];
+        ReferedDataSource s[] = childOperation.getExposedDataSources();
+        connectedDataSources = new ReferedDataSource[s.length];
         
         int i = 0;
         //copies the array of data sources from the child operation
@@ -59,10 +58,17 @@ public class SourceRename extends UnaryOperation {
                 newAlias_ = referedDataSource.alias;
             
             newDataSource.alias = newAlias_;
-            dataSources[i] = newDataSource;
+            connectedDataSources[i] = newDataSource;
             i++;
         }
         
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+
+        dataSources = connectedDataSources;
+
     }
     
     @Override

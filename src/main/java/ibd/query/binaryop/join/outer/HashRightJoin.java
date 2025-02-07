@@ -54,7 +54,7 @@ public class HashRightJoin extends HashJoin {
      * @throws java.lang.Exception
      */
     protected void setNullLeftTuple() throws Exception {
-        ReferedDataSource left[] = getLeftOperation().getDataSources();
+        ReferedDataSource left[] = getLeftOperation().getExposedDataSources();
         nullLeftTuple = new Tuple();
         nullLeftTuple.rows = new LinkedDataRow[left.length];
         for (int i = 0; i < left.length; i++) {

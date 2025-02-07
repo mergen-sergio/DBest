@@ -74,16 +74,16 @@ public class Projection1 extends UnaryOperation {
      * The tuples produced by a this operation contains a single schema, which contains all the projected columns.This function sets this schema.
      * @throws java.lang.Exception
      */
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         for (ColumnDescriptor col : projectionColumns) {
             childOperation.setColumnLocation(col);
-            Column originalCol = childOperation.getDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
+            Column originalCol = childOperation.getExposedDataSources()[col.getColumnLocation().rowIndex].prototype.getColumn(col.getColumnName());
             Column newCol = Prototype.cloneColumn(originalCol);
             prototype.addColumn(newCol);
         }
-
-        dataSources[0].prototype = prototype;
+        return prototype;
+        
     }
     
     @Override
@@ -103,18 +103,29 @@ public class Projection1 extends UnaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
+    public void setConnectedDataSources() throws Exception {
+        //the data sources are not copied from the child operation.
+        //instead, the operation itself is considered a data source that provides tuples that conform to the 
+        //list of projected columns
+        connectedDataSources = new ReferedDataSource[1];
+        connectedDataSources[0] = new ReferedDataSource();
+        connectedDataSources[0].alias = alias;
+        
+        //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
+        connectedDataSources[0].prototype = setPrototype();
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
         //the data sources are not copied from the child operation.
         //instead, the operation itself is considered a data source that provides tuples that conform to the 
         //list of projected columns
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = alias;
-
-        childOperation.setDataSourcesInfo();
         
         //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
-        setPrototype();
+        dataSources[0].prototype = setPrototype();
     }
 
     @Override

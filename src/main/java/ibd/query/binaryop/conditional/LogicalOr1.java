@@ -49,15 +49,16 @@ public class LogicalOr1 extends BinaryOperation {
      *
      * @throws java.lang.Exception
      */
-    protected void setPrototype() throws Exception {
+    protected Prototype setPrototype() throws Exception {
         Prototype prototype = new Prototype();
         prototype.addColumn(new BooleanColumn(colName));
-        dataSources[0].prototype = prototype;
 
         fixedTuple = new Tuple();
-        LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
+        LinkedDataRow row = new LinkedDataRow(prototype, false);
         row.setValue(0, true);
         fixedTuple.setSourceRows(new LinkedDataRow[]{row});
+        
+        return prototype;
     }
 
     @Override
@@ -70,19 +71,16 @@ public class LogicalOr1 extends BinaryOperation {
     }
 
     @Override
-    public void setDataSourcesInfo() throws Exception {
-
-        getLeftOperation().setDataSourcesInfo();
-        getRightOperation().setDataSourcesInfo();
+    public void setExposedDataSources() throws Exception {
 
         dataSources = new ReferedDataSource[1];
         dataSources[0] = new ReferedDataSource();
         dataSources[0].alias = tableName;
 
         //the prototype of the operation's data source needs to be set after the childOperation.setDataSourcesInfo() call
-        setPrototype();
+        dataSources[0].prototype = setPrototype();
     }
-
+    
     /**
      * {@inheritDoc }
      *

@@ -64,16 +64,18 @@ public abstract class UnaryOperation extends Operation {
         childOperation.close();
     }
 
-    /**
-     * {@inheritDoc }
-     * copies the aliases from the child operation to this unary operation
-     *
-     * @throws Exception
-     */
+    
     @Override
-    public void setDataSourcesInfo() throws Exception {
-        childOperation.setDataSourcesInfo();
-        ReferedDataSource s[] = childOperation.getDataSources();
+    public void setConnectedDataSources() throws Exception {
+        ReferedDataSource s[] = childOperation.getExposedDataSources();
+        connectedDataSources = new ReferedDataSource[s.length];
+        System.arraycopy(s, 0, connectedDataSources, 0, s.length);
+
+    }
+    
+    @Override
+    public void setExposedDataSources() throws Exception {
+        ReferedDataSource s[] = childOperation.getExposedDataSources();
         dataSources = new ReferedDataSource[s.length];
         System.arraycopy(s, 0, dataSources, 0, s.length);
 
