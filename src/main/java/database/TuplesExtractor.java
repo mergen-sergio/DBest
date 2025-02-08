@@ -7,7 +7,6 @@ import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
 
-import java.io.File;
 import java.util.*;
 
 public class TuplesExtractor {
@@ -21,16 +20,12 @@ public class TuplesExtractor {
 
         try {
             operator.open();
-
-            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
-            Map<String, String> row;
-            row = getRow(operator, sourceAndName, getPossibleKeys);
             int i = 0;
-            while (row != null) {
+            while (operator.hasNext()) {
+                Tuple tuple = operator.next();
+                Map<String, String> row = getRow_(tuple, operator, sourceAndName);
                 rows.put(i++, row);
-                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
-
             operator.close();
 
         } catch (Exception ex) {
@@ -42,14 +37,11 @@ public class TuplesExtractor {
         List<Map<String, String>> rows = new ArrayList<>();
         try {
             operator.open();
-            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
-            
-            Map<String, String> row;
-            row = getRow(operator, sourceAndName, getPossibleKeys);
             int i = 1;
-            while (row != null && i++ <= amount) {
+            while (operator.hasNext() && i++ <= amount) {
+                Tuple tuple = operator.next();
+                Map<String, String> row = getRow_(tuple, operator, sourceAndName);
                 rows.add(row);
-                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
 
             operator.close();
@@ -64,14 +56,10 @@ public class TuplesExtractor {
 
         try {
             operator.open();
-            Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
-            
-            Map<String, String> row;
-            row = getRow(operator, sourceAndName,getPossibleKeys);
-
-            while (row != null) {
+            while (operator.hasNext()) {
+                Tuple tuple = operator.next();
+                Map<String, String>  row = getRow_(tuple, operator, sourceAndName);
                 rows.add(row);
-                row = getRow(operator, sourceAndName, getPossibleKeys);
             }
 
             operator.close();
@@ -88,25 +76,23 @@ public class TuplesExtractor {
             return new ArrayList<>();
         }
 
-        Set<String> getPossibleKeys = getPossibleKeys(operator, sourceAndName);
         List<Map<String, String>> rows = new ArrayList<>();
-
-        for (int i = 0; i < amount; i++) {
-            Map<String, String> row = getRow(operator, sourceAndName, getPossibleKeys);
-            if (row == null) {
-                return rows;
-            }
-
+        int i = 0;
+        while (i<amount && operator.hasNext()) {
+            Tuple tuple = operator.next();
+            
+            Map<String, String> row = getRow_(tuple, operator, sourceAndName);
             rows.add(row);
+            i++;
         }
 
         return rows;
 
     }
-    
+
     public static Set<String> getPossibleKeys(Operation operator, boolean sourceAndName) {
-    Set<String> possibleKeys = new HashSet<>();
-    for (Map.Entry<String, List<String>> content : operator.getContentInfo().entrySet()) {
+        Set<String> possibleKeys = new HashSet<>();
+        for (Map.Entry<String, List<String>> content : operator.getContentInfo().entrySet()) {
             possibleKeys.addAll(content
                     .getValue()
                     .stream()
@@ -114,14 +100,13 @@ public class TuplesExtractor {
                     .toList()
             );
         }
-    return possibleKeys;
+        return possibleKeys;
     }
 
-    public static Map<String, String> getRow(Operation operator, boolean sourceAndName, Set<String> possibleKeys) {
+    public static Map<String, String> getRow___(Operation operator, boolean sourceAndName) {
         if (operator == null) {
             return null;
         }
-
 
         Map<String, String> row = new TreeMap<>();
 
@@ -159,6 +144,8 @@ public class TuplesExtractor {
                                 row.put(sourceAndColumn, Objects.toString(row1.getString(columnName), ConstantController.NULL));
 
                         }
+                    } else {
+                        row.put(sourceAndColumn, ConstantController.NULL);
                     }
                     colIndex++;
                 }
@@ -169,10 +156,56 @@ public class TuplesExtractor {
             return null;
         }
 
-        for (String key : possibleKeys) {
-            if (!row.containsKey(key)) {
-                row.put(key, ConstantController.NULL);
+//        for (String key : possibleKeys) {
+//            if (!row.containsKey(key)) {
+//                row.put(key, ConstantController.NULL);
+//            }
+//        }
+        return row;
+    }
+
+    public static Map<String, String> getRow_(Tuple tuple, Operation operator, boolean sourceAndName) {
+
+        Map<String, String> row = new TreeMap<>();
+
+        int rowIndex = 0;
+        ReferedDataSource[] dataSources = null;
+        try {
+            dataSources = operator.getExposedDataSources();
+        } catch (Exception ex) {
+        }
+        for (LinkedDataRow row1 : tuple.rows) {
+
+            String alias = dataSources[rowIndex].alias;
+            int colIndex = 0;
+            for (ibd.table.prototype.column.Column column : row1.getPrototype().getColumns()) {
+                String columnName = column.getName();
+                String sourceAndColumn = sourceAndName ? Column.composeSourceAndName(alias, columnName) : columnName;
+                boolean hasValue = row1.hasValue(columnName);
+                if (hasValue) {
+                    switch (column.getType()) {
+                        case ibd.table.prototype.column.Column.INTEGER_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getInt(columnName), ConstantController.NULL));
+                        case ibd.table.prototype.column.Column.LONG_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getLong(columnName), ConstantController.NULL));
+                        case ibd.table.prototype.column.Column.FLOAT_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getFloat(columnName), ConstantController.NULL));
+                        case ibd.table.prototype.column.Column.DOUBLE_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getDouble(columnName), ConstantController.NULL));
+                        case ibd.table.prototype.column.Column.BOOLEAN_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getBoolean(columnName), ConstantController.NULL));
+                        case ibd.table.prototype.column.Column.STRING_TYPE ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getString(columnName), ConstantController.NULL));
+                        default ->
+                            row.put(sourceAndColumn, Objects.toString(row1.getString(columnName), ConstantController.NULL));
+
+                    }
+                } else {
+                    row.put(sourceAndColumn, ConstantController.NULL);
+                }
+                colIndex++;
             }
+            rowIndex++;
         }
 
         return row;

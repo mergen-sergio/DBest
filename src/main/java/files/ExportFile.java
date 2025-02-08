@@ -18,6 +18,7 @@ import gui.frames.ErrorFrame;
 import gui.frames.forms.importexport.ExportSQLScriptForm;
 import gui.frames.main.MainFrame;
 import ibd.query.Operation;
+import ibd.query.Tuple;
 import net.coobird.thumbnailator.Thumbnails;
 
 import javax.swing.*;
@@ -249,11 +250,11 @@ public class ExportFile extends JPanel {
 
             try {
                 operator.open();
-                Set<String> getPossibleKeys = TuplesExtractor.getPossibleKeys(operator, false);
                 
                 int i = 0;
                 while (operator.hasNext()) {
-                    Map<String, String> row = TuplesExtractor.getRow(operator, false, getPossibleKeys);
+                    Tuple tuple = operator.next();
+                    Map<String, String> row = TuplesExtractor.getRow_(tuple, operator, false);
                     if (row != null) {
                         rows.put(i++, row);
                     }
@@ -318,6 +319,7 @@ public class ExportFile extends JPanel {
         }
     }
 
+    
     public void exportToCSV(Cell cell) {
         try {
             String defaultFileName = String.format("%s%s", cell.getSources().stream().findFirst().orElse(null).getName(), FileType.CSV.extension);
@@ -349,7 +351,14 @@ public class ExportFile extends JPanel {
 
                 boolean columnsPut = false;
 
-                for (Map<String, String> row : TuplesExtractor.getAllRowsList(cell.getOperator(), true)) {
+                cell.getOperator().open();
+                Tuple tuple = cell.getOperator().next();
+
+                //Map<String, String> row = TuplesExtractor.getRow_(this.cell.getOperator(), true);
+                while (tuple != null) {
+
+                    Map<String, String> row = TuplesExtractor.getRow_(tuple, cell.getOperator(), true);
+
                     if (!columnsPut) {
                         boolean repeatedColumnName = false;
 
@@ -374,6 +383,9 @@ public class ExportFile extends JPanel {
 
                         csv.write("\n");
                         columnsPut = true;
+
+                        
+
                     }
 
                     int i = 0;
@@ -387,15 +399,16 @@ public class ExportFile extends JPanel {
                     }
 
                     csv.write("\n");
+                    tuple = cell.getOperator().next();
                 }
-
+                cell.getOperator().close();
                 csv.close();
             }
-        } catch (IOException exception) {
+        } catch (Exception exception) {
             new ErrorFrame(exception.getMessage());
         }
     }
-
+    
     private void exportToImage() {
         try {
             mxGraphComponent component = MainFrame.getGraphComponent();

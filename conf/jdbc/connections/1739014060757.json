@@ -1,0 +1,1 @@
+{"id":"1739014060757","host":"localhost:3306","username":"root","password":"root","database":"movie","connectionURL":"jdbc:mysql://localhost:3306/movie","type":"database.jdbc.MySQLConnectionConfig"}
