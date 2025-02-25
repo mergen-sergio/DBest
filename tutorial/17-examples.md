@@ -13,7 +13,7 @@ Complex SQL queries often include **subqueries**, which involve nested processin
 The following examples are provided:
 
  - [IN vs EXISTS](17.1%20-%20IN-vs-EXISTS.md).
- - [NOT IN vs NOT EXISTS](17.1%20-%20NOT-IN-vs-NOT-EXISTS.md).
+ - [NOT IN vs NOT EXISTS](17.2%20-%20NOT-IN-vs-NOT-EXISTS.md).
 
 
 
