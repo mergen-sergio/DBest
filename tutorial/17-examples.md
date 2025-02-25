@@ -33,8 +33,8 @@ WHERE movie_id IN (
 
 We present two primary ways to represent this query in **DBest**:  
 
-- **Without Materialization:** The execution is fully pipelined, with the **Nested Loop Semi Join** directly searching for matching `movie_id`s in the `movie_cast` table.  
-- **With Materialization:** The **Hash** operator materializes `movie_cast` tuples in a **hash table**, enabling the **Nested Loop Semi Join** to perform efficient lookups.  
+- **Without Materialization (left approach):** The execution is fully pipelined, with the **Nested Loop Semi Join** directly searching for matching `movie_id`s in the `movie_cast` table.  
+- **With Materialization  (right approach):** The **Hash** operator materializes `movie_cast` tuples in a **hash table**, enabling the **Nested Loop Semi Join** to perform efficient lookups.  
   - Alternatively, a **Hash Left Semi Join** can replace the **Nested Loop Semi Join + Hash** combination.  
 
 
@@ -56,15 +56,23 @@ SELECT * FROM movie
 WHERE release_year IN (  
     SELECT release_year FROM movie  
     WHERE title = 'Casablanca'  
-);
+);the materi
 ```
 
-One way to represent this query in DBest is:
+One way to represent this query in **DBest** is by materializing the `movie_cast` tuples. Since the number of movies titled *Casablanca* is expected to be small, the cost of materialization remains low.  
 
-- **Hash Operator**: Materializes movies titled *Casablanca* in a hash table indexed by `release_year`.  
-- **Nested Loop Semi Join**: Finds movies matching the same `release_year`.  
+Two different approaches to materialization are discussed:  
 
-Since the number of movies titled *Casablanca* is expected to be small, the cost of materialization remains low.  
+- **Materialized Operator (Left Approach):**  
+  - Stores *Casablanca* movies in memory.  
+  - Requires a **full scan** over the materialized tuples for each lookup, as indexed search is not supported.  
+
+- **Hash Operator (Right Approach):**  
+  - Stores *Casablanca* movies in a **hash table** for quick lookups.  
+  - Given a movie, the **hash table** is queried directly to find matching tuples.  
+
+Since the number of materialized tuples is small, both strategies should perform similarly.  
+
 
 
 <img src="assets/images/in vs exists 2.png" alt="Expressing IN and EXISTS subqueries" width="900"/>
