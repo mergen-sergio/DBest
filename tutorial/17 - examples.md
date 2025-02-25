@@ -2,7 +2,7 @@
     <a href="./16 - comparing-query-costs.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./17.1 - IN-vs-EXISTS">Next</a>
+  <a href="./17.1 - IN-vs-EXISTS.md">Next</a>
 </div>
 
 # Expressing Queries in DBest  
@@ -28,5 +28,5 @@ The following examples are provided:
     <a href="./16 - comparing-query-costs.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./17.1 - IN-vs-EXISTS">Next</a>
+  <a href="./17.1 - IN-vs-EXISTS.md">Next</a>
 </div>
