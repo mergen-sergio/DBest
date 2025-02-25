@@ -90,7 +90,7 @@ Query plan comparisons provide valuable insights:
 By advancing records incrementally, you can evaluate the effort required to fetch the next tuple and uncover optimization opportunities for improved query execution.
 
 <div align="left">
-    <a href=".//15 - using-boolean-expressions.md">Previous</a>
+    <a href="./15 - using-boolean-expressions.md">Previous</a>
 </div>
 <div align="right">
   <a href="./17 - examples.md">Next</a>
