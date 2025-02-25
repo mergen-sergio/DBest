@@ -1,5 +1,5 @@
 <div align="left">
-    <a href=".//15 - using-boolean-expressions.md">Previous</a>
+    <a href="./15 - using-boolean-expressions.md">Previous</a>
 </div>
 <div align="right">
   <a href="./17 - examples.md">Next</a>
