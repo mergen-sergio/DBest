@@ -1,0 +1,36 @@
+Besides IN and EXISTS, SQL supports subqueries connected by the ANY(or SOME) and ALL keywords. 
+
+Queries with ANY can be rewritten using EXISTS. For instance, the query below asks for movies released before any movie whose name is Casablanca.  
+
+SELECT * FROM movie
+WHERE release_year < ANY (SELECT release_year FROM movie WHERE title = 'Casablanca')
+
+The query can be expressed using EXISTS as indicated below:
+
+SELECT * FROM movie m1
+WHERE EXISTS (SELECT 1 FROM movie m2 WHERE m2.title = 'Casablanca' AND m1.release_year < m2.release_year )
+
+Queries with < ANY, = ANY and <> ANY can be expressed using EXISTS just by adjusting the inner condition based on year. 
+
+Things get different with the ALL keyword. Lets have a look at the same example as before, but changing the keyword to ALL.
+
+SELECT * FROM movie
+WHERE release_year < ALL (SELECT release_year FROM movie WHERE title = 'Casablanca')
+
+This is not the same as using NOT EXISTS with a reverse condition, as indicated below. 
+
+SELECT * FROM movie2 m1
+WHERE m1.release_year is not null and NOT EXISTS (SELECT 1 FROM movie2 m2 WHERE m2.title = 'Casablanca' and m1.release_year >= m2.release_year)
+
+
+SELECT * FROM movie
+WHERE release_year = ALL (SELECT release_year FROM movie WHERE title = 'Casablanca')
+
+SELECT * FROM movie2 m1
+WHERE m1.release_year is not null and NOT EXISTS (SELECT 1 FROM movie2 m2 WHERE m2.title = 'Casablanca' and m1.release_year <> m2.release_year)
+
+SELECT * FROM movie
+WHERE release_year <> ALL (SELECT release_year FROM movie WHERE title = 'Casablanca')
+
+SELECT * FROM movie2 m1
+WHERE m1.release_year is not null and NOT EXISTS (SELECT 1 FROM movie2 m2 WHERE m2.title = 'Casablanca' and m1.release_year = m2.release_year)
