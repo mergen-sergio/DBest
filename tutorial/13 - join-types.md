@@ -45,15 +45,11 @@ The example below shows the **Nested Loop Left Outer Join** between `movie` and 
 ---
 
 ## 3. **Semi Join**
-The **Semi Join** retrieves a tuple from one side only if at least one match exists on the other side. It does not return tuples from the other side.
-
-- **Optimized Behavior:** The algorithm only checks if a match exists, avoiding the overhead of locating and returning all matches.
-- **Left Semi Join:** Returns tuples from the outer side.
-- **Right Semi Join:** Returns tuples from the inner side.
+The **Semi Join** retrieves a tuple from one side only if at least one match exists on the other side. It does not return tuples from the other side. The algorithm only checks if a match exists, avoiding the overhead of locating and returning all matches.
 
 ### Implementation of Semi Joins:
-- **Left Semi Join:** Can be implemented using **Nested Loop Join**, **Merge Join**, or **Hash Join**.
-- **Right Semi Join:** Can be implemented using **Merge Join** or **Hash Join**.
+- **Left Semi Join:** Returns tuples from the outer side. Can be implemented using **Nested Loop Join**, **Merge Join**, or **Hash Join**.
+- **Right Semi Join:** Returns tuples from the inner side. Can be implemented using **Merge Join** or **Hash Join**.
 
 ### Example:
 The example below shows the **Nested Loop Left Semi Join** between `movie` and `movie_cast`. Only movies with cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
@@ -63,15 +59,11 @@ The example below shows the **Nested Loop Left Semi Join** between `movie` and `
 ---
 
 ## 4. **Anti Join**
-The **Anti Join** retrieves tuples from one side when no matches exist on the other side.
-
-- **Optimized Behavior:** The algorithm only verifies the absence of matches, without retrieving any.
-- **Left Anti Join:** Returns tuples from the outer side.
-- **Right Anti Join:** Returns tuples from the inner side.
+The **Anti Join** retrieves tuples from one side when no matches exist on the other side. The algorithm only verifies the absence of matches, without retrieving any.
 
 ### Implementation of Anti Joins:
-- **Left Anti Join:** Can be implemented using **Nested Loop Join**, **Merge Join**, or **Hash Join**.
-- **Right Anti Join:** Can be implemented using **Merge Join** or **Hash Join**.
+- **Left Anti Join:** Returns tuples from the outer side. Can be implemented using **Nested Loop Join**, **Merge Join**, or **Hash Join**.
+- **Right Anti Join:** Returns tuples from the inner side. Can be implemented using **Merge Join** or **Hash Join**.
 
 ### Example:
 The example below shows the **Nested Loop Anti Join** between `movie` and `movie_cast`. Only movies without cast members are returned. Note that `movie_cast` columns are not available for retrieval after the join.
