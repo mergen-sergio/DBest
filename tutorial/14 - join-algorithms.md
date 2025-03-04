@@ -48,7 +48,7 @@ The **Hash Join** algorithm builds a hash table from the inner side using the jo
 The figure below compares two equivalent approaches to Hash Join:  
 - **Left Tree:** Directly builds a hash table from the inner side and uses it to match tuples from the outer side, avoiding repeated scans.  
 
-<img src="assets/images/hash-join.png" alt="Hash Join Illustration" width="500"/>
+<img src="assets/images/hash-join.png" alt="Hash Join Illustration" width="800"/>
 
 - **Right Tree:** Projects relevant columns from the inner side, builds a hash table using these columns, and uses a Nested Loop Join for lookups. The **Hash operator** is a materialized operation that dynamically aligns its keys with the parent node (the join operator). Both trees achieve the same result, but the left tree is a simplified representation.
 
@@ -71,7 +71,7 @@ The **Merge Join** algorithm processes both sides of the join simultaneously in 
 The image below compares two query trees using Merge Join:  
 - **Left Tree:** Joins `movie` and `movie_cast` nodes, both already sorted by the join column (`movie_id`). This is an optimal setup for Merge Join.  
 
-<img src="assets/images/merge-join.png" alt="Merge Join Illustration" width="700"/>
+<img src="assets/images/merge-join.png" alt="Merge Join Illustration" width="900"/>
 
 - **Right Tree:** Joins `movie_cast` and `person` nodes, but requires a **Sort operator** for the inner side (`person`) to align tuples by the join column (`person_id`). When sorting is needed, alternative join strategies may offer better performance.
 
