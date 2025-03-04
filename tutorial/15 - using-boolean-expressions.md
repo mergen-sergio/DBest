@@ -11,13 +11,10 @@
 A **boolean expression** is a structure composed of smaller expressions that evaluate to either `true` or `false`. 
 
 ### Combining Boolean Expressions
-Boolean expressions can be combined using logical operators such as:
-- **AND**
-- **OR**
+Boolean expressions can be combined using logical operators such as: **AND** and **OR**.
 
 ### Boolean Expressions in Filter Operators
-One common use of boolean expressions is within the **Filter Operator**, which returns only the rows that satisfy the boolean expression.  
-- The boolean expression is defined by editing the properties of the filter operator.
+One common use of boolean expressions is within the **Filter Operator**, which returns only the rows that satisfy the boolean expression.  The boolean expression is defined by editing the properties of the filter operator.
 
 ---
 
@@ -33,7 +30,7 @@ The Boolean Expression Editor allows users to create and modify expressions, inc
 
 ### Example: Creating a Boolean Expression
 The example below demonstrates how to create a boolean expression for a filter operator. The expression includes:
-- An **AND expression** that combines two atomic expressions.
+- An **OR expression** that combines two atomic expressions.
 
 Additional atomic expressions or sub-expressions can be added by clicking the appropriate button in the editor.
 
@@ -70,8 +67,8 @@ A **boolean expression** can also be created using specialized boolean operators
 
 ### Example: Boolean Expression with Boolean Operators
 The example below demonstrates how to create the same boolean expression as in the earlier example, but this time using boolean operators instead of editing the properties of a filter operator. Key points:
-- **AND operator**: Combines two condition operators.
-- **Condition operators**: Use referenced columns for comparisons.
+- **OR operator**: Combines two condition operators.
+- **Condition operators (?)**: Use referenced columns for comparisons.
 
 <img src="assets/images/filter-expression-tree.png" alt="Boolean Expression Tree" width="500"/>
 
