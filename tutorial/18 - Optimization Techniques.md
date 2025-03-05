@@ -21,3 +21,43 @@ Database literature highlights three basic techniques for optimization:
 While many other strategies exist, these three provide a solid foundation for understanding **how to optimize query execution** effectively.  
 
 
+## Combining Join Operators
+
+When defining a **join operator**, it is crucial to decide which component (**table/subquery subtree**) should be on the **outer** or **inner** side. This decision depends on the **join algorithm** used and the **optimization criteria** prioritized.  
+
+### Choosing the Outer and Inner Tables  
+For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
+
+*(Image goes here)*  
+
+- **Left tree:** `movie` is the **outer** table.  
+- **Right tree:** `movie_cast` is the **outer** table.  
+
+Since `movie` is the **smaller** table, the **left tree** is preferable as it reduces the number of lookups on `movie_cast`.  
+
+### Indexing and Lookup Efficiency  
+However, **table size is not the only factor**—the **inner table must support efficient lookups** for the join to be optimal. This is often **more important** than table size alone.  
+
+Consider a **join between `person` and `movie_cast`**:  
+
+*(Image goes here)*  
+
+- **Size-based decision:** `person` is smaller, so it should be **outer**.  
+- **Index-based decision:** `movie_cast` does **not** have an efficient index on `person_id`. It is indexed by **(movie_id, person_id)**, making lookups by `person_id` inefficient.  
+
+Because `person_id` is **not a leading index column**, it cannot be queried efficiently. **In this case, `movie_cast` should be the outer table**, as `person` allows efficient lookups using its primary key.  
+
+### Optimizing Lookups with Foreign Key Indexing  
+If we need to keep `movie` as the **outer** table, we can **create an index on the foreign key `movie_cast.person_id`**. This index enables efficient lookups and improves join performance:  
+
+*(Image goes here)*  
+
+- **New index:** `fk_mca_person` on `movie_cast.person_id`.  
+- **Lookup process:**  
+  - The index retrieves the **primary key** of `movie_cast` (`movie_id`, `person_id`).  
+  - A secondary lookup efficiently fetches the corresponding row.  
+
+This example highlights the **importance of indexing foreign keys** to enable **efficient join execution** and **query optimization**.  
+
+
+
