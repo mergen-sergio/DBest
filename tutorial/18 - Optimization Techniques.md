@@ -84,15 +84,42 @@ FROM movie m1
 JOIN movie_cast mc ON m1.title = mc.character_name;
 ```
 
-If there are no indexes on title or character_name, other join algorithms become inefficient. The hash join is the best choice in this scenario, as it avoids expensive sequential scans and reduces the number of comparisons.
+If there are **no indexes** on `title` or `character_name`, **other join algorithms become inefficient**. The **hash join** is the best choice in this scenario, as it avoids expensive sequential scans and reduces the number of comparisons.
 
 ## Pushing down filters
 
-The ideia behind this strategy is rather obvious. Perfoming filters sooner reduce the amount of work required in the remaining parts of the query. 
+## Pushing Down Filters  
 
-For instance, take a look at the queries below, where only movie_casts whose cast_order is over 200 are required. This is a very selective filter, as few movies have more than 200 cast members.  
-The left query performs a filter after the join. This is unnificient because we perform the join to all movies. The right query first performs the filter over the cast_order and then performs the join. NOte that the right query uses movie_cast on the outer side, since only a few records would satisfy the filter. The join  phase is cheap, since the outer side of the query is small.  
+The concept behind this strategy is straightforward: **applying filters as early as possible reduces the amount of work needed for the rest of the query execution**.  
+
+### Example: Filtering `movie_cast` by Year and `cast_order`  
+
+Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
+
+*(Image goes here)*  
+
+Both queries use the **nested loop join** strategy:  
+
+- **Left query:** Filters are applied **after** the join.  
+  - This is inefficient because the join processes **many irrelevant rows** that are later discarded.  
+
+- **Right query:** Filters are **pushed down** before the join.  
+  - This **eliminates irrelevant rows early**, reducing the number of tuples processed by the join.  
+
+The right query **chooses `movie_cast` as the outer table** because the filter on `cast_order` is more selective than the filter on `year`. This highlights how **the presence of filters can influence join ordering**.  
+
+Notice that in the optimized query, the **join condition disappears** from the join operator and is instead applied as a **filter on `movie`**. This happens because it is the operator **connected** to `movie` that drives the lookup. If the filter on `year` were applied directly to `movie`, it would trigger a **full scan** of `movie`, negating the benefits of filtering early. To prevent this, the **join condition is transformed into a filter on `movie`**, ensuring that only relevant rows are fetched.  As a result, the **join operator itself has an empty condition**, since **the filtering is already handled before the join occurs**.  
+
+### Key Takeaways  
+✅ **Apply filters as early as possible** to reduce unnecessary computations.  
+✅ **Filters can influence join ordering**, changing which table is placed on the outer side.  
+✅ **Join predicates may be rewritten as filters** to optimize query execution.  
 
 
+
+
+If the hash join was used instead, it would be better to place the filter in the inner side, as it helps reducing the memory consumption. 
+
+Pushing down filter is more important
 
 
