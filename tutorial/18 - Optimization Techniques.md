@@ -61,3 +61,13 @@ This example highlights the **importance of indexing foreign keys** to enable **
 
 
 
+## Pushing down filters
+
+The ideia behind this strategy is rather obvious. Perfoming filters sooner reduce the amount of work required in the remaining parts of the query. 
+
+For instance, take a look at the queries below, where only movie_casts whose cast_order is over 200 are required. This is a very selective filter, as few movies have more than 200 cast members.  
+The left query performs a filter after the join. This is unnificient because we perform the join to all movies. The right query first performs the filter over the cast_order and then performs the join. NOte that the right query uses movie_cast on the outer side, since only a few records would satisfy the filter. The join  phase is cheap, since the outer side of the query is small.  
+
+
+
+
