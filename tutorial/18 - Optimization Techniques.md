@@ -280,6 +280,36 @@ Consider the following query plans:
 In this case, using **Nested Loop Join** instead may be a better choice, placing `movie_cast` in the **outer side of the join** to avoid the costly sorting step.  
 
 *(Image goes here)*  
+## Conclusion: Applying Multiple Optimization Strategies  
 
+To conclude, consider the following **query example**, which incorporates several of the optimization techniques discussed earlier.  
 
+### Query Goal  
+Find movies where the **title matches a character name** whose **cast order is 1**.  
+(*Note: The movie does not need to be related to the character.*)  
 
+### Query Execution Plan  
+The query plan below outlines an efficient strategy:  
+
+1. **Index Scan on `cast_order`**  
+   - Uses an **index on `cast_order`** to filter rows where `cast_order = 1`.  
+
+2. **Join with `movie_cast`**  
+   - Retrieves additional columns from `movie_cast`.  
+
+3. **Hash-Based Join for Title Matching**  
+   - Since **no index exists on `title` or `character_name`**, a **hash join** is used for comparison.  
+   - Since only movie columns are needed, a **hash semi-join** is chosen.  
+   - As the main input is on the **inner side**, a **hash right semi-join** is applied.  
+
+4. **Early Projection Before the Join**  
+   - A **projection operator** ensures that only **relevant movie columns** are sent to the **hash join**, reducing memory usage.  
+
+*(Image goes here)*  
+
+### Final Thoughts  
+While this is a **valid optimization strategy**, many other alternatives exist, using different operators.  
+- **Changing a single operator** can require **adjusting the entire query plan**.  
+- This highlights the complexity of the **query optimizer**, which must carefully consider multiple factors when selecting the most efficient execution plan.  
+
+**DBest** illustrates how different strategies can be applied and **demonstrates the critical role of query optimization** in database performance.  
