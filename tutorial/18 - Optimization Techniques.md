@@ -104,7 +104,7 @@ The **duplicate removal** is a **materialized operation**, meaning it stores all
 
 When multiple filters are applied to a table, **it is generally better to process the most selective filter first**.  
 
-The example above filters `movie_cast` by `cast_order` and `character_name`. The **First Query:**  filters  by `cast_order` first, while the **Second Query:** filters by `character_name` first.  
+The example above filters `movie_cast` by `cast_order` and `character_name`. The **First Query**  filters  by `cast_order` first, while the **Second Query** filters by `character_name` first.  
 
 *(Image goes here)*  
 
