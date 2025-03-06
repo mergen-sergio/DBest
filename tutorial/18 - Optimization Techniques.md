@@ -188,10 +188,98 @@ The query below retrieves **movie titles with more than 200 cast members** using
 
 *(Image goes here)*  
 
-
+those
 Another way to work around the **nested loop join limitation** is to apply a **Duplicate Removal** operator **before the join**, as indicated in the image below.  This solution **Removes duplicate values of `movie_id`**  and **Ensures each movie is looked up only once** in the inner table.
 
 
+
+
+## Removing Unnecessary Columns Early  
+
+Queries often require only a subset of a table's columns. In some cases, **removing unnecessary columns early** can be beneficial, especially in terms of **memory consumption**.  
+
+### Impact on Pipeline Execution  
+
+In **pipeline execution**, keeping extra columns **has little impact**, since operators access the full row directly. The example below joins `movie` and `movie_cast`, returning only `title` and `character_name`.  **All columns remain available until the final projection**. However, they do not affect the join operation.  
+
+*(Image goes here)*  
+
+### Impact on Materialized Operations  
+
+For **materialized operations**, **removing unnecessary columns before materialization** is crucial to **reduce memory usage**.  
+
+Consider the same query, now using **hash join**:  
+
+- The **left tree** keeps all columns throughout execution.  
+- The **right tree** applies a **projection before building the hash table**, keeping only:  
+  - The **join column**.  
+  - The **columns needed for the final output**.  
+
+This approach significantly **reduces memory consumption**, making it the preferred strategy.  
+
+*(Image goes here)*  
+## Early Projection in Materialized Operators  
+
+Several **materialized operators** benefit from **early projection**, including:  
+- **Sort**  
+- **Hash Intersection**  
+- **Hash Union**  
+- **Hash Difference**  
+- **Hash Joins (and their variants)**  
+
+### Example: Sorting Character Names by Cast Order  
+
+Consider the query below, which **retrieves character names from movies released in 2010, sorted by cast order**.  
+
+- The **left tree** does not apply an early projection, meaning **all columns remain available** until the final selection.  
+- The **right tree** applies a **projection before the Sort operator**, keeping **only the necessary columns** (`character_name` and `cast_order`).  
+
+By **removing unnecessary columns before sorting**, the **right tree** reduces **memory consumption** and **improves efficiency**.  
+
+*(Image goes here)*  
+
+
+## Sorting Operators  
+
+Sorting plays a crucial role in query execution plans. It may be required because:  
+- The **user explicitly requests sorted data** (e.g., `ORDER BY`).  
+- Certain **operators require sorted data** to function efficiently.  
+
+
+Sorting typically **requires materialization**, meaning data must be fully processed before being sorted. However, materialization **can be avoided** if **pre-sorted data** is available, such as from an **index**.  
+
+Consider a query that retrieves **movie titles and release years, sorted by release year**:  
+
+- **Left Query**: Uses a **Sort operator** to order rows after retrieving them from the `movie` table.  
+- **Right Query**: Uses an **index on `release_year`** to retrieve pre-sorted data. Since the index does not store the title, a **join with the `movie` table** is necessary.  
+
+However, using the index **may not be ideal** in this case, as the join requires **too many random lookups**, making it inefficient.  
+
+*(Image goes here)*  
+
+Now, consider a query that retrieves **only movies released before 1930**:  
+
+- In this case, using the **index is beneficial** because it efficiently filters movies by year **while also providing sorted data**.  
+- The **join with the `movie` table** is not costly here, since **only a small number of entries** are retrieved from the index.  
+
+*(Image goes here)*  
+
+
+
+As stated, some operators **require sorted input** to function efficiently. Examples include:  
+- **Merge Join**  
+- **Set operations** (`UNION`, `INTERSECT`, `EXCEPT`)  
+
+If data is **already sorted**, these operators tend to be **highly efficient**. However, if sorting is required beforehand, it may be **better to use alternative operators** that do not depend on sorted input.  
+
+Consider the following query plans:  
+
+- **Left Query**: Uses **Merge Join** to join `movie` and `movie_cast`. Since **both tables are already sorted by `movie_id`**, the join is efficient, scanning both sides sequentially as matches are found.  
+- **Right Query**: Uses **Merge Join** to join `person` and `movie_cast`. However, `movie_cast` **is not sorted by `person_id`**, requiring an additional **Sort operator**.  
+
+In this case, using **Nested Loop Join** instead may be a better choice, placing `movie_cast` in the **outer side of the join** to avoid the costly sorting step.  
+
+*(Image goes here)*  
 
 
 
