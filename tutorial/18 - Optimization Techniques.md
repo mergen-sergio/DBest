@@ -20,6 +20,7 @@ While **many other optimization strategies exist**, these three form a strong fo
 
 However, **real-world query optimization** is not as straightforward as textbook descriptions suggest.  Implementing these techniques effectively requires a **holistic view of the query execution plan**. The choice of optimization depends on factors such as **operator selection, memory usage, and I/O costs**.  In the following sections, we **explore these three techniques in detail** and introduce additional optimization strategies.  
 
+<br>
 
 ## 18.1 - Combining Join Operators
 
@@ -79,6 +80,8 @@ JOIN movie_cast mc ON m1.title = mc.character_name;
 
 If there are **no indexes** on `title` or `character_name`, **other join algorithms become inefficient**. The **hash join** is the best choice in this scenario, as it avoids expensive sequential scans and reduces the number of comparisons.
 
+<br>
+
 ## 18.2 - Pushing Down Filters  
 
 The concept behind this strategy is straightforward: **applying filters as early as possible reduces the amount of work needed for the rest of the query execution**.  
@@ -109,7 +112,6 @@ However, in this particular case, the difference between these two plans is mini
 
 The **third query** in the example **applies both filters in a single operation**, reducing the number of **pipeline steps** while still scanning `movie_cast`. This approach is generally more efficient.
 
----
 
 ### 18.2.3 - Indexed Filters: A Game Changer  
 
@@ -162,7 +164,7 @@ When using a **hash join**, placing the most **selective filter** on the **inner
 
  Consider a query that retrieves **movies from 2010** where the **title matches a character name** from any movie, as long as the **cast order is above 200**.  In this scenario, the most **memory-efficient** solution **places `movie_cast` on the inner side** of the join. This minimizes the size of the **hash table**, reducing memory usage. 
 
-<img src="assets/images/opt_filter6.png" alt="Pushing filters down a hash join" width="750"/>   
+<img src="assets/images/opt_filter6.png" alt="Pushing filters down a hash join" width="550"/>   
 
 
 A **hash join** is also useful when handling **semi joins** or **anti joins**, especially when applying a **selective filter** to the **secondary part** (the table whose tuples are not exposed in the result).  
@@ -180,6 +182,7 @@ Another way to work around the **nested loop join limitation** is to apply a **D
 
 <img src="assets/images/opt_filter8.png" alt="Removing duplicates before the join" width="550"/>  
 
+<br>
 
 ## 18.3 - Removing Unnecessary Columns Early  
 
@@ -198,7 +201,8 @@ This approach significantly **reduces memory consumption**, making it the prefer
 
 <img src="assets/images/opt_projection2.png" alt="A materialized execution where removing unnecessary columns matters" width="450"/> 
 
-## 18.3.1 - Early Projection in Materialized Operators  
+
+### 18.3.1 - Early Projection in Materialized Operators  
 
 Several **materialized operators** benefit from **early projection**, including:  
 - **Sort**  
@@ -216,6 +220,7 @@ By **removing unnecessary columns before sorting**, the **right tree** reduces *
 
 <img src="assets/images/opt_projection3.png" alt="Removing columns before a sort operator" width="750"/> 
 
+<br>
 
 ## 18.4 - Sorting Operators  
 
@@ -256,6 +261,8 @@ Consider the following query plans:
 In this case, using **Nested Loop Join** instead may be a better choice, placing `movie_cast` in the **outer side of the join** to avoid the costly sorting step.  
 
 <img src="assets/images/opt_sort3.png" alt="Sorting and the merge join algorithm" width="750"/> 
+
+<br>
 
 ## 18.5 - Applying Multiple Optimization Strategies  
 
