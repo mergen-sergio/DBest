@@ -1,4 +1,4 @@
-# Optimization Techniques
+# 18 - Optimization Techniques
 
 When planning a query, two key factors should be considered:  
 1. **Reducing memory consumption**  
@@ -21,11 +21,11 @@ While **many other optimization strategies exist**, these three form a strong fo
 However, **real-world query optimization** is not as straightforward as textbook descriptions suggest.  Implementing these techniques effectively requires a **holistic view of the query execution plan**. The choice of optimization depends on factors such as **operator selection, memory usage, and I/O costs**.  In the following sections, we **explore these three techniques in detail** and introduce additional optimization strategies.  
 
 
-## Combining Join Operators
+## 18.1 - Combining Join Operators
 
 When defining a **join operator**, it is crucial to decide which component (**table/subquery subtree**) should be on the **outer** or **inner** side. This decision depends on the **join algorithm** used and the **optimization criteria** prioritized.  
 
-### Optimizing Nested Loop Joins 
+### 18.1.1 - Optimizing Nested Loop Joins 
 For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
 <img src="assets/images/opt_join1.png" alt="Joining movie and movie_cast" width="750"/>  
@@ -54,7 +54,7 @@ The index `fk_mca_person` uses `movie_cast.person_id` as key, so it can be the i
 This example highlights the **importance of indexing foreign keys** to enable **efficient join execution** and **query optimization**.  
 
 
-### Optimizing Hash Joins  
+### 18.1.2 - Optimizing Hash Joins  
 
 For a **hash join**, reducing the **inner side** minimizes the amount of memory needed to build the hash table. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
@@ -79,11 +79,11 @@ JOIN movie_cast mc ON m1.title = mc.character_name;
 
 If there are **no indexes** on `title` or `character_name`, **other join algorithms become inefficient**. The **hash join** is the best choice in this scenario, as it avoids expensive sequential scans and reduces the number of comparisons.
 
-## Pushing Down Filters  
+## 18.2 - Pushing Down Filters  
 
 The concept behind this strategy is straightforward: **applying filters as early as possible reduces the amount of work needed for the rest of the query execution**.  
 
-### Pushing it down
+### 18.2.1 - Pushing it down
 
 Consider a query that retrieves **character names and cast orders**, but only for **cast orders greater than 100**, and ensuring that the result **does not contain duplicates**.  
 
@@ -95,7 +95,7 @@ Consider a query that retrieves **character names and cast orders**, but only fo
 The **duplicate removal** is a **materialized operation**, meaning it stores all tuples in order to perform its computation.  The **Left Query** materializes **all tuples**, including those that will be **filtered out later**.  On the other hand, the **Right Query** **filters first**, ensuring that **only relevant tuples** are materialized, **reducing unnecessary computation**.  Since **fewer tuples need to be processed**, the **right query** is the **more efficient** approach.  
 
 
-### Ordering Filters for Efficiency  
+### 18.2.2 - Ordering Filters for Efficiency  
 
 When multiple filters are applied to a table, **it is generally better to process the most selective filter first**.  
 
@@ -111,7 +111,7 @@ The **third query** in the example **applies both filters in a single operation*
 
 ---
 
-### Indexed Filters: A Game Changer  
+### 18.2.3 - Indexed Filters: A Game Changer  
 
 The situation changes if **one of the filtered columns is indexed**. If the indexed filter is **selective enough**, applying it **first** is beneficial—even if another filter is **more selective**—because the index **avoids scanning the entire table**.
 
@@ -139,7 +139,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 
 
-### Pushing filters down a nested loop join 
+### 18.2.4 - Pushing filters down a nested loop join 
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
@@ -155,12 +155,12 @@ The right query **chooses `movie_cast` as the outer table** because the filter o
 Notice that in the optimized query, the **join condition disappears** from the join operator and is instead applied as a **filter on `movie`**. This happens because it is the operator **connected** to `movie` that drives the lookup. If the filter on `year` were applied directly to `movie`, it would trigger a **full scan** of `movie`, negating the benefits of filtering early. To prevent this, the **join condition is transformed into a filter on `movie`**, ensuring that only relevant rows are fetched.  As a result, the **join operator itself has an empty condition**, since **the filtering is already handled before the join occurs**.  
 
 
-### Pushing filters down a hash join
+### 18.2.5 - Pushing filters down a hash join
 
 
 When using a **hash join**, placing the most **selective filter** on the **inner side** can significantly **reduce memory consumption**.  
 
- Consider a query that retrieves **movies from 2010** where the **title matches a character name** from any movie, as long as the **cast order is above 100**.  In this scenario, the most **memory-efficient** solution **places `movie_cast` on the inner side** of the join. This minimizes the size of the **hash table**, reducing memory usage. 
+ Consider a query that retrieves **movies from 2010** where the **title matches a character name** from any movie, as long as the **cast order is above 200**.  In this scenario, the most **memory-efficient** solution **places `movie_cast` on the inner side** of the join. This minimizes the size of the **hash table**, reducing memory usage. 
 
 <img src="assets/images/opt_filter6.png" alt="Pushing filters down a hash join" width="750"/>   
 
@@ -171,42 +171,34 @@ A **nested loop join** cannot place the **filtered table** on the outer side whe
 
 To **push the filter to the outer side**, a **hash join-based algorithm** is required, such as **Hash Right Semi Join**  or **Hash Right Anti Join** .
 
-The query below retrieves **movie titles with more than 200 cast members** using a **Hash Right Semi Join**, where the **primary table (`movie`) is placed on the inner side**.  
+The query below retrieves **movie titles with more than 100 cast members** using a **Hash Right Semi Join**, where the **primary table (`movie`) is placed on the inner side**.  
 
-<img src="assets/images/opt_filter1.png" alt="Filter and Hash Right Semi Join" width="750"/>   
+<img src="assets/images/opt_filter7.png" alt="Filter and Hash Right Semi Join" width="550"/>   
 
 
 Another way to work around the **nested loop join limitation** is to apply a **Duplicate Removal** operator **before the join**, as indicated in the image below.  This solution **Removes duplicate values of `movie_id`**  and **Ensures each movie is looked up only once** in the inner table.
 
+<img src="assets/images/opt_filter8.png" alt="Removing duplicates before the join" width="550"/>  
 
 
-
-## Removing Unnecessary Columns Early  
+## 18.3 - Removing Unnecessary Columns Early  
 
 Queries often require only a subset of a table's columns. In some cases, **removing unnecessary columns early** can be beneficial, especially in terms of **memory consumption**.  
 
-### Impact on Pipeline Execution  
 
 In **pipeline execution**, keeping extra columns **has little impact**, since operators access the full row directly. The example below joins `movie` and `movie_cast`, returning only `title` and `character_name`.  **All columns remain available until the final projection**. However, they do not affect the join operation.  
 
-<img src="assets/images/opt_projection1.png" alt="A pipeline execution" width="750"/>   
+<img src="assets/images/opt_projection1.png" alt="A pipeline execution" width="450"/>   
 
-### Impact on Materialized Operations  
+On the other hand, for **materialized operations**, **removing unnecessary columns before materialization** is crucial to **reduce memory usage**.  
 
-For **materialized operations**, **removing unnecessary columns before materialization** is crucial to **reduce memory usage**.  
-
-Consider the same query, now using **hash join**:  
-
-- The **left tree** keeps all columns throughout execution.  
-- The **right tree** applies a **projection before building the hash table**, keeping only:  
-  - The **join column**.  
-  - The **columns needed for the final output**.  
+Consider the same query, now using **hash join**. The tree applies a **projection before building the hash table**, keeping only the **join column** and the **columns needed for the final output**.  
 
 This approach significantly **reduces memory consumption**, making it the preferred strategy.  
 
-<img src="assets/images/opt_projection2.png" alt="A materialized execution where removing unnecessary columns matters" width="750"/> 
+<img src="assets/images/opt_projection2.png" alt="A materialized execution where removing unnecessary columns matters" width="450"/> 
 
-## Early Projection in Materialized Operators  
+## 18.3.1 - Early Projection in Materialized Operators  
 
 Several **materialized operators** benefit from **early projection**, including:  
 - **Sort**  
@@ -215,11 +207,9 @@ Several **materialized operators** benefit from **early projection**, including:
 - **Hash Difference**  
 - **Hash Joins (and their variants)**  
 
-### Example: Sorting Character Names by Cast Order  
-
 Consider the query below, which **retrieves character names from movies released in 2010, sorted by cast order**.  
 
-- The **left tree** does not apply an early projection, meaning **all columns remain available** until the final selection.  
+- The **left tree** does not apply an early projection, meaning **all columns remain available** until the final projection.  
 - The **right tree** applies a **projection before the Sort operator**, keeping **only the necessary columns** (`character_name` and `cast_order`).  
 
 By **removing unnecessary columns before sorting**, the **right tree** reduces **memory consumption** and **improves efficiency**.  
@@ -227,12 +217,13 @@ By **removing unnecessary columns before sorting**, the **right tree** reduces *
 <img src="assets/images/opt_projection3.png" alt="Removing columns before a sort operator" width="750"/> 
 
 
-## Sorting Operators  
+## 18.4 - Sorting Operators  
 
 Sorting plays a crucial role in query execution plans. It may be required because:  
 - The **user explicitly requests sorted data** (e.g., `ORDER BY`).  
 - Certain **operators require sorted data** to function efficiently.  
 
+### 18.4.1 - Using an index to retrieve sorted data 
 
 Sorting typically **requires materialization**, meaning data must be fully processed before being sorted. However, materialization **can be avoided** if **pre-sorted data** is available, such as from an **index**.  
 
@@ -245,14 +236,11 @@ However, using the index **may not be ideal** in this case, as the join requires
 
 <img src="assets/images/opt_sort1.png" alt="Sorting over the year column" width="750"/> 
 
-Now, consider a query that retrieves **only movies released before 1930**:  
-
-- In this case, using the **index is beneficial** because it efficiently filters movies by year **while also providing sorted data**.  
-- The **join with the `movie` table** is not costly here, since **only a small number of entries** are retrieved from the index.  
+Now, consider a query that retrieves **only movies released before 1930**:  In this case, using the **index is beneficial** because it efficiently filters movies by year **while also providing sorted data**.  The **join with the `movie` table** is not costly here, since **only a small number of entries** are retrieved from the index.  
 
 <img src="assets/images/opt_sort2.png" alt="Sorting and filtering over the year column" width="750"/>  
 
-
+### 18.4.2 - Operators that require sorted data
 
 As stated, some operators **require sorted input** to function efficiently. Examples include:  
 - **Merge Join**  
@@ -269,15 +257,13 @@ In this case, using **Nested Loop Join** instead may be a better choice, placing
 
 <img src="assets/images/opt_sort3.png" alt="Sorting and the merge join algorithm" width="750"/> 
 
-## Conclusion: Applying Multiple Optimization Strategies  
+## 18.5 - Applying Multiple Optimization Strategies  
 
 To conclude, consider the following **query example**, which incorporates several of the optimization techniques discussed earlier.  
 
-### Query Goal  
-Find movies where the **title matches a character name** whose **cast order is 1**.  
+**Query Goal:** Find movies where the **title matches a character name** whose **cast order is 1**.  
 (*Note: The movie does not need to be related to the character.*)  
 
-### Query Execution Plan  
 The query plan below outlines an efficient strategy:  
 
 1. **Index Scan on `cast_order`**  
@@ -296,7 +282,6 @@ The query plan below outlines an efficient strategy:
 
 <img src="assets/images/opt_complex_query.png" alt="Performing optimizations over a complex query" width="750"/> 
 
-### Final Thoughts  
 While this is a **valid optimization strategy**, many other alternatives exist, using different operators.  
 - **Changing a single operator** can require **adjusting the entire query plan**.  
 - This highlights the complexity of the **query optimizer**, which must carefully consider multiple factors when selecting the most efficient execution plan.  
