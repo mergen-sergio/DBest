@@ -1,24 +1,24 @@
-## Optimization Techniques
+# Optimization Techniques
 
 When planning a query, two key factors should be considered:  
 1. **Reducing memory consumption**  
 2. **Minimizing I/O transfers from disk to memory**  
 
-Transferring pages from disk is an expensive operation, especially when using **magnetic disks**. This is because locating data involves **mechanical movement**—spinning platters and repositioning the read head.  
-Even with **SSDs**, where access time is significantly lower, avoiding disk I/O is still beneficial. Keeping data in **main memory** prevents unnecessary **system calls**, which trigger internal OS operations and add overhead.  
+Transferring pages from disk is an expensive operation, especially when using **magnetic disks**. This is because locating data involves **mechanical movement**—spinning platters and repositioning the read head.  Even with **SSDs**, where access time is significantly lower, avoiding disk I/O is still beneficial. Keeping data in **main memory** prevents unnecessary **system calls**, which trigger internal OS operations and add overhead.  
 
 On the other hand, excessive memory usage can lead to **wasting available RAM**, forcing the OS to **swap** data to disk. This creates a **vicious cycle**, as swapping brings back the **I/O bottleneck**—moving data **to and from disk**.  
 
-Some query optimization techniques **prioritize reducing memory consumption**, while others focus on **minimizing disk I/O**. When designing a query plan, it's crucial to determine **Which factor is more important** for the specific query.  
-and **Whether a balanced approach** between both criteria is necessary.  
+Some query optimization techniques **prioritize reducing memory consumption**, while others focus on **minimizing disk I/O**. When designing a query plan, it's crucial to determine **Which factor is more important** for the specific query and **whether a balanced approach** between both criteria is necessary.  
 
-### Fundamental Query Optimization Techniques  
-Database literature highlights three basic techniques for optimization:  
-- **Pushing down filters** – Apply filtering as early as possible to reduce the amount of data processed.  
-- **Combining join operations** – Optimize join execution order to reduce intermediate result size.  
-- **Removing unnecessary columns early** – Select only relevant columns at the start to minimize memory usage.  
+Database literature highlights **three fundamental techniques** for query optimization:  
 
-While many other strategies exist, these three provide a solid foundation for understanding **how to optimize query execution** effectively.  
+- **Pushing Down Filters** – Apply filtering as early as possible to reduce the amount of data processed.  
+- **Optimizing Join Execution** – Adjust the join order to minimize the size of intermediate results.  
+- **Eliminating Unnecessary Columns Early** – Select only relevant columns at the beginning to reduce memory consumption.  
+
+While **many other optimization strategies exist**, these three form a strong foundation for understanding **efficient query execution**.  
+
+However, **real-world query optimization** is not as straightforward as textbook descriptions suggest.  Implementing these techniques effectively requires a **holistic view of the query execution plan**. The choice of optimization depends on factors such as **operator selection, memory usage, and I/O costs**.  In the following sections, we **explore these three techniques in detail** and introduce additional optimization strategies.  
 
 
 ## Combining Join Operators
@@ -41,8 +41,7 @@ Consider a **join between `person` and `movie_cast`**:
 
 <img src="assets/images/opt_join2.png" alt="Joining person and movie_cast" width="750"/>  
 
-- **Size-based decision:** `person` is smaller, so it should be **outer**.  
-- **Index-based decision:** `movie_cast` does **not** have an efficient index on `person_id`. It is indexed by **(movie_id, person_id)**, making lookups by `person_id` inefficient.  
+Table `person` is smaller, so ideally it should be **outer**.  However, `movie_cast` does **not** have an efficient index on `person_id`. It is indexed by **(movie_id, person_id)**, making lookups by `person_id` inefficient.  
 
 Because `person_id` is **not a leading index column**, it cannot be queried efficiently. **In this case, `movie_cast` should be the outer table**, as `person` allows efficient lookups using its primary key.  
 
@@ -50,15 +49,12 @@ If we need to keep `movie` as the **outer** table, we can **create an index on t
 
 <img src="assets/images/opt_join3.png" alt="Using an index to join person and movie_cast" width="750"/>  
 
-- **New index:** `fk_mca_person` on `movie_cast.person_id`.  
-- **Lookup process:**  
-  - The index retrieves the **primary key** of `movie_cast` (`movie_id`, `person_id`).  
-  - A secondary lookup efficiently fetches the corresponding row.  
+The index `fk_mca_person` uses `movie_cast.person_id` as key, so it can be the inner side of a **Nested Loop Join** with person.  The index retrieves the **primary key** of `movie_cast` (`movie_id`, `person_id`).  A secondary lookup over `movie_cast` efficiently fetches the corresponding row.  
 
 This example highlights the **importance of indexing foreign keys** to enable **efficient join execution** and **query optimization**.  
 
 
-## Optimizing Hash Joins  
+### Optimizing Hash Joins  
 
 For a **hash join**, reducing the **inner side** minimizes the amount of memory needed to build the hash table. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
@@ -71,7 +67,6 @@ Since `movie` is the **smaller** table, the **right tree** is preferable because
 
 The example above could also be efficiently solved using a **nested loop join** by leveraging an **index** instead of a hash table. The **nested loop join** would reduce memory usage, while the **hash join** offers slightly faster lookups due to its **O(1) search cost**. This demonstrates how choosing a **join algorithm** influences the **table placement** in the query plan.  
 
-### When Hash Join is the Best Choice  
 In some cases, a **hash join is the only efficient option**, specifically, when **no indexes are available** on the join condition.  
 
 For example, consider a query that finds movies whose **title matches a character name** in any movie:  
@@ -97,7 +92,7 @@ Consider a query that retrieves **character names and cast orders**, but only fo
 - **Left Query:** The **duplicate removal** is applied **before** the filter.  
 - **Right Query:** The **duplicate removal** is applied **after** the filter.  
 
-The **duplicate removal** is a **materialized operation**, meaning it stores all tuples in order to perform its computation.  The **Left Query** materializes **all tuples**, including those that will be **filtered out later**.  On the other hand, the **Right Query:** **filters first**, ensuring that **only relevant tuples** are materialized, **reducing unnecessary computation**.  Since **fewer tuples need to be processed**, the **right query** is the **more efficient** approach.  
+The **duplicate removal** is a **materialized operation**, meaning it stores all tuples in order to perform its computation.  The **Left Query** materializes **all tuples**, including those that will be **filtered out later**.  On the other hand, the **Right Query** **filters first**, ensuring that **only relevant tuples** are materialized, **reducing unnecessary computation**.  Since **fewer tuples need to be processed**, the **right query** is the **more efficient** approach.  
 
 
 ### Ordering Filters for Efficiency  
@@ -106,7 +101,7 @@ When multiple filters are applied to a table, **it is generally better to proces
 
 The example above filters `movie_cast` by `cast_order` and `character_name`. The **First Query**  filters  by `cast_order` first, while the **Second Query** filters by `character_name` first.  
 
-<img src="assets/images/opt_filter2.png" alt="Selective filter position" width="750"/>   
+<img src="assets/images/opt_filter2.png" alt="Selective filter position" width="850"/>   
 
 Since the **filter on `character_name` is more selective**, the **second query is more efficient** because it reduces the number of tuples before applying the next filter.  
 
@@ -130,12 +125,13 @@ This approach **only works if the indexed filter is highly selective**. Otherwis
 
 When **both filtered columns have indexes**, and the filters are **selective enough**, an efficient strategy is to **intersect the index pointers** before accessing the table.  
 
-IN the exmple below, **Each index processes its respective filter independently:**   
+In the eaxample below, **each index processes its respective filter independently:**   
    - One index handles the **`cast_order` filter**.  
    - Another index handles the **`character_name` filter**.
 
+
 **An intersection operator** keeps only the index entries that **satisfy both filters**.  Finally, a **join with `movie_cast`** retrieves the full row content.  
-   - 
+    
 <img src="assets/images/opt_filter4.png" alt="Intersecting index pointers" width="750"/>   
 
 
@@ -143,7 +139,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 
 
-### Example based on the Nested Loop Join  
+### Pushing filters down a nested loop join 
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
@@ -151,23 +147,15 @@ Consider the queries below, which retrieve **only `movie_cast` entries from the 
 
 Both queries use the **nested loop join** strategy:  
 
-- **Left query:** Filters are applied **after** the join.  
-  - This is inefficient because the join processes **many irrelevant rows** that are later discarded.  
-
-- **Right query:** Filters are **pushed down** before the join.  
-  - This **eliminates irrelevant rows early**, reducing the number of tuples processed by the join.  
+- **Left query:** Filters are applied **after** the join.  This is inefficient because the join processes **many irrelevant rows** that are later discarded.  
+- **Right query:** Filters are **pushed down** before the join.  This **eliminates irrelevant rows early**, reducing the number of tuples processed by the join.  
 
 The right query **chooses `movie_cast` as the outer table** because the filter on `cast_order` is more selective than the filter on `year`. This highlights how **the presence of filters can influence join ordering**.  
 
 Notice that in the optimized query, the **join condition disappears** from the join operator and is instead applied as a **filter on `movie`**. This happens because it is the operator **connected** to `movie` that drives the lookup. If the filter on `year` were applied directly to `movie`, it would trigger a **full scan** of `movie`, negating the benefits of filtering early. To prevent this, the **join condition is transformed into a filter on `movie`**, ensuring that only relevant rows are fetched.  As a result, the **join operator itself has an empty condition**, since **the filtering is already handled before the join occurs**.  
 
-### Key Takeaways  
-✅ **Apply filters as early as possible** to reduce unnecessary computations.  
-✅ **Filters can influence join ordering**, changing which table is placed on the outer side.  
-✅ **Join predicates may be rewritten as filters** to optimize query execution.  
 
-
-### Example based on the Hash Join
+### Pushing filters down a hash join
 
 
 When using a **hash join**, placing the most **selective filter** on the **inner side** can significantly **reduce memory consumption**.  
