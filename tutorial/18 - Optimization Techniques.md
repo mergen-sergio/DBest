@@ -28,7 +28,7 @@ When defining a **join operator**, it is crucial to decide which component (**ta
 ### Optimizing Nested Loop Joins 
 For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
-*(Image goes here)*  
+<img src="assets/images/subqueries-select-clause.png" alt="Subqueries in the SELECT clause" width="750"/>  
 
 - **Left tree:** `movie` is the **outer** table.  
 - **Right tree:** `movie` is the **inner** table.  
