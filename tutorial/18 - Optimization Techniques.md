@@ -28,7 +28,7 @@ When defining a **join operator**, it is crucial to decide which component (**ta
 ### Optimizing Nested Loop Joins 
 For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
-<img src="assets/images/subqueries-select-clause.png" alt="Subqueries in the SELECT clause" width="750"/>  
+<img src="assets/images/opt_join1.png" alt="Joining movie and movie_cast" width="750"/>  
 
 - **Left tree:** `movie` is the **outer** table.  
 - **Right tree:** `movie` is the **inner** table.  
@@ -39,7 +39,7 @@ However, **table size is not the only factor**—the **inner table must support 
 
 Consider a **join between `person` and `movie_cast`**:  
 
-*(Image goes here)*  
+<img src="assets/images/opt_join2.png" alt="Joining person and movie_cast" width="750"/>  
 
 - **Size-based decision:** `person` is smaller, so it should be **outer**.  
 - **Index-based decision:** `movie_cast` does **not** have an efficient index on `person_id`. It is indexed by **(movie_id, person_id)**, making lookups by `person_id` inefficient.  
@@ -48,7 +48,7 @@ Because `person_id` is **not a leading index column**, it cannot be queried effi
 
 If we need to keep `movie` as the **outer** table, we can **create an index on the foreign key `movie_cast.person_id`**. This index enables efficient lookups and improves join performance:  
 
-*(Image goes here)*  
+<img src="assets/images/opt_join3.png" alt="Using an index to join person and movie_cast" width="750"/>  
 
 - **New index:** `fk_mca_person` on `movie_cast.person_id`.  
 - **Lookup process:**  
@@ -62,7 +62,7 @@ This example highlights the **importance of indexing foreign keys** to enable **
 
 For a **hash join**, reducing the **inner side** minimizes the amount of memory needed to build the hash table. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
-*(Image goes here)*  
+<img src="assets/images/opt_join4.png" alt="Joining movie and movie_cast with a hash join" width="750"/>  
 
 - **Left tree:** `movie` is the **outer** table.  
 - **Right tree:** `movie` is the **inner** table.  
@@ -92,7 +92,7 @@ The concept behind this strategy is straightforward: **applying filters as early
 
 Consider a query that retrieves **character names and cast orders**, but only for **cast orders greater than 100**, and ensuring that the result **does not contain duplicates**.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_filter1.png" alt="Filter position" width="750"/>   
 
 - **Left Query:** The **duplicate removal** is applied **before** the filter.  
 - **Right Query:** The **duplicate removal** is applied **after** the filter.  
@@ -106,8 +106,7 @@ When multiple filters are applied to a table, **it is generally better to proces
 
 The example above filters `movie_cast` by `cast_order` and `character_name`. The **First Query**  filters  by `cast_order` first, while the **Second Query** filters by `character_name` first.  
 
-*(Image goes here)*  
-
+<img src="assets/images/opt_filter2.png" alt="Selective filter position" width="750"/>   
 
 Since the **filter on `character_name` is more selective**, the **second query is more efficient** because it reduces the number of tuples before applying the next filter.  
 
@@ -123,7 +122,7 @@ The situation changes if **one of the filtered columns is indexed**. If the inde
 
 The example above uses an index on `cast_order` . The **filter on `cast_order` is applied first** using an **index lookup** instead of scanning `movie_cast`. Then, a **nested loop join** retrieves the required `movie_cast` columns (including `character_name`).  The **filter on `character_name` is applied afterward**.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_filter3.png" alt="Impact of index over a filtered column" width="750"/>   
 
 
 This approach **only works if the indexed filter is highly selective**. Otherwise, the overhead of joining `movie_cast` would outweigh the benefits, making a **full table scan with direct filtering more efficient**.
@@ -137,7 +136,7 @@ IN the exmple below, **Each index processes its respective filter independently:
 
 **An intersection operator** keeps only the index entries that **satisfy both filters**.  Finally, a **join with `movie_cast`** retrieves the full row content.  
    - 
-*(Image goes here)*  
+<img src="assets/images/opt_filter4.png" alt="Intersecting index pointers" width="750"/>   
 
 
 This approach significantly **reduces the number of rows accessed in `movie_cast`**, improving performance by avoiding a full table scan.  
@@ -148,7 +147,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_filter5.png" alt="Pushing filters down a nested loop join" width="750"/>   
 
 Both queries use the **nested loop join** strategy:  
 
@@ -175,7 +174,7 @@ When using a **hash join**, placing the most **selective filter** on the **inner
 
  Consider a query that retrieves **movies from 2010** where the **title matches a character name** from any movie, as long as the **cast order is above 100**.  In this scenario, the most **memory-efficient** solution **places `movie_cast` on the inner side** of the join. This minimizes the size of the **hash table**, reducing memory usage. 
 
-*(Image goes here)*  
+<img src="assets/images/opt_filter6.png" alt="Pushing filters down a hash join" width="750"/>   
 
 
 A **hash join** is also useful when handling **semi joins** or **anti joins**, especially when applying a **selective filter** to the **secondary part** (the table whose tuples are not exposed in the result).  
@@ -186,9 +185,9 @@ To **push the filter to the outer side**, a **hash join-based algorithm** is req
 
 The query below retrieves **movie titles with more than 200 cast members** using a **Hash Right Semi Join**, where the **primary table (`movie`) is placed on the inner side**.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_filter1.png" alt="Filter and Hash Right Semi Join" width="750"/>   
 
-those
+
 Another way to work around the **nested loop join limitation** is to apply a **Duplicate Removal** operator **before the join**, as indicated in the image below.  This solution **Removes duplicate values of `movie_id`**  and **Ensures each movie is looked up only once** in the inner table.
 
 
@@ -202,7 +201,7 @@ Queries often require only a subset of a table's columns. In some cases, **remov
 
 In **pipeline execution**, keeping extra columns **has little impact**, since operators access the full row directly. The example below joins `movie` and `movie_cast`, returning only `title` and `character_name`.  **All columns remain available until the final projection**. However, they do not affect the join operation.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_projection1.png" alt="A pipeline execution" width="750"/>   
 
 ### Impact on Materialized Operations  
 
@@ -217,7 +216,8 @@ Consider the same query, now using **hash join**:
 
 This approach significantly **reduces memory consumption**, making it the preferred strategy.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_projection2.png" alt="A materialized execution where removing unnecessary columns matters" width="750"/> 
+
 ## Early Projection in Materialized Operators  
 
 Several **materialized operators** benefit from **early projection**, including:  
@@ -236,7 +236,7 @@ Consider the query below, which **retrieves character names from movies released
 
 By **removing unnecessary columns before sorting**, the **right tree** reduces **memory consumption** and **improves efficiency**.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_projection3.png" alt="Removing columns before a sort operator" width="750"/> 
 
 
 ## Sorting Operators  
@@ -255,14 +255,14 @@ Consider a query that retrieves **movie titles and release years, sorted by rele
 
 However, using the index **may not be ideal** in this case, as the join requires **too many random lookups**, making it inefficient.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_sort1.png" alt="Sorting over the year column" width="750"/> 
 
 Now, consider a query that retrieves **only movies released before 1930**:  
 
 - In this case, using the **index is beneficial** because it efficiently filters movies by year **while also providing sorted data**.  
 - The **join with the `movie` table** is not costly here, since **only a small number of entries** are retrieved from the index.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_sort2.png" alt="Sorting and filtering over the year column" width="750"/>  
 
 
 
@@ -279,7 +279,8 @@ Consider the following query plans:
 
 In this case, using **Nested Loop Join** instead may be a better choice, placing `movie_cast` in the **outer side of the join** to avoid the costly sorting step.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_sort3.png" alt="Sorting and the merge join algorithm" width="750"/> 
+
 ## Conclusion: Applying Multiple Optimization Strategies  
 
 To conclude, consider the following **query example**, which incorporates several of the optimization techniques discussed earlier.  
@@ -305,7 +306,7 @@ The query plan below outlines an efficient strategy:
 4. **Early Projection Before the Join**  
    - A **projection operator** ensures that only **relevant movie columns** are sent to the **hash join**, reducing memory usage.  
 
-*(Image goes here)*  
+<img src="assets/images/opt_complex_query.png" alt="Performing optimizations over a complex query" width="750"/> 
 
 ### Final Thoughts  
 While this is a **valid optimization strategy**, many other alternatives exist, using different operators.  
