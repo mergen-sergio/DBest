@@ -26,7 +26,7 @@ The following examples are provided:
  - [18.5 - Subqueries in boolean expressions](18.5%20-%20sub-queries-in-boolean-expressions.md). 
  - [18.6 - Subqueries in the FROM clause](18.6%20-%20subqueries-in-from-clause.md).
  - [18.7 - Subqueries in the SELECT clause](18.7%20-%20subqueries-in-select-clause.md).
-
+ - [18.8 - ETL example](18.8%20-%20etl-example.md).
    
 <div align="left">
     <a href="./16 - comparing-query-costs.md">Previous</a>
