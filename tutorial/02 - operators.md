@@ -10,130 +10,218 @@
 
 In DBest, you can build query execution plans by using a variety of operators. These operators are designed to help you manipulate and filter data as it flows through your query plan. They are similar to the operators you would find in a typical Database Management System (DBMS). Below is a list of the common operators available in DBest, with a special focus on **join** operators, as these play a critical role in most database queries.
 
-- **Filter**: An unary operator that filters incoming tuples based on boolean expressions
- 
-- **Projection**: An unary operator that removes columns from the incoming tuples
+## Data Retrieval Operators
+- **Scan**: Requests **all tuples** from the data source.  
+- **Reference**: Uses columns from **already processed operations** for independent processing.  
+
+## Data Filtering and Transformation Operators
+- **Filter**: Removes tuples based on **boolean expressions**.  
+- **Projection**: Removes **specific columns** from tuples.  
+- **Explode**: Splits a tuple into **multiple tuples** based on a delimiter in a column.  
+- **Auto Increment**: Adds a **new column** with incrementing values.  
+
+## Data Deduplication Operators
+- **Duplicate Removal**: Removes **duplicate tuples** (requires sorted data).  
+- **Hash Duplicate Removal**: Uses a **hash table** to remove duplicates (**materialized**).  
+
+## Data Limiting and Sorting Operators
+- **Limit**: Keeps **only the top-k tuples**.  
+- **Sort**: Orders tuples in **ascending or descending** order (**materialized**).  
 
 
+  ### Join Operators  
+
+- **Cartesian Product**  
+  A binary operator that combines tuples from the outer and inner sides .  
+  The resulting tuples contain columns from both sides. 
   
-- **Join**: A binary operator that maintains all correspondences between the outer and the inner side tuples based on join conditions, expressed as a list of equality filters. The correspondencenes are built as a sum of the columns coming from both sides. Given an outer tuple, the algorithm asks for matches for the connected child of hthe right part (the inner part). Also known as Nested Loop Join.
-- **Nested Loop Join**: A binary operator that maintains all correspondences between the outer and the inner side tuples based on join conditions, expressed as a list of equality filters. The correspondencenes are built as a sum of the columns coming from both sides.  The algorithm stores all incoming tuples from the inner part on a hash table indexed by the columns used as join conditions. The hash tbale is used during the join phase. This operation is materialized.
-   **Merge Join**: A binary operator that finds correspondences all correspondences between the outer and the inner side tuples based on join conditions, expressed as a list of equality filters. The correspondencenes are built as a sum of the columns coming from both sides.  The algorithm traverses both sides sequencially and retrieved the macthes as they are found. It requires sorted data to function properly.
-  - **Left Outer Join**: A variation of the Join. An outer tuple that has no matches to inner tuples  is still returned, and have the inner side columns complemented with null values.
-  - **Hash Left Outer Join**: A variation of the Hash Join. An outer tuple that has no matches to inner tuples  is still returned, and have the inner side columns complemented with null values. 
-    - **Hash Right Outer Join**: A variation of the Hash Join. An inner tuple that has no matches to outer tuples is still returned, and have the outer side columns complemented with null values.
-    - **Hash Full Outer Join**: A variation of the Hash Join. An inner tuple that has no matches to outer tuples is still returned, and have the outer side columns complemented with null values. Similarly,  an outer tuple that has no matches to inner tuples is still returned, and have the inner side columns complemented with null values.
-    - - **Merge Left Outer Join**: A variation of the Merge Join. An outer tuple that has no matches to inner tuples  is still returned, and have the inner side columns complemented with null values. 
-    - **Merge Right Outer Join**: A variation of the Merge Join. An inner tuple that has no matches to outer tuples is still returned, and have the outer side columns complemented with null values.
-    - - **Merge Full Outer Join**: A variation of the Merge Join. An inner tuple that has no matches to outer tuples is still returned, and have the outer side columns complemented with null values. Similarly,  an outer tuple that has no matches to inner tuples is still returned, and have the inner side columns complemented with null values.
-     
-    **Semi Join**: A variation of the Join that checks if a an outer tuple has correspondences to inner tuples. If so, the outer tuple is returned. 
-   **Hash Left Semi Join**: A variation of the Hash Join that checks if a an outer(left) tuple has correspondences to inner tuples. If so, the outer tuple is returned. 
- **Hash Right Semi Join**: A variation of the Hash Join that checks if a an inner(right) tuple has correspondences to outer tuples. If so, the inner tuple is returned.
-   **Merge Left Semi Join**: A variation of the Merge Join that checks if a an outer(left) tuple has correspondences to inner tuples. If so, the outer tuple is returned. 
- **Merge Right Semi Join**: A variation of the Merge Join that checks if a an inner(right) tuple has correspondences to outer tuples. If so, the inner tuple is returned.
+- **Join (Nested Loop Join)**  
+  A binary operator that finds correspondences between tuples from the outer and inner sides based on join conditions (a list of equality filters).  
+  The resulting tuples contain columns from both sides. Given an outer tuple, the algorithm searches for matching tuples in the inner side.  
+
+- **Hash Join**  
+  A binary operator that finds correspondences between tuples from both sides using a hash-based approach.  
+  The inner-side tuples are stored in a hash table indexed by the join columns. During the join phase, this hash table is used to find matches efficiently.  
+  This operation requires materialization.  
+
+- **Merge Join**  
+  A binary operator that finds correspondences between tuples from both sides by scanning them sequentially, assuming they are already sorted on the join columns.  
+  Matches are retrieved as they are found. This method requires sorted data.  
+
+### Outer Joins  
+
+- **Left Outer Join**  
+  A variation of the Join where unmatched outer-side tuples are still included in the result, with inner-side columns filled with `NULL` values.  
+
+- **Hash Left Outer Join**  
+  A variation of the Hash Join where unmatched outer-side tuples are included, with inner-side columns filled with `NULL` values.  
+
+- **Hash Right Outer Join**  
+  A variation of the Hash Join where unmatched inner-side tuples are included, with outer-side columns filled with `NULL` values.  
+
+- **Hash Full Outer Join**  
+  A variation of the Hash Join that includes all unmatched tuples from both sides.  
+  - Outer-side unmatched tuples have inner-side columns filled with `NULL` values.  
+  - Inner-side unmatched tuples have outer-side columns filled with `NULL` values.  
+
+- **Merge Left Outer Join**  
+  A variation of the Merge Join where unmatched outer-side tuples are included, with inner-side columns filled with `NULL` values.  
+
+- **Merge Right Outer Join**  
+  A variation of the Merge Join where unmatched inner-side tuples are included, with outer-side columns filled with `NULL` values.  
+
+- **Merge Full Outer Join**  
+  A variation of the Merge Join that includes all unmatched tuples from both sides.  
+  - Outer-side unmatched tuples have inner-side columns filled with `NULL` values.  
+  - Inner-side unmatched 
+
+ 
+- ### Semi Join Operators  
+
+- **Semi Join**  
+  A variation of the Join that checks whether an outer tuple has corresponding inner tuples.  
+  If at least one match is found, the outer tuple is returned.  
+
+- **Hash Left Semi Join**  
+  A variation of the Hash Join that checks whether an outer (left) tuple has corresponding inner tuples.  
+  If at least one match is found, the outer tuple is returned.  
+
+- **Hash Right Semi Join**  
+  A variation of the Hash Join that checks whether an inner (right) tuple has corresponding outer tuples.  
+  If at least one match is found, the inner tuple is returned.  
+
+- **Merge Left Semi Join**  
+  A variation of the Merge Join that checks whether an outer (left) tuple has corresponding inner tuples.  
+  If at least one match is found, the outer tuple is returned.  
+
+- **Merge Right Semi Join**  
+  A variation of the Merge Join that checks whether an inner (right) tuple has corresponding outer tuples.  
+  If at least one match is found, the inner tuple is returned.  
+
+### Anti Join Operators  
+
+- **Anti Join**  
+  A variation of the Join that checks whether an outer tuple has corresponding inner tuples.  
+  If no match is found, the outer tuple is returned.  
+
+- **Hash Left Anti Join**  
+  A variation of the Hash Join that checks whether an outer (left) tuple has corresponding inner tuples.  
+  If no match is found, the outer tuple is returned.  
+
+- **Hash Right Anti Join**  
+  A variation of the Hash Join that checks whether an inner (right) tuple has corresponding outer tuples.  
+  If no match is found, the inner tuple is returned.  
+
+- **Merge Left Anti Join**  
+  A variation of the Merge Join that checks whether an outer (left) tuple has corresponding inner tuples.  
+  If no match is found, the outer tuple is returned.  
+
+- **Merge Right Anti Join**  
+  A variation of the Merge Join that checks whether an inner (right) tuple has corresponding outer tuples.  
+  If no match is found, the inner tuple is returned.  
+
+### Set Operators  
+
+- **Append**  
+  A binary operator that includes all tuples from both inner and outer sides by appending them into a single result set.  
+  This operator requires both sides to be **union compatible**, meaning they must have the same number of columns,  
+  and corresponding columns must be of the same data type.  
+
+- **Union**  
+  A variation of the Append operator that **removes duplicate tuples** from the result.  
+  This operator requires both sides to be **sorted on all columns** to function properly.  
+
+- **Hash Union**  
+  A variation of the Union operator that **removes duplicate tuples** from the result without relying on sorted data.  
+  Instead, it uses a **hash table** to eliminate duplicates. This operator is **materialized**.  
+
+- **Intersection**  
+  A binary operator that **retains tuples from the outer side only if they also exist on the inner side**.  
+  This operator requires both sides to be **union compatible**. It also requires **sorted data** on all columns.  
+
+- **Difference**  
+  A binary operator that **retains tuples from the outer side only if they do not exist on the inner side**.  
+  Like Intersection, this operator requires both sides to be **union compatible** and **sorted on all columns**.  
+
+- **Hash Intersection**  
+  A variation of the Intersection operator that does **not rely on sorted data**.  
+  Instead, it uses a **hash table** to check for matches. This operator is **materialized**.  
+
+- **Hash Difference**  
+  A variation of the Difference operator that does **not rely on sorted data**.  
+  Instead, it uses a **hash table** to check for matches. This operator is **materialized**.  
 
 
-    **Anti Join**: A variation of the Join that checks if a an outer tuple has correspondences to inner tuples. If no correspondences are found, the outer tuple is returned. 
-   **Hash Left Anti Join**: A variation of the Hash Join that checks if a an outer(left) tuple has correspondences to inner tuples. If no correspondences are found, the outer tuple is returned. 
- **Hash Right Anti Join**: A variation of the Hash Join that checks if a an inner(right) tuple has correspondences to outer tuples. If no correspondences are found, the inner tuple is returned.
-   **Merge Left Anti Join**: A variation of the Merge Join that checks if a an outer(left) tuple has correspondences to inner tuples. If no correspondences are found,the outer tuple is returned. 
- **Merge Right Anti Join**: A variation of the Merge Join that checks if a an inner(right) tuple has correspondences to outer tuples. If no correspondences are found, the inner tuple is returned.
+### Logical Operators  
 
-**Append**: A binary operator that maintains all tuples from both inner and outer sides. The tuples are appended into a single result set. This operator requires both sides to be union compatible to work properly. It means they need to be formed by the same number of columns, and columns must be of the same data type. 
-**Union**: A variation of the Append operator that removes duplicate tuples from the result.  THis operator requires both sides to be sorted on all columns to work properly. 
-**Hash Union**: A variation of the Union operator that removes duplicate tuples from the result. This operator does not rely on sorted data. Instead, it uses a hash table to remove duplicates. This oeprator is materialized.
-**Intersection**: A binary operator that maintains tuples from the outer side if it exists as an inner side tuple.   This operator requires both sides to be union compatible to work properly. It means they need to be formed by the same number of columns, and columns must be of the same data type. THis operator requires both sides to be sorted on all columns to work properly. 
-**Difference**: A binary operator that maintains tuples from the outer side if it does not exists as an inner side tuple.   This operator requires both sides to be union compatible to work properly. It means they need to be formed by the same number of columns, and columns must be of the same data type. THis operator requires both sides to be sorted on all columns to work properly. 
-**Hash Intersection**: A variation of the Intersection operator that does not rely on sorted data. Instead, it uses a hash table to check for matches. This oeprator is materialized.
-**Hash Difference**: A variation of the Difference operator that does not rely on sorted data. Instead, it uses a hash table to check for matches. This oeprator is materialized.
+- **And**  
+  A binary operator that checks the validity of two connected operators.  
+  A connected operator is **valid** if it either:  
+  - Returns a **non-empty result**  
+  - Returns a **boolean column** named `EVAL` with content `TRUE`.  
 
-**And**: A binary operator that checks the validity of the two connected operators. TO be valid, a connected operator has to either return a non-empty result or return a boolean column named EVAL whose content is TRUE.  This operator returns a boolean column EVAL. The evaluation is true only if both two connected operators are valid. 
-**Or**: A binary operator that checks the validity of the two connected operators. TO be valid, a connected operator has to either return a non-empty result or return a boolean column named EVAL whose content is TRUE.  This operator returns a boolean column EVAL. The evaluation is true if at least on of two connected operators are valid. 
-**XOr**: A binary operator that checks the validity of the two connected operators. TO be valid, a connected operator has to either return a non-empty result or return a boolean column named EVAL whose content is TRUE.  This operator returns a boolean column EVAL. The evaluation is true if just one of two connected operators is valid. 
-**Condition**: A nullary operator that contains a boolean expression.   This operator returns a boolean column EVAL. The evaluation is true if the boolnea expression is satisfied. 
-**If**: A binary operator that contains a boolean expression. If the boolean expression is satisfied, the oeprator returns the outer side tuples. It returned the inner side tuples otherwise. 
+  This operator returns a **boolean column `EVAL`**, which evaluates to `TRUE` **only if both connected operators are valid**.  
 
-**Scan**: An unary operator that informs its connected operator that it requires all tuples.  
-**Cartesian product**: A binary operator that maintains all combinations between the outer and the inner side tuples. The combinations are built as a sum of the columns coming from both sides. 
+- **Or**  
+  A binary operator that checks the validity of two connected operators.  
+  The operator is **valid** under the same conditions as **And**.  
 
-**Reference**: A nullary operator that is formed by columns from already processed operations. Useful for independent processing regarding parts of the queyr already processed.
+  This operator returns a **boolean column `EVAL`**, which evaluates to `TRUE` **if at least one of the connected operators is valid**.  
 
+- **XOr**  
+  A binary operator that checks the validity of two connected operators.  
+  The operator is **valid** under the same conditions as **And**.  
 
-**Sort**: An unary operator that sorts the incoming tuples by one of its columns in ascending or descending order. This operator is materialized.
+  This operator returns a **boolean column `EVAL`**, which evaluates to `TRUE` **only if exactly one of the connected operators is valid**.  
 
+- **Condition**  
+  A **nullary** operator (i.e., it takes no input) that contains a **boolean expression**.  
+  This operator returns a **boolean column `EVAL`**, which evaluates to `TRUE` **if the boolean expression is satisfied**.  
 
-**Agggregation**: An unary operator that computes an aggregation function from all the incoming tuples. The available fucctions are COUNT, COUNT_ALL, COUNT_NULL, MAX, MIN, SUM, AVG, FIRST and LAST. 
-**Group**: An unary operator that that divides the incoming tuples into groups and compute aggregation functions for each group. The available fuctions are COUNT, COUNT_ALL, COUNT_NULL, MAX, MIN, SUM, AVG, FIRST and LAST.  The groups contain tuples that share the same value for a group by column. This operator requires tuples to be sorted by the group by column to work properly.
-**Hash Group**: A variation of the Group operator that uses a hash to process each group.  This operator is materialized.
-
-**Duplicate Removal**: An unary operator that only keeps on the duplicate incoming tuples. This operator requires tuples to be sorted to work properly. 
-**Hash Duplicate Removal**: A variation of the Duplicate Removal operator that uses a hash table to identify duplicates. This operator is materialized.
-
-**Limit**: An unary operator that only maintains the top-k incoming tuples in the result set. 
-
-**Explode**: An unary operator that splits the incoming tuples into multiples tuples based on the presence of a delimiter in one the columns. 
-
-**Auto increment**: An unary operator that adds a new column into the incoming tuples. The value of the column is incremented as tuples are processed. 
-
-- **Hash**: An unary operator that stores all incoming tuples on a hash table indexed by the columns used by the connected operator as equality filters. This operation is materialized
-- **Materialization**: An unary operator that stores all incoming tuples in memory to avoid repetadly processing the subtree starting at this operator. This operation is materialized
-- **Memoize**: An unary operator that remembers accessed tuples. It redirects lookups on the connected operator. If the same lookup occurs again, the opertor retrieves the found tuples from a collection in memory.This operation is materialized
-
-splits the incoming tuples into multiples tuples based on the presence of a delimiter in one the columns. 
-
-variation of the Group operator that uses a hash to process each group.  This operator is materialized.
+- **If**  
+  A binary operator that contains a **boolean expression**.  
+  - If the **boolean expression is satisfied**, it returns the **outer side tuples**.  
+  - Otherwise, it returns the **inner side tuples**.  
 
 
+### Aggregation Operators  
+
+- **Aggregation**  
+  A **unary operator** that computes an **aggregation function** over all incoming tuples.  
+  The available functions are:  
+  - `COUNT`, `COUNT_ALL`, `COUNT_NULL`  
+  - `MAX`, `MIN`, `SUM`, `AVG`  
+  - `FIRST`, `LAST`  
+
+- **Group**  
+  A **unary operator** that divides incoming tuples into **groups** and computes aggregation functions for each group.  
+  - The available functions are the same as in **Aggregation**.  
+  - Groups contain tuples that **share the same value** for a **group-by column**.  
+  - This operator **requires tuples to be sorted** by the group-by column to function correctly.  
+
+- **Hash Group**  
+  A variation of the **Group** operator that uses a **hash table** to process each group.  
+  - This operator is **materialized**.  
 
 
-- **Inner Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Left Outer Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Outer Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Full Outer Join**
-    - Hash Join
-    - Merge Join
-- **Left Semi Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Semi Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Left Anti Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Right Anti Join**
-    - Nested Loop Join
-    - Hash Join
-    - Merge Join
-- **Cross Join**
-- **Aggregation**
-- **Sorting**
-- **Group By**
-    - Sorted
-    - Hashed
-- **Append**
-- **Union**
-    - Sorted
-    - Hashed
-- **Difference**
-    - Sorted
-    - Hashed
-- **Intersect**
-    - Sorted
-    - Hashed
+### Storage and Caching Operators  
+
+- **Hash**  
+  A **unary operator** that stores all incoming tuples in a **hash table**,  
+  indexed by the columns used by the connected operator as **equality filters**.  
+  - This operation is **materialized**.  
+
+- **Materialization**  
+  A **unary operator** that stores all incoming tuples **in memory**,  
+  preventing repeated processing of the subtree starting at this operator.  
+  - This operation is **materialized**.  
+
+- **Memoize**  
+  A **unary operator** that **remembers accessed tuples** and redirects lookups on the connected operator.  
+  - If the same lookup occurs again, the operator retrieves the found tuples **from memory**.  
+  - This operation is **materialized**.  
+
+
 
 <br><br>
  
