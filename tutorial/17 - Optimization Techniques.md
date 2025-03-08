@@ -1,4 +1,4 @@
-# 18 - Optimization Techniques
+# 17 - Optimization Techniques
 
 When planning a query, two key factors should be considered:  
 1. **Reducing memory consumption**  
@@ -22,11 +22,11 @@ However, **real-world query optimization** is not as straightforward as textbook
 
 <br>
 
-## 18.1 - Combining Join Operators
+## 17.1 - Combining Join Operators
 
 When defining a **join operator**, it is crucial to decide which component (**table/subquery subtree**) should be on the **outer** or **inner** side. This decision depends on the **join algorithm** used and the **optimization criteria** prioritized.  
 
-### 18.1.1 - Optimizing Nested Loop Joins 
+### 17.1.1 - Optimizing Nested Loop Joins 
 For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
 <img src="assets/images/opt_join1.png" alt="Joining movie and movie_cast" width="750"/>  
@@ -55,7 +55,7 @@ The index `fk_mca_person` uses `movie_cast.person_id` as key, so it can be the i
 This example highlights the **importance of indexing foreign keys** to enable **efficient join execution** and **query optimization**.  
 
 
-### 18.1.2 - Optimizing Hash Joins  
+### 17.1.2 - Optimizing Hash Joins  
 
 For a **hash join**, reducing the **inner side** minimizes the amount of memory needed to build the hash table. Consider the two query trees below, which join `movie` and `movie_cast`:  
 
@@ -82,11 +82,11 @@ If there are **no indexes** on `title` or `character_name`, **other join algorit
 
 <br>
 
-## 18.2 - Pushing Down Filters  
+## 17.2 - Pushing Down Filters  
 
 The concept behind this strategy is straightforward: **applying filters as early as possible reduces the amount of work needed for the rest of the query execution**.  
 
-### 18.2.1 - Pushing it down
+### 17.2.1 - Pushing it down
 
 Consider a query that retrieves **character names and cast orders**, but only for **cast orders greater than 100**, and ensuring that the result **does not contain duplicates**.  
 
@@ -98,7 +98,7 @@ Consider a query that retrieves **character names and cast orders**, but only fo
 The **duplicate removal** is a **materialized operation**, meaning it stores all tuples in order to perform its computation.  The **Left Query** materializes **all tuples**, including those that will be **filtered out later**.  On the other hand, the **Right Query** **filters first**, ensuring that **only relevant tuples** are materialized, **reducing unnecessary computation**.  Since **fewer tuples need to be processed**, the **right query** is the **more efficient** approach.  
 
 
-### 18.2.2 - Ordering Filters for Efficiency  
+### 17.2.2 - Ordering Filters for Efficiency  
 
 When multiple filters are applied to a table, **it is generally better to process the most selective filter first**.  
 
@@ -113,7 +113,7 @@ However, in this particular case, the difference between these two plans is mini
 The **third query** in the example **applies both filters in a single operation**, reducing the number of **pipeline steps** while still scanning `movie_cast`. This approach is generally more efficient.
 
 
-### 18.2.3 - Indexed Filters: A Game Changer  
+### 17.2.3 - Indexed Filters: A Game Changer  
 
 The situation changes if **one of the filtered columns is indexed**. If the indexed filter is **selective enough**, applying it **first** is beneficial—even if another filter is **more selective**—because the index **avoids scanning the entire table**.
 
@@ -141,7 +141,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 
 
-### 18.2.4 - Pushing filters down a nested loop join 
+### 17.2.4 - Pushing filters down a nested loop join 
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
@@ -157,7 +157,7 @@ The right query **chooses `movie_cast` as the outer table** because the filter o
 Notice that in the optimized query, the **join condition disappears** from the join operator and is instead applied as a **filter on `movie`**. This happens because it is the operator **connected** to `movie` that drives the lookup. If the filter on `year` were applied directly to `movie`, it would trigger a **full scan** of `movie`, negating the benefits of filtering early. To prevent this, the **join condition is transformed into a filter on `movie`**, ensuring that only relevant rows are fetched.  As a result, the **join operator itself has an empty condition**, since **the filtering is already handled before the join occurs**.  
 
 
-### 18.2.5 - Pushing filters down a hash join
+### 17.2.5 - Pushing filters down a hash join
 
 
 When using a **hash join**, placing the most **selective filter** on the **inner side** can significantly **reduce memory consumption**.  
@@ -184,7 +184,7 @@ Another way to work around the **nested loop join limitation** is to apply a **D
 
 <br>
 
-## 18.3 - Removing Unnecessary Columns Early  
+## 17.3 - Removing Unnecessary Columns Early  
 
 Queries often require only a subset of a table's columns. In some cases, **removing unnecessary columns early** can be beneficial, especially in terms of **memory consumption**.  
 
@@ -202,7 +202,7 @@ This approach significantly **reduces memory consumption**, making it the prefer
 <img src="assets/images/opt_projection2.png" alt="A materialized execution where removing unnecessary columns matters" width="450"/> 
 
 
-### 18.3.1 - Early Projection in Materialized Operators  
+### 17.3.1 - Early Projection in Materialized Operators  
 
 Several **materialized operators** benefit from **early projection**, including:  
 - **Sort**  
@@ -222,13 +222,13 @@ By **removing unnecessary columns before sorting**, the **right tree** reduces *
 
 <br>
 
-## 18.4 - Sorting Operators  
+## 17.4 - Sorting Operators  
 
 Sorting plays a crucial role in query execution plans. It may be required because:  
 - The **user explicitly requests sorted data** (e.g., `ORDER BY`).  
 - Certain **operators require sorted data** to function efficiently.  
 
-### 18.4.1 - Using an index to retrieve sorted data 
+### 17.4.1 - Using an index to retrieve sorted data 
 
 Sorting typically **requires materialization**, meaning data must be fully processed before being sorted. However, materialization **can be avoided** if **pre-sorted data** is available, such as from an **index**.  
 
@@ -245,7 +245,7 @@ Now, consider a query that retrieves **only movies released before 1930**:  In t
 
 <img src="assets/images/opt_sort2.png" alt="Sorting and filtering over the year column" width="750"/>  
 
-### 18.4.2 - Operators that require sorted data
+### 17.4.2 - Operators that require sorted data
 
 As stated, some operators **require sorted input** to function efficiently. Examples include:  
 - **Merge Join**  
@@ -264,7 +264,7 @@ In this case, using **Nested Loop Join** instead may be a better choice, placing
 
 <br>
 
-## 18.5 - Applying Multiple Optimization Strategies  
+## 17.5 - Applying Multiple Optimization Strategies  
 
 To conclude, consider the following **query example**, which incorporates several of the optimization techniques discussed earlier.  
 
