@@ -24,7 +24,7 @@ The following examples are provided:
  - [18.3 - ANY-and-ALL](18.3%20-%20ANY-and-ALL.md).
  - [18.4 - Subqueries and direct comparisons](18.4%20-%20Subqueries-and-direct-comparisons.md).
  - [18.5 - Subqueries in boolean expressions](18.5%20-%20sub-queries-in-boolean-expressions.md). 
- - [18.6 - Subqueries in the FROM clause](18.6%20-%20Nsubqueries-in-from-clause.md).
+ - [18.6 - Subqueries in the FROM clause](18.6%20-%20subqueries-in-from-clause.md).
  - [18.7 - Subqueries in the SELECT clause](18.7%20-%20subqueries-in-select-clause.md).
 
    
