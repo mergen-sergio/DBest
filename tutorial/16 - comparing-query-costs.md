@@ -72,7 +72,7 @@ A powerful feature of DBest is the query plan comparator. It enables users to ev
 
 In the example, the comparator panel provides a snapshot after retrieving five tuples. It shows that the **left tree** incurs higher costs. Key observations include:
 
-- **Accessed Blocks:** The left tree reads more disk pages because filtering occurs **after** the join, causing unnecessary processing of `movie_cast` rows.
+- **Accessed Blocks:** The left tree (Q1) reads more disk pages because filtering occurs **after** the join, causing unnecessary processing of `movie_cast` rows.
 - **Filter Comparisons:** Higher in the left tree since the same movie is filtered multiple times, once per match in `movie_cast`.
 
 ![Comparing Queries](assets/images/comparing_queries.png)
