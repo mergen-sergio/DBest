@@ -19,11 +19,15 @@ Complex SQL queries often include **subqueries**, which involve nested processin
 
 The following examples are provided:
 
- - [IN vs EXISTS](17.1%20-%20IN-vs-EXISTS.md).
- - [NOT IN vs NOT EXISTS](17.2%20-%20NOT-IN-vs-NOT-EXISTS.md).
+ - [18.1 - IN vs EXISTS](18.1%20-%20IN-vs-EXISTS.md).
+ - [18.2 - NOT IN vs NOT EXISTS](18.2%20-%20NOT-IN-vs-NOT-EXISTS.md).
+ - [18.3 - ANY-and-ALL](18.3%20-%20ANY-and-ALL.md).
+ - [18.4 - Subqueries and direct comparisons](18.4%20-%20Subqueries-and-direct-comparisons.md).
+ - [18.5 - Subqueries in boolean expressions](18.5%20-%20sub-queries-in-boolean-expressions.md). 
+ - [18.6 - Subqueries in the FROM clause](18.6%20-%20Nsubqueries-in-from-clause.md).
+ - [18.7 - Subqueries in the SELECT clause](18.7%20-%20subqueries-in-select-clause.md).
 
-
-
+   
 <div align="left">
     <a href="./16 - comparing-query-costs.md">Previous</a>
 </div>
