@@ -67,7 +67,7 @@ A **boolean expression** can also be created using specialized boolean operators
 
 ### Example: Boolean Expression with Boolean Operators
 The example below demonstrates how to create the same boolean expression as in the earlier example, but this time using boolean operators instead of editing the properties of a filter operator. Key points:
-- **OR operator**: Combines two condition operators.
+- **OR operator (||)**: Combines two condition operators.
 - **Condition operators (?)**: Use referenced columns for comparisons.
 
 <img src="assets/images/filter-expression-tree.png" alt="Boolean Expression Tree" width="500"/>
