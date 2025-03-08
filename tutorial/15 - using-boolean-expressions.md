@@ -70,7 +70,7 @@ The example below demonstrates how to create the same boolean expression as in t
 - **OR operator (||)**: Combines two condition operators.
 - **Condition operators (?)**: Use referenced columns for comparisons.
 
-<img src="assets/images/filter-expression-tree.png" alt="Boolean Expression Tree" width="500"/>
+<img src="assets/images/filter-expression-tree.png" alt="Boolean Expression Tree" width="700"/>
 
 The filter operator is still present, but now it contains a simpler expression that directly tests the result of the **AND operator**.
 
@@ -94,7 +94,7 @@ WHERE movie_id IN (SELECT movie_id FROM movie_cast)
 ```
 
 
-<img src="assets/images/filter-sub-queries.png" alt="Expresion tree to represent disjoint sub-queries" width="500"/>
+<img src="assets/images/filter-sub-queries.png" alt="Expresion tree to represent disjoint sub-queries" width="700"/>
 
 In this query tree:
 
