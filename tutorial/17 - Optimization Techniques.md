@@ -8,7 +8,7 @@ Transferring pages from disk is an expensive operation, especially when using **
 
 On the other hand, excessive memory usage can lead to **wasting available RAM**, forcing the OS to **swap** data to disk. This creates a **vicious cycle**, as swapping brings back the **I/O bottleneck**—moving data **to and from disk**.  
 
-Some query optimization techniques **prioritize reducing memory consumption**, while others focus on **minimizing disk I/O**. When designing a query plan, it's crucial to determine **Which factor is more important** for the specific query and **whether a balanced approach** between both criteria is necessary.  
+Some query optimization techniques **prioritize reducing memory consumption**, while others focus on **minimizing disk I/O**. When designing a query plan, it's important to determine **which factor is more important** for the specific query and **whether a balanced approach** between both criteria is necessary.  
 
 Database literature highlights **three fundamental techniques** for query optimization:  
 
