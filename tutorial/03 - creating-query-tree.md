@@ -9,7 +9,7 @@
 
 In DBest, a **query tree** is composed of two types of nodes:  
 - **Data Nodes**: Represent data sources and are located in the **left panel**.  
-- **Operator Nodes**: Represent transformations or operations and are located in the **right panel**.
+- **Operator Nodes**: Represent transformations on data and are located in the **right panel**.
 
 A query tree is built by adding nodes to the editor, connecting them, and configuring their properties.
 
