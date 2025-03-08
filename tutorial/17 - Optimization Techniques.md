@@ -124,6 +124,7 @@ The example above uses an index on `cast_order` . The **filter on `cast_order` i
 
 This approach **only works if the indexed filter is highly selective**. Otherwise, the overhead of joining `movie_cast` would outweigh the benefits, making a **full table scan with direct filtering more efficient**.
 
+### 17.2.4 - Using multiple indexes with the Pointer Intersection Technique  
 
 When **both filtered columns have indexes**, and the filters are **selective enough**, an efficient strategy is to **intersect the index pointers** before accessing the table.  
 
@@ -141,7 +142,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 
 
-### 17.2.4 - Pushing filters down a nested loop join 
+### 17.2.5 - Pushing filters down a nested loop join 
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
@@ -157,7 +158,7 @@ The right query **chooses `movie_cast` as the outer table** because the filter o
 Notice that in the optimized query, the **join condition disappears** from the join operator and is instead applied as a **filter on `movie`**. This happens because it is the operator **connected** to `movie` that drives the lookup. If the filter on `year` were applied directly to `movie`, it would trigger a **full scan** of `movie`, negating the benefits of filtering early. To prevent this, the **join condition is transformed into a filter on `movie`**, ensuring that only relevant rows are fetched.  As a result, the **join operator itself has an empty condition**, since **the filtering is already handled before the join occurs**.  
 
 
-### 17.2.5 - Pushing filters down a hash join
+### 17.2.6 - Pushing filters down a hash join
 
 
 When using a **hash join**, placing the most **selective filter** on the **inner side** can significantly **reduce memory consumption**.  
