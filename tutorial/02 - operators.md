@@ -6,7 +6,7 @@
 </div>
 
 
-## Available Operators
+# Available Operators
 
 In DBest, you can build query execution plans by using a variety of operators. These operators are designed to help you manipulate and filter data as it flows through your query plan. They are similar to the operators you would find in a typical Database Management System (DBMS). Below is a list of the common operators available in DBest, with a special focus on **join** operators, as these play a critical role in most database queries.
 
@@ -29,7 +29,7 @@ In DBest, you can build query execution plans by using a variety of operators. T
 - **Sort**: Orders tuples in **ascending or descending** order (**materialized**).  
 
 
-  ### Join Operators  
+## Join Operators  
 
 - **Cartesian Product**  
   A binary operator that combines tuples from the outer and inner sides .  
@@ -48,7 +48,7 @@ In DBest, you can build query execution plans by using a variety of operators. T
   A binary operator that finds correspondences between tuples from both sides by scanning them sequentially, assuming they are already sorted on the join columns.  
   Matches are retrieved as they are found. This method requires sorted data.  
 
-### Outer Joins  
+## Outer Joins  
 
 - **Left Outer Join**  
   A variation of the Join where unmatched outer-side tuples are still included in the result, with inner-side columns filled with `NULL` values.  
@@ -73,10 +73,10 @@ In DBest, you can build query execution plans by using a variety of operators. T
 - **Merge Full Outer Join**  
   A variation of the Merge Join that includes all unmatched tuples from both sides.  
   - Outer-side unmatched tuples have inner-side columns filled with `NULL` values.  
-  - Inner-side unmatched 
+  - Inner-side unmatched tuples have outer-side columns filled with `NULL` values. 
 
- 
-- ### Semi Join Operators  
+
+## Semi Join Operators  
 
 - **Semi Join**  
   A variation of the Join that checks whether an outer tuple has corresponding inner tuples.  
@@ -98,7 +98,7 @@ In DBest, you can build query execution plans by using a variety of operators. T
   A variation of the Merge Join that checks whether an inner (right) tuple has corresponding outer tuples.  
   If at least one match is found, the inner tuple is returned.  
 
-### Anti Join Operators  
+## Anti Join Operators  
 
 - **Anti Join**  
   A variation of the Join that checks whether an outer tuple has corresponding inner tuples.  
@@ -120,12 +120,31 @@ In DBest, you can build query execution plans by using a variety of operators. T
   A variation of the Merge Join that checks whether an inner (right) tuple has corresponding outer tuples.  
   If no match is found, the inner tuple is returned.  
 
-### Set Operators  
+
+## Aggregation Operators  
+
+- **Aggregation**  
+  A **unary operator** that computes an **aggregation function** over all incoming tuples.  
+  The available functions are:  
+  - `COUNT`, `COUNT_ALL`, `COUNT_NULL`  
+  - `MAX`, `MIN`, `SUM`, `AVG`  
+  - `FIRST`, `LAST`  
+
+- **Group**  
+  A **unary operator** that divides incoming tuples into **groups** and computes aggregation functions for each group.  
+  - The available functions are the same as in **Aggregation**.  
+  - Groups contain tuples that **share the same value** for a **group-by column**.  
+  - This operator **requires tuples to be sorted** by the group-by column to function correctly.  
+
+- **Hash Group**  
+  A variation of the **Group** operator that uses a **hash table** to process each group.  
+  - This operator is **materialized**.  
+
+## Set Operators  
 
 - **Append**  
   A binary operator that includes all tuples from both inner and outer sides by appending them into a single result set.  
-  This operator requires both sides to be **union compatible**, meaning they must have the same number of columns,  
-  and corresponding columns must be of the same data type.  
+  This operator requires both sides to be **union compatible**, meaning they must have the same number of columns,  and corresponding columns must be of the same data type.  
 
 - **Union**  
   A variation of the Append operator that **removes duplicate tuples** from the result.  
@@ -152,7 +171,7 @@ In DBest, you can build query execution plans by using a variety of operators. T
   Instead, it uses a **hash table** to check for matches. This operator is **materialized**.  
 
 
-### Logical Operators  
+## Logical Operators  
 
 - **And**  
   A binary operator that checks the validity of two connected operators.  
@@ -184,36 +203,16 @@ In DBest, you can build query execution plans by using a variety of operators. T
   - Otherwise, it returns the **inner side tuples**.  
 
 
-### Aggregation Operators  
-
-- **Aggregation**  
-  A **unary operator** that computes an **aggregation function** over all incoming tuples.  
-  The available functions are:  
-  - `COUNT`, `COUNT_ALL`, `COUNT_NULL`  
-  - `MAX`, `MIN`, `SUM`, `AVG`  
-  - `FIRST`, `LAST`  
-
-- **Group**  
-  A **unary operator** that divides incoming tuples into **groups** and computes aggregation functions for each group.  
-  - The available functions are the same as in **Aggregation**.  
-  - Groups contain tuples that **share the same value** for a **group-by column**.  
-  - This operator **requires tuples to be sorted** by the group-by column to function correctly.  
-
-- **Hash Group**  
-  A variation of the **Group** operator that uses a **hash table** to process each group.  
-  - This operator is **materialized**.  
 
 
-### Storage and Caching Operators  
+## Storage and Caching Operators  
 
 - **Hash**  
-  A **unary operator** that stores all incoming tuples in a **hash table**,  
-  indexed by the columns used by the connected operator as **equality filters**.  
+  A **unary operator** that stores all incoming tuples in a **hash table**,  indexed by the columns used by the connected operator as **equality filters**.  
   - This operation is **materialized**.  
 
 - **Materialization**  
-  A **unary operator** that stores all incoming tuples **in memory**,  
-  preventing repeated processing of the subtree starting at this operator.  
+  A **unary operator** that stores all incoming tuples **in memory**,  preventing repeated processing of the subtree starting at this operator.  
   - This operation is **materialized**.  
 
 - **Memoize**  
