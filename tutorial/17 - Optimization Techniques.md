@@ -24,7 +24,7 @@ However, **real-world query optimization** is not as straightforward as textbook
 
 ## 17.1 - Combining Join Operators
 
-When defining a **join operator**, it is crucial to decide which component (**table/subquery subtree**) should be on the **outer** or **inner** side. This decision depends on the **join algorithm** used and the **optimization criteria** prioritized.  
+When defining a **join operator**, it is important to decide which component (**table/subquery subtree**) should be on the **outer** or **inner** side. This decision depends on the **join algorithm** used and the **optimization criteria** prioritized.  
 
 ### 17.1.1 - Optimizing Nested Loop Joins 
 For a **nested loop join**, reducing the **outer side** minimizes the number of lookups needed on the **inner side**. Consider the two query trees below, which join `movie` and `movie_cast`:  
@@ -224,7 +224,7 @@ By **removing unnecessary columns before sorting**, the **right tree** reduces *
 
 ## 17.4 - Sorting Operators  
 
-Sorting plays a crucial role in query execution plans. It may be required because:  
+Sorting plays an important role in query execution plans. It may be required because:  
 - The **user explicitly requests sorted data** (e.g., `ORDER BY`).  
 - Certain **operators require sorted data** to function efficiently.  
 
