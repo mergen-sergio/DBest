@@ -15,7 +15,7 @@ The examples provided focus on **subqueries**, a crucial component of complex SQ
 
 The following examples illustrate different use cases:  
 
-- **[18.1 - Subqueries in the WHERE clause]**  
+- **[18.1 - Subqueries in the WHERE clause](18.1%20-%20subqueries-in-where-clause.md) **  
   - [18.1.1 - IN vs EXISTS](18.1.1%20-%20IN-vs-EXISTS.md)  
   - [18.1.2 - NOT IN vs NOT EXISTS](18.1.2%20-%20NOT-IN-vs-NOT-EXISTS.md)  
   - [18.1.3 - ANY and ALL](18.1.3%20-%20ANY-and-ALL.md)  
