@@ -24,6 +24,8 @@
 14. [Join algorithms](14%20-%20join-algorithms.md)
 15. [Using boolean expressions](15%20-%20using-boolean-expressions.md)
 16. [Comparing query costs](16%20-%20comparing-query-costs.md)
+17. [Optimizarion techniques](17%20-%20optimization-techniques.md)
+18. [Query Examples](18%20-%20examples.md)
 
 
 
