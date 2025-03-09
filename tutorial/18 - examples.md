@@ -2,7 +2,7 @@
     <a href="./17 - optimization-techniques.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./18.1 - IN-vs-EXISTS.md">Next</a>
+  <a href="./18.1 - subqueries-in-where-clause.md">Next</a>
 </div>
 
 # Expressing Queries in DBest  
@@ -31,5 +31,5 @@ The following examples illustrate different use cases:
     <a href="./17 - optimization-techniques.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./18.1 - IN-vs-EXISTS.md">Next</a>
+  <a href="./18.1 - subqueries-in-where-clause.md">Next</a>
 </div>
