@@ -1,3 +1,10 @@
+<div align="left">
+    <a href="./16 - comparing-query-costs.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./18 - examples.md">Next</a>
+</div>
+
 # 17 - Optimization Techniques
 
 When planning a query, two key factors should be considered:  
@@ -295,3 +302,12 @@ While this is a **valid optimization strategy**, many other alternatives exist, 
 - This highlights the complexity of the **query optimizer**, which must carefully consider multiple factors when selecting the most efficient execution plan.  
 
 **DBest** illustrates how different strategies can be applied and **demonstrates the critical role of query optimization** in database performance.  
+
+
+<div align="left">
+    <a href="./16 - comparing-query-costs.md">Previous</a>
+</div>
+<div align="right">
+  <a href="./18 - examples.md">Next</a>
+</div>
+
