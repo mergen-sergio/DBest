@@ -153,7 +153,7 @@ This approach significantly **reduces the number of rows accessed in `movie_cast
 
 Consider the queries below, which retrieve **only `movie_cast` entries from the year 2010 where `cast_order` is greater than 200**. These are **highly selective** filters—few movies were released in 2010, and even fewer have more than 200 cast members.  
 
-<img src="assets/images/opt_filter5.png" alt="Pushing filters down a nested loop join" width="750"/>   
+<img src="assets/images/opt_filter5.png" alt="Pushing filters down a nested loop join" width="850"/>   
 
 Both queries use the **nested loop join** strategy:  
 
