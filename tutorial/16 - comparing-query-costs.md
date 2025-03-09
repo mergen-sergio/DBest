@@ -2,7 +2,7 @@
     <a href="./15 - using-boolean-expressions.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./17 - examples.md">Next</a>
+  <a href="./17 - optimization-techniques.md">Next</a>
 </div>
 
 # Query Plan Comparison and Efficiency
@@ -93,6 +93,6 @@ By advancing records incrementally, you can evaluate the effort required to fetc
     <a href="./15 - using-boolean-expressions.md">Previous</a>
 </div>
 <div align="right">
-  <a href="./17 - examples.md">Next</a>
+  <a href="./17 - optimization-techniques.md">Next</a>
 </div>
 
