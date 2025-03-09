@@ -27,9 +27,3 @@ The following examples illustrate different use cases:
 - [18.4 - ETL example](18.8%20-%20etl-example.md) 
 
    
-<div align="left">
-    <a href="./17 - optimization-techniques.md">Previous</a>
-</div>
-<div align="right">
-  <a href="./18.1 - subqueries-in-where-clause.md">Next</a>
-</div>
