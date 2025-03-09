@@ -4,6 +4,8 @@ import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
 import entities.Column;
 import entities.cells.Cell;
+import entities.cells.OperationCell;
+import entities.utils.cells.CellUtils;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.forms.operations.OperationForm;
 
@@ -30,7 +32,9 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
             ConstantController.getString("operationForm.sum"),
             ConstantController.getString("operationForm.first"),
             ConstantController.getString("operationForm.last"),
-            ConstantController.getString("operationForm.count")});
+            ConstantController.getString("operationForm.count"),
+            ConstantController.getString("operationForm.countAll"),
+            ConstantController.getString("operationForm.countNull")});
 
     public GroupForm(mxCell jCell) {
 
@@ -72,13 +76,22 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
         addExtraComponent(new JLabel(ConstantController.getString("operationForm.groupBy")+":"), 0, 7, 1, 1);
         addExtraComponent(comboBoxGroupByColumn, 1, 7, 1, 1);
 
-        leftChild.getSources().stream()
-                .map(Cell::getName)
-                .forEach(comboBoxGroupBySource::addItem);
+//        leftChild.getSources().stream()
+//                .map(Cell::getName)
+//                .forEach(comboBoxGroupBySource::addItem);
 
-        comboBoxGroupBySource.addActionListener(actionEvent -> setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild));
+//        if (leftChild instanceof OperationCell opCell)
+//            opCell.setColumns();
+        comboBoxGroupBySource.addActionListener(actionEvent -> setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild.getColumns()));
 
-        setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild);
+        //setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild);
+        
+        
+        Cell cell = CellUtils.getActiveCell(jCell).get();
+        java.util.List<Column> columns = setLeftComboBoxColumns(cell);
+        setComboBoxData(columns, comboBoxGroupBySource, comboBoxGroupByColumn);
+        
+        
         setPreviousArgs();
 
         pack();
@@ -158,6 +171,10 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
             suffix = "LAST:";
         else  if(selected.equals(ConstantController.getString("operationForm.count")))
             suffix = "COUNT:";
+        else  if(selected.equals(ConstantController.getString("operationForm.countAll")))
+            suffix = "COUNT_ALL:";
+        else  if(selected.equals(ConstantController.getString("operationForm.countNull")))
+            suffix = "COUNT_NULL:";
         else
             throw new IllegalStateException("Unexpected value: " + selected);
 

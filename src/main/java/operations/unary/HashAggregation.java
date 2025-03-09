@@ -80,6 +80,22 @@ public class HashAggregation implements IOperator {
             public String getPrefix() {
                 return "COUNT:";
             }
+        }, COUNT_ALL {
+            public String getDisplayName() {
+                return ConstantController.getString("operationForm.countAll");
+            }
+
+            public String getPrefix() {
+                return "COUNT_ALL:";
+            }
+        }, COUNT_NULL {
+            public String getDisplayName() {
+                return ConstantController.getString("operationForm.countNull");
+            }
+
+            public String getPrefix() {
+                return "COUNT_NULL:";
+            }
         };
 
         public abstract String getDisplayName();

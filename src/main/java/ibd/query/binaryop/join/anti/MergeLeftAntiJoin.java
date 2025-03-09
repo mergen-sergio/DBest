@@ -41,13 +41,6 @@ public class MergeLeftAntiJoin extends Join {
         super(leftOperation, rightOperation, terms);
     }
 
-    /**
-     * {@inheritDoc }
-     * the data sources array is a copy of the data sources that come from the
-     * left subtree
-     *
-     * @throws Exception
-     */
     @Override
     public void setExposedDataSources() throws Exception {
 

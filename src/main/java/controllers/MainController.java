@@ -538,7 +538,9 @@ public class MainController extends MainFrame {
 
         AtomicReference<Boolean> cancelService = new AtomicReference<>(false);
 
-        AsOperatorForm form = new AsOperatorForm(cancelService);
+        Cell cell_ = CellUtils.getActiveCell(cell).get();
+        
+        AsOperatorForm form = new AsOperatorForm(cancelService, cell_.getAlias());
 
         if (!cancelService.get()) {
             executeAsOperator(cell, form.getNewName());
@@ -1073,12 +1075,16 @@ public class MainController extends MainFrame {
         if (operationExpression instanceof BinaryExpression binaryExpression) {
             parents.add(binaryExpression.getSource2().getCell());
         }
-
+        
         operationExpression.setCell(new OperationCell(jCell, type, parents, operationExpression.getArguments(), operationExpression.getAlias()));
 
         OperationCell cell = operationExpression.getCell();
 
         cell.setAllNewTrees();
+        
+        if (!(operationExpression.getAlias().isEmpty()))
+            executeAsOperator(jCell, operationExpression.getAlias());
+
     }
 
     public static int getCurrentTableYPosition() {

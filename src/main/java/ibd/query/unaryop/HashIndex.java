@@ -10,9 +10,13 @@ import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
+import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
+import ibd.query.lookup.Element;
+import ibd.query.lookup.LiteralElement;
 import ibd.query.lookup.LookupFilter;
 import ibd.query.lookup.NoLookupFilter;
+import ibd.query.lookup.ReferencedElement;
 import ibd.query.lookup.SingleColumnLookupFilter;
 import ibd.table.ComparisonTypes;
 import java.util.ArrayList;
@@ -36,6 +40,8 @@ public class HashIndex extends UnaryOperation {
      */
     HashMap<String, List<Tuple>> tuples;
 
+    List<Tuple> constantTuples;
+
     /**
      * the list of conjunctive equality filters conditions that form the key of
      * the hash
@@ -47,6 +53,7 @@ public class HashIndex extends UnaryOperation {
      */
     LookupFilter unhashedFilters;
 
+    List<SingleColumnLookupFilter> hashedFilters2;
 
     /**
      *
@@ -56,7 +63,7 @@ public class HashIndex extends UnaryOperation {
     public HashIndex(Operation childOperation) throws Exception {
         super(childOperation);
     }
-    
+
     @Override
     public boolean canProcessDelegatedFilters() {
         return true;
@@ -78,9 +85,18 @@ public class HashIndex extends UnaryOperation {
     private void prepareHashColumns() throws Exception {
 
         hashedFilters = new ArrayList();
+        hashedFilters2 = new ArrayList();
         unhashedFilters = new NoLookupFilter();
         if (hasDelegatedfilters()) {
             LookupFilter joinFilter = parentOperation.getFilters();
+
+            if (hasSingleDisjunction(joinFilter)) {
+                CompositeLookupFilter rowFilter = transformDisjunctiveFilter((CompositeLookupFilter) joinFilter);
+                if (rowFilter != null) {
+                    joinFilter = rowFilter;
+                }
+
+            }
 
             prepareHashColumns(joinFilter);
 
@@ -89,7 +105,7 @@ public class HashIndex extends UnaryOperation {
     }
 
     //sets the list of columns that will be part of the hash keys
-    private void prepareHashColumns(LookupFilter filter) {
+    private void prepareHashColumns(LookupFilter filter) throws Exception {
         if (filter instanceof CompositeLookupFilter compositeLookupFilter) {
             if (compositeLookupFilter.getBooleanConnector() == CompositeLookupFilter.OR) {
                 return;
@@ -99,10 +115,30 @@ public class HashIndex extends UnaryOperation {
             }
         } else if (filter instanceof SingleColumnLookupFilter singleColumnLookupFilter) {
             if (singleColumnLookupFilter.getComparisonType() == ComparisonTypes.EQUAL) {
-                hashedFilters.add(singleColumnLookupFilter);
+                singleColumnLookupFilter = createFilter(singleColumnLookupFilter);
+                if (singleColumnLookupFilter != null) {
+                    hashedFilters.add(singleColumnLookupFilter);
+                }
             }
+
         }
 
+    }
+
+    private SingleColumnLookupFilter createFilter(SingleColumnLookupFilter singleColumnLookupFilter) throws Exception {
+        Element elem1 = singleColumnLookupFilter.getFirstElement();
+        Element elem2 = singleColumnLookupFilter.getSecondElement();
+        if (elem1 instanceof ColumnElement && (elem2 instanceof LiteralElement || elem2 instanceof ReferencedElement)) {
+            return singleColumnLookupFilter;
+        } else if (elem2 instanceof ColumnElement && (elem1 instanceof LiteralElement || elem1 instanceof ReferencedElement)) {
+            SingleColumnLookupFilter invertedFilter = new SingleColumnLookupFilter(
+                    singleColumnLookupFilter.getSecondElement(),
+                    ComparisonTypes.EQUAL,
+                    singleColumnLookupFilter.getFirstElement());
+            hashedFilters2.add(singleColumnLookupFilter);
+            return invertedFilter;
+        }
+        return null;
     }
 
     //Copies the unhashed filters into a new structure
@@ -122,13 +158,92 @@ public class HashIndex extends UnaryOperation {
             }
             return rowFilter;
         } else if (filter instanceof SingleColumnLookupFilter f) {
-            if (hashedFilters.contains(f)) {
+            if (hashedFilters2.contains(f)) {
                 return new NoLookupFilter();
             }
             return f;
         } else {
             return new NoLookupFilter();
         }
+    }
+
+    private boolean hasSingleDisjunction(LookupFilter filter) throws Exception {
+        if (!(filter instanceof CompositeLookupFilter compositeLookupFilter)) {
+            return false;
+        }
+
+        if (compositeLookupFilter.getBooleanConnector() == CompositeLookupFilter.AND) {
+            return false;
+        }
+
+        for (LookupFilter f : compositeLookupFilter.getFilters()) {
+            if (f instanceof CompositeLookupFilter) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    List<LookupFilter> nullFilters = new ArrayList();
+
+    private CompositeLookupFilter transformDisjunctiveFilter(CompositeLookupFilter compositeLookupFilter) throws Exception {
+
+        boolean alreadyFoundNonConstant = false;
+        CompositeLookupFilter rowFilter = new CompositeLookupFilter(CompositeLookupFilter.AND);
+        for (LookupFilter f : compositeLookupFilter.getFilters()) {
+            //LookupFilter filter = createConstantFilter(f);
+            if (hasConstantFilter(f)) {
+                //if (filter!=null) {
+                nullFilters.add(f);
+                continue;
+            }
+            if (alreadyFoundNonConstant) {
+                nullFilters.clear();
+                return null;
+            }
+
+            rowFilter.addFilter(f);
+            alreadyFoundNonConstant = true;
+
+        }
+
+        return rowFilter;
+    }
+
+    private boolean hasValidNullFilter(ColumnElement colElem, int compType, LiteralElement litElem) throws Exception {
+        Comparable value = litElem.getValue(null);
+        return true;
+        //return (value == null);
+    }
+
+    private boolean hasConstantFilter(LookupFilter f) {
+        SingleColumnLookupFilter filter = (SingleColumnLookupFilter) f;
+        Element elem1 = filter.getFirstElement();
+        Element elem2 = filter.getSecondElement();
+        if (elem1 instanceof ColumnElement && elem2 instanceof LiteralElement) {
+            return true;
+        }
+
+        if (elem2 instanceof ColumnElement && elem1 instanceof LiteralElement) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private LookupFilter createConstantFilter(LookupFilter f) throws Exception {
+        SingleColumnLookupFilter filter = (SingleColumnLookupFilter) f;
+        Element elem1 = filter.getFirstElement();
+        Element elem2 = filter.getSecondElement();
+        if (elem1 instanceof ColumnElement && elem2 instanceof LiteralElement) {
+            return f;
+        }
+
+        if (elem2 instanceof ColumnElement && elem1 instanceof LiteralElement) {
+            return new SingleColumnLookupFilter(elem2, ComparisonTypes.getSwitchedComparisonType(filter.getComparisonType()), elem1);
+        }
+
+        return null;
     }
 
     @Override
@@ -164,14 +279,17 @@ public class HashIndex extends UnaryOperation {
             //the hash is queried using as key the values of the hashed filter columns
             String key = "";
             for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
-                key += lookupFilter.getValue(null).toString();
+                Element elem2 = lookupFilter.getSecondElement();
+                key += elem2.getValue(null).toString();
             }
 
             List<Tuple> result = tuples.get(key);
             if (result != null) {
-                it = result.iterator();
+                //it = result.iterator();
+                it = new TwoListsIterator(constantTuples.iterator(), result.iterator());
             } else {
-                it = new ArrayList<Tuple>().iterator();
+                it = constantTuples.iterator();
+                //it = new ArrayList<Tuple>().iterator();
             }
         }
 
@@ -179,6 +297,7 @@ public class HashIndex extends UnaryOperation {
             //build hash, if one does not exist yet
             if (tuples == null) {
                 tuples = new HashMap();
+                constantTuples = new ArrayList();
                 long memoryUsed = 0;
                 try {
                     //accesses and indexes all tuples that come from the child operation
@@ -186,10 +305,27 @@ public class HashIndex extends UnaryOperation {
                     int tupleSize = childOperation.getTupleSize();
                     while (it.hasNext()) {
                         Tuple tuple = (Tuple) it.next();
-                        String key = "";
 
+                        boolean foundNullTuple = false;
+                        for (LookupFilter lookupFilter : nullFilters) {
+                            //ColumnElement colElem = (ColumnElement)lookupFilter.getFirstElement();
+                            //ColumnDescriptor col = colElem.getColumnDescriptor();
+                            //Comparable value = tuple.rows[col.getColumnLocation().rowIndex].getValue(col.getColumnLocation().colIndex);
+                            if (lookupFilter.match(tuple)) //if (value==null)
+                            {
+                                constantTuples.add(tuple);
+                                memoryUsed += tupleSize;
+                                break;
+                            }
+                        }
+                        if (foundNullTuple) {
+                            continue;
+                        }
+
+                        String key = "";
                         for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
-                            ColumnDescriptor col = lookupFilter.getColumnDescriptor();
+                            ColumnElement colElem = (ColumnElement) lookupFilter.getFirstElement();
+                            ColumnDescriptor col = colElem.getColumnDescriptor();
                             key += tuple.rows[col.getColumnLocation().rowIndex].getValue(col.getColumnLocation().colIndex).toString();
                         }
 
@@ -222,6 +358,28 @@ public class HashIndex extends UnaryOperation {
 
             }
             return null;
+        }
+
+    }
+
+    private class TwoListsIterator implements Iterator {
+
+        private final Iterator<Tuple> it1;
+        private final Iterator<Tuple> it2;
+
+        public TwoListsIterator(Iterator<Tuple> it1, Iterator<Tuple> it2) {
+            this.it1 = it1;
+            this.it2 = it2;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return it1.hasNext() || it2.hasNext();
+        }
+
+        @Override
+        public Tuple next() {
+            return it1.hasNext() ? it1.next() : it2.next();
         }
 
     }

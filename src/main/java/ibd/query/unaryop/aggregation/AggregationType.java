@@ -25,6 +25,8 @@ public class AggregationType {
     public final static int SUM = 5;
     public final static int FIRST = 6;
     public final static int LAST = 7;
+    public final static int COUNT_ALL = 8;
+    public final static int COUNT_NULL = 9;
 
     public ColumnDescriptor aggregateColumn;
 
@@ -65,6 +67,11 @@ public class AggregationType {
                 "FIRST";
             case LAST ->
                 "LAST";
+            case COUNT_ALL ->
+                "COUNT_ALL";
+            case COUNT_NULL ->
+                "COUNT_NULL";
+            
             default ->
                 "";
         };
@@ -91,6 +98,12 @@ public class AggregationType {
             aggregations.add(new AggregationType(sourceName, columnName, AggregationType.LAST));
         } else if (Utils.startsWithIgnoreCase(fixedArgument, "COUNT:")) {
             aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT));
+        }
+        else if (Utils.startsWithIgnoreCase(fixedArgument, "COUNT_ALL:")) {
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_ALL));
+        }
+        else if (Utils.startsWithIgnoreCase(fixedArgument, "COUNT_NULL:")) {
+            aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_NULL));
         }
         return aggregations;
     }
@@ -129,6 +142,12 @@ public class AggregationType {
             } 
             else if (Utils.startsWithIgnoreCase(argument, "SUM:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.SUM));
+            }
+            else if (Utils.startsWithIgnoreCase(argument, "COUNT_ALL:")) {
+                aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_ALL));
+            }
+            else if (Utils.startsWithIgnoreCase(argument, "COUNT_NULL:")) {
+                aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_NULL));
             }
         }
         return aggregations;

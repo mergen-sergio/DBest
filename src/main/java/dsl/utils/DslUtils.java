@@ -56,15 +56,27 @@ public class DslUtils {
             }
 
             OperationArity arity = OperationType.fromString(input.substring(0, endIndex).toLowerCase()).arity;
-            if ( arity== OperationArity.UNARY) {
+            if (arity == OperationArity.UNARY) {
                 return new UnaryExpression(input, tables);
-            }
-            else if (arity==OperationArity.NULLARY)
+            } else if (arity == OperationArity.NULLARY) {
                 return new NullaryExpression(input, tables);
-            
+            }
+
             return new BinaryExpression(input, tables);
         }
+        int endIndex = input.length() - 1;
 
+        if (input.contains("<"))
+            endIndex = input.indexOf('<');
+            
+        if (input.contains("[")) {
+            endIndex = input.indexOf('[');
+        }
+
+        OperationType type = OperationType.fromString(input.substring(0, endIndex).toLowerCase());
+        if (type!=null && type.arity == OperationArity.NULLARY) {
+            return new NullaryExpression(input, tables);
+        }
         if (DslController.containsVariable(clearTableName(input))) {
             return expressionRecognizer(DslController.getVariableContent(input), tables);
         }
@@ -72,9 +84,10 @@ public class DslUtils {
         if (MainController.getTables().get(clearTableName(input)) != null) {
             return new Relation(input);
         }
-        
-        if (tables!=null && tables.get(clearTableName(input))!= null)
+
+        if (tables != null && tables.get(clearTableName(input)) != null) {
             return new Relation(input);
+        }
 
         throw new InputException(ConstantController.getString("dsl.error.sourceNotFound") + ": " + input);
 
@@ -201,7 +214,7 @@ public class DslUtils {
         List<Cell> cells = tree.getLeaves();
         for (Cell cell : cells) {
             if (cell instanceof TableCell tableCell) {
-                uniqueLines.add("import " + tableCell.getHeaderFile().getAbsolutePath()+";");
+                uniqueLines.add("import " + tableCell.getHeaderFile().getAbsolutePath() + ";");
             }
         }
 
@@ -220,33 +233,34 @@ public class DslUtils {
             raw = operationCell.getType().dslSyntax;
 
             int in = raw.indexOf('[');
-            if (in==-1)
+            if (in == -1) {
                 in = raw.indexOf('(');
-            String toBeReplaced = raw.substring(0,in);
+            }
+            String toBeReplaced = raw.substring(0, in);
             String replacement = toBeReplaced;
-            if (!operationCell.getAlias().isBlank())
-                replacement = replacement+":"+operationCell.getAlias();
-            
+            if (!operationCell.getAlias().isBlank()) {
+                replacement = replacement + ":" + operationCell.getAlias();
+            }
+
             raw = raw.replace(toBeReplaced, replacement);
-            
+
             raw = raw.replace("[args]", OperationType.OPERATIONS_WITHOUT_FORM.contains(operationCell.getType()) ? ""
                     : operationCell.getArguments().toString());
 
             if (operationCell.getArity() == OperationArity.UNARY) {
                 raw = raw.replace("source", generateExpression(cell.getParents().get(0)));
-            } else if (operationCell.getArity() == OperationArity.BINARY){
+            } else if (operationCell.getArity() == OperationArity.BINARY) {
 
                 raw = raw.replace("source1", generateExpression(cell.getParents().get(0)));
                 raw = raw.replace("source2", generateExpression(cell.getParents().get(1)));
-            }
-            else {
-            
+            } else {
+
             }
 
         } else if (cell instanceof TableCell tableCell) {
             String fileName = tableCell.getTable().getHeaderName();
-            String alias = tableCell.getName();
-            if (fileName.equals(alias)) {
+            String alias = tableCell.getAlias();
+            if (fileName.equals(alias) || alias.isBlank()) {
                 raw = fileName;
             } else {
                 raw = fileName + ":" + alias;

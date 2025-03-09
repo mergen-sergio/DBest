@@ -41,20 +41,13 @@ public class Filter extends UnaryOperation {
         this.filter = filter;
     }
 
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
-
-        //sets the tuple index of the column based filters
-        //setTupleIndex(filter);
-    }
 
     @Override
     public LookupFilter getFilters() {
         return filter;
     }
 
-    ;
+    
 
     
     private void setFilterValue(LookupFilter filter, List<Tuple> processedTuples) {

@@ -21,6 +21,8 @@ import java.util.List;
 public abstract class LookupJoin extends Join {
     //the filter that needs to be performed over the right side operation.
     protected CompositeLookupFilter joinFilter;
+    
+    protected boolean hasNoFilters = false;
 
     /**
      *
@@ -35,6 +37,10 @@ public abstract class LookupJoin extends Join {
 
     @Override
     public boolean useLeftSideLookups() {
+        return true;
+    }
+    
+    public boolean hasNoFilters() {
         return true;
     }
 
@@ -53,10 +59,12 @@ public abstract class LookupJoin extends Join {
     //each time a left-side tuple performs a lookup on the right side, ths filter is reused. 
     //Only the look-up value coming from the left is replaced, in the moment of the lookup.
     private void createJoinFilter() throws Exception {
+        hasNoFilters = true;
         joinFilter = new CompositeLookupFilter(CompositeLookupFilter.AND);
         for (JoinTerm term : joinPredicate.getTerms()) {
             SingleColumnLookupFilter f = new SingleColumnLookupFilter(new ColumnElement(term.getRightColumnDescriptor()), ComparisonTypes.EQUAL, new LiteralElement(0));
             joinFilter.addFilter(f);
+            hasNoFilters = false;
         }
     }
 

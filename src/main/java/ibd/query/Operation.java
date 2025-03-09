@@ -179,7 +179,7 @@ public abstract class Operation {
         if (!runFromHere) {
             checkFilters();
         }
-        
+        prepareIndexes();
        
     }
 
@@ -352,11 +352,10 @@ public abstract class Operation {
      * @return the found index or -1 if no index was found
      * @throws Exception
      */
-    public int getRowIndex(String tableName) throws Exception {
+    public int getRowIndex(String tableName, ReferedDataSource[] dataSources_) throws Exception {
         if (tableName == null) {
             return 0;
         } else {
-            ReferedDataSource[] dataSources_ = getConnectedDataSources();
             for (int i = 0; i < dataSources_.length; i++) {
                 if (dataSources_[i].alias.equals(tableName)) {
                     return i;
@@ -374,7 +373,22 @@ public abstract class Operation {
      * @return the data source refered by the alias
      * @throws Exception
      */
-    public ReferedDataSource getDataSource(String tableName) throws Exception {
+    public ReferedDataSource getExposedDataSource(String tableName) throws Exception {
+        if (tableName == null) {
+            return null;
+        } else {
+            ReferedDataSource[] dataSources_ = getExposedDataSources();
+            for (int i = 0; i < dataSources_.length; i++) {
+                if (dataSources_[i].alias.equals(tableName)) {
+                    return dataSources_[i];
+                }
+
+            }
+        }
+        return null;
+    }
+    
+    public ReferedDataSource getConnectedDataSource(String tableName) throws Exception {
         if (tableName == null) {
             return null;
         } else {
@@ -439,12 +453,14 @@ public abstract class Operation {
 
         for (int i = 0; i < processedOperations.size(); i++) {
             Operation processedOperation = processedOperations.get(i);
+            try{
             processedOperation.setColumnLocation(columnDescriptor);
             ColumnLocation auxColumnLocation = columnDescriptor.getColumnLocation();
             if (auxColumnLocation != null) {
                 auxColumnLocation.tupleIndex = i;
                 return true;
             }
+            }catch(Exception e){}
         }
         return false;
     }
@@ -473,30 +489,33 @@ public abstract class Operation {
      */
     public void setColumnLocation(ColumnDescriptor columnDescriptor) throws Exception {
 
-        ColumnLocation colLoc = new ColumnLocation();
+        ReferedDataSource[] dataSources_ = getExposedDataSources();
+        ColumnLocation colLoc = getColumnLocation(columnDescriptor, dataSources_);
+        columnDescriptor.setColumnLocation(colLoc);
+    }
+    
+    protected ColumnLocation getColumnLocation(ColumnDescriptor columnDescriptor, ReferedDataSource[] dataSources_) throws Exception {
 
+        ColumnLocation colLoc = new ColumnLocation();
         if (columnDescriptor.getTableName() == null) {
             colLoc.tupleIndex = 0;
             colLoc.rowIndex = 0;
-            ReferedDataSource[] dataSources_ = getConnectedDataSources();
             Column col = dataSources_[0].prototype.getColumn(columnDescriptor.getColumnName());
             if (col==null)
                 throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
             colLoc.colIndex = col.index;
-            columnDescriptor.setColumnLocation(colLoc);
         } else {
-            int rowIndex = getRowIndex(columnDescriptor.getTableName());
+            int rowIndex = getRowIndex(columnDescriptor.getTableName(), dataSources_);
             if (rowIndex != -1) {
-                Column col = getConnectedDataSources()[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
+                Column col = dataSources_[rowIndex].prototype.getColumn(columnDescriptor.getColumnName());
                 if (col==null)
                     throw new Exception("Error in operation "+this+".\nColumn " + columnDescriptor.getColumnName()+" not found.");
                 colLoc.rowIndex = rowIndex;
                 colLoc.colIndex = col.index;
-                columnDescriptor.setColumnLocation(colLoc);
             }
             else throw new Exception("Error in operation "+this+".\nTable " + columnDescriptor.getTableName()+" not found.");
         }
-
+        return colLoc;
     }
 
     /**
@@ -646,11 +665,11 @@ public abstract class Operation {
         return childOperations;
     }
     
-    protected void prepareFromTopDown() throws Exception{
+    protected void prepareIndexes() throws Exception{
          setTupleIndex(getFilters());
     }
     
-    private void prepareAllFromTopDown() throws Exception{
+    private void prepareAllFromTopDown2() throws Exception{
     Stack<Operation> stack = new Stack<>();
         Operation current = this;
 
@@ -664,11 +683,27 @@ public abstract class Operation {
 
             // Process the node
             current = stack.pop();
-            current.prepareFromTopDown();
+            current.prepare();
 
             // Move to the right child, if any
             List<Operation> children = current.getChildOperations();
             current = (children != null && children.size() > 1) ? children.get(1) : null;
+        }
+    }
+    
+    private void prepareAllFromTopDown() throws Exception {
+        
+        Stack<Operation> stack = new Stack<>();
+        stack.push(this);
+        
+        while (!stack.isEmpty()) {
+            Operation current = stack.pop();
+            current.prepare();
+            
+            List<Operation> children = current.getChildOperations();
+            for (int i = children.size() - 1; i >= 0; i--) {
+                stack.push(children.get(i));
+            }
         }
     }
     
@@ -730,7 +765,7 @@ public abstract class Operation {
 
         prepareAllFromTopDown();
         //prepares the operations from the query tree
-        prepare();
+        //prepare();
         }
         catch(Exception ex){
             runFromHere = false;

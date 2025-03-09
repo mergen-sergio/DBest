@@ -72,7 +72,7 @@ public class Test {
     public static void main(String[] args) {
         try {
 
-            boolean newDatabase = false;
+            boolean newDatabase = true;
 
             RowSchema keySchema = new RowSchema(3);
             keySchema.addLongDataType();
@@ -84,7 +84,7 @@ public class Test {
 
             PersistentPageFile p = new PersistentPageFile(4096, Paths.get("c:\\teste\\mtree\\mtree"), newDatabase);
             BPlusTreeFileGeneric tree = new BPlusTreeFileGeneric(p, keySchema, valueSchema);
-
+            tree.open();
             Test test = new Test();
 
             if (newDatabase) {

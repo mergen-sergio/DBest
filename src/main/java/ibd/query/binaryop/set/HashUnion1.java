@@ -81,20 +81,13 @@ public class HashUnion1 extends Set {
     }
 
     @Override
-    public void setConnectedDataSources() throws Exception {
-
-        connectedDataSources = new ReferedDataSource[1];
-        connectedDataSources[0] = new ReferedDataSource();
-        connectedDataSources[0].alias = alias;
-
-        connectedDataSources[0].prototype = setPrototype();
-
-    }
-    
-    @Override
     public void setExposedDataSources() throws Exception {
 
-        dataSources = connectedDataSources;
+        dataSources = new ReferedDataSource[1];
+        dataSources[0] = new ReferedDataSource();
+        dataSources[0].alias = alias;
+
+        dataSources[0].prototype = setPrototype();
 
     }
 

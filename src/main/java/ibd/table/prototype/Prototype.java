@@ -91,8 +91,9 @@ public class Prototype implements Iterable<Column> {
             return;
         }
         Column ori = columnsDic.get(c.getName());
-
+        
         columns.set(ori.index, c);
+        
         c.index = ori.index;
         columnsDic.put(c.getName(), c);
     }

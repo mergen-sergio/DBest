@@ -103,7 +103,6 @@ public class HashRightAntiJoin extends HashJoin {
             }
             
             //iterate through the right side tuples that have NO matches
-            tupleTraverser = new TupleTraverser(tuples);
             while (tupleTraverser.hasNext()) {
                 //sgbd.info.Query.COMPARE_JOIN++;
                 Tuple curTuple2 = (Tuple) tupleTraverser.nextTuple();

@@ -9,6 +9,8 @@ import java.util.Arrays;
 import ibd.table.prototype.DataRow;
 import ibd.table.prototype.LinkedDataRow;
 import ibd.table.prototype.query.fields.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A tuple is a concatenation of data rows. It is produced as data rows are
@@ -56,6 +58,24 @@ public class Tuple implements Comparable<Tuple> {
         rows = new LinkedDataRow[t.rows.length];
         int count = 0;
         for (LinkedDataRow sourceTuple : t.rows) {
+            rows[count] = sourceTuple;
+            count++;
+        }
+
+    }
+    
+    
+    public void setSourceRows(List<Tuple> tuples) {
+        List<LinkedDataRow> rowList = new ArrayList();
+        for (Tuple tuple : tuples) {
+            for (LinkedDataRow row : tuple.rows) {
+                rowList.add(row);
+            }
+        }
+        
+        rows = new LinkedDataRow[rowList.size()];
+        int count = 0;
+        for (LinkedDataRow sourceTuple : rowList) {
             rows[count] = sourceTuple;
             count++;
         }

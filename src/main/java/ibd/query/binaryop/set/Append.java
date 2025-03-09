@@ -5,9 +5,9 @@
  */
 package ibd.query.binaryop.set;
 
-import ibd.query.ColumnDescriptor;
 import ibd.query.Operation;
 import ibd.query.ReferedDataSource;
+import ibd.query.SingleSource;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
@@ -21,7 +21,7 @@ import java.util.List;
  *
  * @author Sergio
  */
-public class Append extends Set {
+public class Append extends Set implements SingleSource{
 
     public Append(Operation leftOperation, Operation rightOperation) throws Exception {
         super(leftOperation, rightOperation);
@@ -68,19 +68,13 @@ public class Append extends Set {
     }
 
     @Override
-    public void setConnectedDataSources() throws Exception {
-
-        connectedDataSources = new ReferedDataSource[1];
-        connectedDataSources[0] = new ReferedDataSource();
-        connectedDataSources[0].alias = alias;
-
-        connectedDataSources[0].prototype = setPrototype();
-    }
-    
-    @Override
     public void setExposedDataSources() throws Exception {
 
-        dataSources = connectedDataSources;
+        dataSources = new ReferedDataSource[1];
+        dataSources[0] = new ReferedDataSource();
+        dataSources[0].alias = alias;
+
+        dataSources[0].prototype = setPrototype();
     }
 
     /**

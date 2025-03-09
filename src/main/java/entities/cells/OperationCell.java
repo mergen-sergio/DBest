@@ -21,6 +21,7 @@ import gui.frames.main.MainFrame;
 import ibd.query.Operation;
 import ibd.query.ReferedDataSource;
 import ibd.query.SingleSource;
+import ibd.query.unaryop.Reference;
 import operations.IOperator;
 
 import java.lang.reflect.Constructor;
@@ -88,7 +89,7 @@ public final class OperationCell extends Cell {
     }
 
     public void editOperation(mxCell jCell) {
-        if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
+        if (!(this.hasBeenInitialized || type==OperationType.CONDITION || type==OperationType.REFERENCE)) {
             return;
         }
 
@@ -285,6 +286,15 @@ public final class OperationCell extends Cell {
 
     public String getErrorMessage() {
         return this.hasError() ? this.errorMessage : ConstantController.getString("cell.operationCell.error.noError");
+    }
+    
+    public List<Column> getColumns() {
+            
+        if (operator!=null && operator instanceof Reference){
+            setColumns();
+        }
+        return this.columns;
+        
     }
 
     public void setColumns() {

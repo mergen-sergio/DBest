@@ -179,18 +179,39 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
 //                break;
 //            }
 //        }
-        int i = node.degree - 1;
-        int left = 0;
-        int right = node.degree - 2;
-        while (left <= right) {
-            int mid = left + (right - left) / 2;
-            if (keys[mid].compareTo(key) > 0) {
-                i = mid;
-                right = mid - 1;
-            } else {
-                left = mid + 1;
-            }
+//        int i = node.degree - 1;
+//        int left = 0;
+//        int right = node.degree - 2;
+//        while (left <= right) {
+//            int mid = left + (right - left) / 2;
+//            if (keys[mid].compareTo(key) > 0) {
+//                i = mid;
+//                right = mid - 1;
+//            } else {
+//                left = mid + 1;
+//            }
+//        }
+        int left = 0, right = node.degree - 2; // Last key index is degree - 2
+int result = -1; // Store the first occurrence of the key
+
+while (left <= right) {
+    int mid = left + (right - left) / 2;
+    int cmp = key.compareTo(keys[mid]);
+
+    if (cmp <= 0) {  
+        // Key is equal or smaller, but we want the first occurrence
+        if (cmp == 0) {
+            result = mid; // Store potential first occurrence
         }
+        right = mid - 1; // Keep searching to the left
+    } else {
+        left = mid + 1; // Move right
+    }
+}
+
+// If found, return the first occurrence; otherwise, return the insertion index
+int i = (result != -1) ? result : left;
+
 
         /* Return node if it is a LeafNode object,
 		   otherwise repeat the search function a level down */

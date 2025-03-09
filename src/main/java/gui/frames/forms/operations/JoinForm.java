@@ -180,7 +180,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
             if (leftChild.getColumns().stream().anyMatch(column -> column.SOURCE.
                     equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))) {
 
-                setColumns(comboBoxColumn, comboBoxSource, leftChild);
+                setColumns(comboBoxColumn, comboBoxSource, leftChild.getColumns());
 
             }
         }
@@ -188,7 +188,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
             if (rightChild != null && rightChild.getColumns().stream().anyMatch(column -> column.SOURCE.
                     equals(Objects.requireNonNull(comboBoxSource2.getSelectedItem()).toString()))) {
 
-                setColumns(comboBoxColumn2, comboBoxSource2, rightChild);
+                setColumns(comboBoxColumn2, comboBoxSource2, rightChild.getColumns());
 
             }
         }

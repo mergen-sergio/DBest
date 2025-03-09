@@ -108,7 +108,7 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
     private Column createColumn(ColumnDescriptor colDesc) throws Exception {
         //ColumnLocation location = colDesc.getColumnLocation();
         //ReferedDataSource[] childSources = childOperation.getDataSources();
-        ReferedDataSource dataSource = childOperation.getDataSource(colDesc.getTableName());
+        ReferedDataSource dataSource = childOperation.getExposedDataSource(colDesc.getTableName());
         Column col = dataSource.prototype.getColumn(colDesc.getColumnName());
 
         //Column col = childSources[location.rowIndex].prototype.getColumn(location.colIndex); 
@@ -228,12 +228,18 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
         //the iterator over the child operation
         Iterator<Tuple> tuples;
         List<Integer> groupedValues[];
+        int countNulls[];
+        int countAll;
+
 
         public AggregationIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
             groupedValues = new List[aggregationTypes.size()];
+            countNulls = new int[aggregationTypes.size()];
+            countAll = 0;
             for (int i = 0; i < groupedValues.length; i++) {
                 groupedValues[i] = new ArrayList();
+                countNulls[i] = 0;
             }
             tuples = childOperation.lookUp(processedTuples, false);//returns all tuples from the child operation 
         }
@@ -252,6 +258,9 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
                     Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
                     if (aggregatedValue!=null)
                         groupedValues[i].add((Integer) aggregatedValue);
+                    else {
+                            countNulls[i]++;
+                        }
                 }
             }
             if (groupedValues[0].isEmpty()) {
@@ -259,7 +268,7 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
             }
             Tuple tuple = new Tuple();
             LinkedDataRow dataRow = new LinkedDataRow(prototype, false);
-            aggregate(dataRow, aggregationTypes, groupedValues);
+            aggregate(dataRow, aggregationTypes, groupedValues, countNulls, countAll);
             //dataRow.setMetadata(prototype);
             tuple.setSingleSourceRow(alias, dataRow);
             groupedValues[0].clear();
@@ -269,7 +278,7 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
 
         }
 
-        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Integer> list[]) {
+        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Integer> list[], int[] countNulls, int countAll) {
             for (int i = 0; i < list.length; i++) {
 
                 switch (aggregationTypes.get(i).type) {
@@ -293,6 +302,12 @@ public class AllAggregation extends UnaryOperation implements SingleSource{
                     }
                     case AggregationType.LAST -> {
                         row.setValue(i + 1, last(list[i]));
+                    }
+                    case AggregationType.COUNT_ALL -> {
+                        row.setValue(i + 1, countAll);
+                    }
+                    case AggregationType.COUNT_NULL -> {
+                        row.setValue(i + 1, countNulls[i]);
                     }
                 }
             }

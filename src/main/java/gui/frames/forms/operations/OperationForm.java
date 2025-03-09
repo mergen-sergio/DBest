@@ -113,7 +113,7 @@ public abstract class OperationForm extends FormBase {
         java.util.List<Column> columns = setLeftComboBoxColumns(cell);
         setComboBoxData(columns, comboBoxSource, comboBoxColumn);
 
-        comboBoxSource.addActionListener(actionEvent -> setColumns(comboBoxColumn, comboBoxSource, leftChild));
+        comboBoxSource.addActionListener(actionEvent -> setColumns(comboBoxColumn, comboBoxSource, columns));
 
     }
 
@@ -173,13 +173,12 @@ public abstract class OperationForm extends FormBase {
 //        pack();
 //
 //    }
-    protected void setColumns(JComboBox<String> comboBox, JComboBox<String> comboBoxS, Cell parent) {
+    protected void setColumns(JComboBox<String> comboBox, JComboBox<String> comboBoxS, List<Column> columns) {
         comboBox.removeAllItems();
         if (comboBoxS.getSelectedItem() == null) {
             return;
         }
         String selectedItem = Objects.requireNonNull(comboBoxS.getSelectedItem()).toString();
-        List<Column> columns = parent.getColumns();
 
         for (Column column : columns) {
             if (column.SOURCE.equals(selectedItem)) {

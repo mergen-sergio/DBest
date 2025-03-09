@@ -53,7 +53,9 @@ public class IndexScan extends SourceOperation {
      */
     List<SingleColumnLookupFilter> fastFilters;
 
-    HashMap<SingleColumnLookupFilter,SingleColumnLookupFilter> modifiedFilters;
+    List<SingleColumnLookupFilter> fastDisjunctiveFilters;
+
+    HashMap<SingleColumnLookupFilter, SingleColumnLookupFilter> modifiedFilters;
 
     /**
      * the row to be used as a parameter to the efficient table lookup. It must
@@ -101,7 +103,7 @@ public class IndexScan extends SourceOperation {
         super.setExposedDataSources();
         dataSources[0].prototype = table.getPrototype();
     }
-    
+
     @Override
     public void setConnectedDataSources() throws Exception {
         super.setConnectedDataSources();
@@ -136,7 +138,14 @@ public class IndexScan extends SourceOperation {
             //builds a preliminary list of fast filters
             fastFilters = new ArrayList();
             modifiedFilters = new HashMap();
-            
+
+//            if (hasSingleDisjunction(joinFilter)) {
+//                CompositeLookupFilter rowFilter = transformDisjunctiveFilter((CompositeLookupFilter) joinFilter);
+//                if (rowFilter != null) {
+//                    joinFilter = rowFilter;
+//                }
+//
+//            }
             fillFastFilters(joinFilter);
 
             // Identify the columns used by the fast filters
@@ -181,11 +190,13 @@ public class IndexScan extends SourceOperation {
             List<SingleColumnLookupFilter> unnModifiedFastFilters = new ArrayList();
             for (SingleColumnLookupFilter fastFilter : fastFilters) {
                 SingleColumnLookupFilter originalFilter = modifiedFilters.get(fastFilter);
-                if (originalFilter!=null)
+                if (originalFilter != null) {
                     unnModifiedFastFilters.add(originalFilter);
-                else unnModifiedFastFilters.add(fastFilter);
+                } else {
+                    unnModifiedFastFilters.add(fastFilter);
+                }
             }
-            
+
             //fills the slow Filter with the lookup filters that are not part of the fast Filters list
             slowLookupFilter = fillSlowFilter(parentOperation.getFilters(), unnModifiedFastFilters);
         }
@@ -224,6 +235,77 @@ public class IndexScan extends SourceOperation {
 
     }
 
+    private boolean hasSingleDisjunction(LookupFilter filter) throws Exception {
+        if (!(filter instanceof CompositeLookupFilter compositeLookupFilter)) {
+            return false;
+        }
+
+        if (compositeLookupFilter.getBooleanConnector() == CompositeLookupFilter.AND) {
+            return false;
+        }
+
+        for (LookupFilter f : compositeLookupFilter.getFilters()) {
+            if (f instanceof CompositeLookupFilter) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    SingleColumnLookupFilter nullFilter;
+
+    private CompositeLookupFilter transformDisjunctiveFilter(CompositeLookupFilter compositeLookupFilter) throws Exception {
+
+        boolean foundNonNullTerm = false;
+        CompositeLookupFilter rowFilter = new CompositeLookupFilter(CompositeLookupFilter.AND);
+        for (LookupFilter f : compositeLookupFilter.getFilters()) {
+            SingleColumnLookupFilter filter = (SingleColumnLookupFilter) f;
+            Element elem1 = filter.getFirstElement();
+            Element elem2 = filter.getSecondElement();
+            int compType = filter.getComparisonType();
+            if (elem1 instanceof ColumnElement colElem && elem2 instanceof LiteralElement litElem) {
+                nullFilter = createNullFilter(colElem, compType, litElem);
+                if (nullFilter == null) {
+                    return null;
+                } else {
+                    if (foundNonNullTerm) {
+                        return null;
+                    }
+                    rowFilter.addFilter(f);
+                    foundNonNullTerm = true;
+                }
+            } else if (elem2 instanceof ColumnElement colElem && elem1 instanceof LiteralElement litElem) {
+                nullFilter = createNullFilter(colElem, compType, litElem);
+                nullFilter = new SingleColumnLookupFilter(colElem, compType, litElem);
+                if (nullFilter == null) {
+                    return null;
+                } else {
+                    if (foundNonNullTerm) {
+                        return null;
+                    }
+                    rowFilter.addFilter(f);
+                    foundNonNullTerm = true;
+                }
+            }
+
+        }
+        return rowFilter;
+    }
+
+    private SingleColumnLookupFilter createNullFilter(ColumnElement colElem, int compType, LiteralElement litElem) throws Exception {
+        Comparable value = litElem.getValue(null);
+        if (value == null) {
+            List<String> list = new ArrayList();
+            list.add(colElem.getColumnDescriptor().getColumnName());
+            List result = table.getPrototype().pKPrefix(list);
+            if (result.isEmpty()) {
+                return null;
+            }
+            return new SingleColumnLookupFilter(colElem, compType, litElem);
+        }
+        return null;
+    }
+
     //fills the list of slow filters
     private LookupFilter fillSlowFilter(LookupFilter filter, List<SingleColumnLookupFilter> unnModifiedFastFilters) throws Exception {
 
@@ -252,8 +334,8 @@ public class IndexScan extends SourceOperation {
         }
     }
 
-    @Override
-    public String toString() {
+@Override
+public String toString() {
         return "[" + alias + "] Index Scan";
     }
 
@@ -264,12 +346,12 @@ public class IndexScan extends SourceOperation {
      * @return an iterator that performs an index scan over a table
      */
     @Override
-    public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
+public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {
         return new IndexScanIterator(processedTuples, withFilterDelegation);
     }
 
     @Override
-    public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
+public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
         if (canLookup) {
             //sgbd.info.Query.PK_SEARCH++;
             //the lookup row is filled with values from the lookup filters
@@ -303,84 +385,85 @@ public class IndexScan extends SourceOperation {
     }
 
     @Override
-    public void close() throws Exception {
+public void close() throws Exception {
     }
 
     @Override
-    public Map<String, List<String>> getContentInfo() {
+public Map<String, List<String>> getContentInfo() {
         HashMap<String, List<String>> map = new LinkedHashMap<>();
         map.put(alias, new ArrayList<>(columns));
         return map;
-    }
+
+}
 
     /**
      * the class that produces resulting tuples from an index scan
      */
     public class IndexScanIterator extends UnpagedOperationIterator {
 
-        //the iterator over the child operation
-        Iterator<LinkedDataRow> iterator;
+    //the iterator over the child operation
+    Iterator<LinkedDataRow> iterator;
 
-        public IndexScanIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
-            super(processedTuples, withFilterDelegation, getDelegatedFilters());
+    public IndexScanIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        super(processedTuples, withFilterDelegation, getDelegatedFilters());
 //          
 
-            //the lookup filters from the parent were already divided into fast and slos filters.
-            //now its time to use them
-            try {
+        //the lookup filters from the parent were already divided into fast and slos filters.
+        //now its time to use them
+        try {
 
-                //if there exists fast filters
-                if (canLookup) {
-                    ibd.query.QueryStats.PK_SEARCH++;
-                    //the lookup row is filled with values from the fast filters
-                    for (SingleColumnLookupFilter filter : fastFilters) {
-                        fastLookupRow.setValue(filter.getColumnDescriptor().getColumnLocation().colIndex, filter.getSecondElement().getValue(null));
-                    }
-
-                    //the lookup occurs
-                    iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
-                    return;
-
+            //if there exists fast filters
+            if (canLookup) {
+                ibd.query.QueryStats.PK_SEARCH++;
+                //the lookup row is filled with values from the fast filters
+                for (SingleColumnLookupFilter filter : fastFilters) {
+                    fastLookupRow.setValue(filter.getColumnDescriptor().getColumnLocation().colIndex, filter.getSecondElement().getValue(null));
                 }
 
-                //if it gets here, no fast filters exist, so we need to scan the entire table
-                //In this case, either all filters are slow or there are no filters
-                if (slowLookupFilter instanceof NoLookupFilter) {
-                    //if no filter needs to be performed
-                    iterator = table.getAllRecordsIterator();
-                    //iterator = table.getAllRecords().iterator();
-                    return;
-                }
-                //there exists slow filters to be satisfied
-                //the scan has to traverse the entire table and resolve the filters as the rows are accessed
-                iterator = table.getFilteredRecordsIterator(slowLookupFilter);
-                //iterator = table.getFilteredRecords(slowLookupFilter).iterator();
-
-            } catch (Exception ex) {
-            }
-
-        }
-
-        /**
-         * {@inheritDoc }
-         *
-         * @return
-         */
-        @Override
-        protected Tuple findNextTuple() {
-
-            while (iterator.hasNext()) {
-                LinkedDataRow row = iterator.next();
-                Tuple tuple = new Tuple();
-                //the resulting tuple contains a single row taken from the table
-                tuple.setSingleSourceRow(dataSources[0].alias, row);
-                //no filters need to be applied. They were already processed, wither as fast or slow filters.
-                return tuple;
+                //the lookup occurs
+                iterator = table.getPKFilteredRecordsIterator(fastLookupRow, slowLookupFilter, compType);
+                return;
 
             }
 
-            return null;
+            //if it gets here, no fast filters exist, so we need to scan the entire table
+            //In this case, either all filters are slow or there are no filters
+            if (slowLookupFilter instanceof NoLookupFilter) {
+                //if no filter needs to be performed
+                iterator = table.getAllRecordsIterator();
+                //iterator = table.getAllRecords().iterator();
+                return;
+            }
+            //there exists slow filters to be satisfied
+            //the scan has to traverse the entire table and resolve the filters as the rows are accessed
+            iterator = table.getFilteredRecordsIterator(slowLookupFilter);
+            //iterator = table.getFilteredRecords(slowLookupFilter).iterator();
+
+        } catch (Exception ex) {
         }
 
     }
+
+    /**
+     * {@inheritDoc }
+     *
+     * @return
+     */
+    @Override
+    protected Tuple findNextTuple() {
+
+        while (iterator.hasNext()) {
+            LinkedDataRow row = iterator.next();
+            Tuple tuple = new Tuple();
+            //the resulting tuple contains a single row taken from the table
+            tuple.setSingleSourceRow(dataSources[0].alias, row);
+            //no filters need to be applied. They were already processed, wither as fast or slow filters.
+            return tuple;
+
+        }
+
+        return null;
+    }
+
+}
 }

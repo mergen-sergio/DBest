@@ -74,4 +74,21 @@ public class Column extends Metadata {
                 + Short.BYTES;
     }
 
+    
+    public static Column copyColumn(Column col, String colName){
+    Column newCol = null;
+        switch (col.getType()) {
+            case Column.INTEGER_TYPE ->
+                newCol = new IntegerColumn(colName);
+            case Column.STRING_TYPE ->
+                newCol = new StringColumn(colName);
+            case Column.LONG_TYPE ->
+                newCol = new LongColumn(colName);
+            case Column.DOUBLE_TYPE ->
+                newCol = new DoubleColumn(colName);
+            case Column.FLOAT_TYPE ->
+                newCol = new FloatColumn(colName);
+        }
+        return newCol;
+    }
 }

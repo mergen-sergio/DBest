@@ -124,13 +124,13 @@ public class DslController {
             //tableName = path.substring(path.lastIndexOf("/") + 1, path.indexOf(FileType.HEADER.extension));
         }
 
-        String unnamedImport = importStatement.substring(0, importStatement.indexOf(FileType.HEADER.extension) + 5);
-
-        if (!unnamedImport.equals(importStatement)) {
-
-            tableName = importStatement.substring(importStatement.indexOf(FileType.HEADER.extension) + 7);
-
-        }
+//        String unnamedImport = importStatement.substring(0, importStatement.indexOf(FileType.HEADER.extension) + 5);
+//
+//        if (!unnamedImport.equals(importStatement)) {
+//
+//            tableName = importStatement.substring(importStatement.indexOf(FileType.HEADER.extension) + 7);
+//
+//        }
 
         if (MainController.getTables().containsKey(DslUtils.clearTableName(tableName))) {
             return;

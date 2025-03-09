@@ -136,6 +136,16 @@ public class LogicalOr extends BinaryOperation implements SingleSource{
         return new LogicalOrIterator(processedTuples, withFilterDelegation);
     }
 
+    @Override
+    public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        
+        LogicalOrIterator it = new LogicalOrIterator(processedTuples, withFilterDelegation);
+        if (!it.hasNext()) return false;
+        Tuple tuple = it.next();
+        return (tuple.rows[0].getBoolean(colName));
+    }
+    
+    
 //    @Override
 //    public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
 //        

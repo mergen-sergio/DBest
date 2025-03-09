@@ -149,8 +149,12 @@ public class NestedLoopLeftJoin extends LookupJoin {
                         rightTuples = rightOperation.lookUp(processedTuples, true);
                     }
                     else rightTuples = Collections.emptyIterator();
+                    
+                    processedTuples.remove(processedTuples.size() - 1);
                 }
 
+                processedTuples.add(currentLeftTuple);
+                
                 //iterate through the right side tuples that satisfy the lookup
                 while (rightTuples.hasNext()) {
                     Tuple curTuple2 = (Tuple) rightTuples.next();
@@ -163,6 +167,7 @@ public class NestedLoopLeftJoin extends LookupJoin {
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
 
                     foundJoin = true;
+                    processedTuples.remove(processedTuples.size() - 1);
                     return tuple;
 
                 }

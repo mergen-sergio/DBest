@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 public class Group implements IOperator {
 
-    public static final List<String> PREFIXES = List.of("MIN:", "MAX:", "AVG:", "COUNT:", "FIRST:", "LAST:", "SUM:");
+    public static final List<String> PREFIXES = List.of("MIN:", "MAX:", "AVG:", "COUNT_ALL:", "COUNT_NULL:", "COUNT:", "FIRST:", "LAST:", "SUM:");
 
     @Override
     public void executeOperation(mxCell jCell, List<String> arguments, String alias) {
@@ -107,7 +107,13 @@ public class Group implements IOperator {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.MIN));
             } else if (Utils.startsWithIgnoreCase(argument, "AVG:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.AVG));
-            } else if (Utils.startsWithIgnoreCase(argument, "COUNT:")) {
+            }else if (Utils.startsWithIgnoreCase(argument, "COUNT_ALL:")) {
+                aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_ALL));
+            }
+            else if (Utils.startsWithIgnoreCase(argument, "COUNT_NULL:")) {
+                aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT_NULL));
+            } 
+            else if (Utils.startsWithIgnoreCase(argument, "COUNT:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.COUNT));
             } else if (Utils.startsWithIgnoreCase(argument, "FIRST:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.FIRST));
@@ -116,6 +122,7 @@ public class Group implements IOperator {
             } else if (Utils.startsWithIgnoreCase(argument, "SUM:")) {
                 aggregations.add(new AggregationType(sourceName, columnName, AggregationType.SUM));
             }
+            
         }
 
         ibd.query.Operation operator = parentCell.getOperator();

@@ -6,6 +6,7 @@ package ibd.query.lookup;
 
 import ibd.query.ColumnDescriptor;
 import ibd.query.Tuple;
+import ibd.table.prototype.LinkedDataRow;
 import java.util.List;
 
 /**
@@ -33,6 +34,9 @@ public class ReferencedElement extends ColumnElement{
     
     @Override
     public Comparable getValue(Tuple tuple) {
+        return value;
+    }
+    public Comparable getValueFromRow(LinkedDataRow row){
         return value;
     }
     

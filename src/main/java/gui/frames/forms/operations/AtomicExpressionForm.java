@@ -413,7 +413,7 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
             sourceBox1Selected(comboBoxSource, comboBoxColumn, leftChild);
         }
         if (e.getSource() == comboBoxSource2) {
-            sourceBox1Selected(comboBoxSource2, comboBoxColumn2, leftChild);
+            sourceBox2Selected(comboBoxSource2, comboBoxColumn2, leftChild);
         }
 
         if (e.getSource() == btnColumnSet1) {
@@ -513,6 +513,19 @@ public class AtomicExpressionForm extends OperationForm implements ActionListene
     }
 
     protected void sourceBox1Selected(JComboBox<String> comboBoxSources, JComboBox<String> comboBoxColumns, Cell cell) {
+
+        java.util.List<Column> allColumns = new ArrayList();
+        allColumns.addAll(cell.getColumns());
+
+        allColumns.addAll(getReferences(cell));
+
+        if (hasMatch(allColumns, comboBoxSources)) {
+            setColumnsComboBox(comboBoxColumns, comboBoxSources, allColumns);
+
+        }
+    }
+    
+    protected void sourceBox2Selected(JComboBox<String> comboBoxSources, JComboBox<String> comboBoxColumns, Cell cell) {
 
         java.util.List<Column> allColumns = new ArrayList();
         if (acceptFilters) {

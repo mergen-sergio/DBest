@@ -143,7 +143,7 @@ public class ConditionForm extends OperationForm implements ActionListener, IOpe
         initGUI();
 
     }
-
+    
     protected java.util.List<Column> setLeftComboBoxColumns(Cell cell) {
         java.util.List<Column> allColumns = new ArrayList();
         if (!cell.getParents().isEmpty()) {

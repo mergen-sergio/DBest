@@ -12,7 +12,6 @@ import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
 import ibd.table.prototype.Prototype;
 import ibd.table.prototype.column.Column;
-import ibd.table.prototype.query.fields.Field;
 import java.util.Iterator;
 import java.util.List;
 
@@ -70,20 +69,13 @@ public class Union1 extends Set {
     }
 
     @Override
-    public void setConnectedDataSources() throws Exception {
-        
-        connectedDataSources = new ReferedDataSource[1];
-        connectedDataSources[0] = new ReferedDataSource();
-        connectedDataSources[0].alias = alias;
-
-        connectedDataSources[0].prototype = setPrototype();
-
-    }
-    
-    @Override
     public void setExposedDataSources() throws Exception {
 
-        dataSources = connectedDataSources;
+        dataSources = new ReferedDataSource[1];
+        dataSources[0] = new ReferedDataSource();
+        dataSources[0].alias = alias;
+
+        dataSources[0].prototype = setPrototype();
 
     }
 

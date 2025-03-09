@@ -48,13 +48,6 @@ public class BlockNestedLoopJoin extends Join {
 
     }
 
-    @Override
-    public void prepare() throws Exception {
-
-        super.prepare();
-        
-    }
-    
     //sets the column indexes for the terms of the join predicate
     @Override
     protected void setJoinTermsIndexes() throws Exception {

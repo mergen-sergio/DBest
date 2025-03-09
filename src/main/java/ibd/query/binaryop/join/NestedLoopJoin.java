@@ -90,8 +90,11 @@ public class NestedLoopJoin extends LookupJoin {
                     //lookup the tuples from the right side
                     rightTuples = rightOperation.lookUp(processedTuples, true);
 
-                    
+                    //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
+                    processedTuples.remove(processedTuples.size() - 1);
                 }
+                
+                processedTuples.add(currentLeftTuple);
 
                 //iterate through the right side tuples that satisfy the lookup
                 while (rightTuples.hasNext()) {
@@ -104,6 +107,8 @@ public class NestedLoopJoin extends LookupJoin {
                     //create a returning tuple and add the joined tuples
                     Tuple tuple = new Tuple();
                     tuple.setSourceRows(currentLeftTuple, curTuple2);
+                    
+                    processedTuples.remove(processedTuples.size() - 1);
                     return tuple;
 
                 }

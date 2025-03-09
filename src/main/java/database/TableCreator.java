@@ -184,22 +184,23 @@ public class TableCreator {
         String dataFileName = removeSuffix(headerFile.getPath(), ".head") + ".dat";
         header.set(Header.FILE_PATH, dataFileName);
 
-        Map<String,Integer> dict = new HashMap<>();
+        Map<ibd.table.prototype.column.Column,Integer> dict = new HashMap<>();
 
+        //needs to walkthrough all rows to adjust the size of string columns
         for(BasicDataRow row: rows){
             for(ibd.table.prototype.column.Column c:prototype.getColumns()){
                 if(!c.isString())continue;
                 String key = c.getName();
                 String s = row.getString(key);
                 if(s==null)continue;
-                if(dict.containsKey(key))
-                    dict.put(key,Math.max(dict.get(key),s.length() + 1));
+                if(dict.containsKey(c))
+                    dict.put(c,Math.max(dict.get(c),s.length() + 1));
                 else
-                    dict.put(key,s.length() + 1);
+                    dict.put(c,s.length() + 1);
             }
         }
-        for(Map.Entry<String,Integer> c:dict.entrySet()) {
-            prototype.replaceColumn(new StringColumn(c.getKey(), (short) (c.getValue() + 1)));
+        for(Map.Entry<ibd.table.prototype.column.Column,Integer> c:dict.entrySet()) {
+           prototype.replaceColumn(new StringColumn(c.getKey().getName(), (short) (c.getValue() + 1), c.getKey().getFlags()));
         }
 
 

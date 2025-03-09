@@ -137,7 +137,7 @@ public class HashAggregation extends UnaryOperation implements SingleSource{
     private Column createColumn(ColumnDescriptor colDesc) throws Exception {
         //ColumnLocation location = colDesc.getColumnLocation();
         //ReferedDataSource[] childSources = childOperation.getDataSources();
-        ReferedDataSource dataSource = childOperation.getDataSource(colDesc.getTableName());
+        ReferedDataSource dataSource = childOperation.getExposedDataSource(colDesc.getTableName());
         Column col = dataSource.prototype.getColumn(colDesc.getColumnName());
 
         //Column col = childSources[location.rowIndex].prototype.getColumn(location.colIndex); 
@@ -263,16 +263,11 @@ public class HashAggregation extends UnaryOperation implements SingleSource{
         //the iterator over the child operation
         Iterator<Tuple> tuples;
         
-        List<Integer> groupedValues[];
         //the iterator over the child operation
         Iterator<Entry<Comparable, List<Tuple>>> allTuplesIterator;
 
         public AggregationIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
-            groupedValues = new List[aggregationTypes.size()];
-            for (int i = 0; i < groupedValues.length; i++) {
-                groupedValues[i] = new ArrayList();
-            }
             tuples = childOperation.lookUp(processedTuples, false);//returns all tuples from the child operation 
             allTuples = new HashMap<>();
         }
@@ -305,19 +300,33 @@ public class HashAggregation extends UnaryOperation implements SingleSource{
             while (allTuplesIterator.hasNext()) {
                 Entry<Comparable, List<Tuple>> entry = allTuplesIterator.next();
                 Comparable groupByValue = entry.getKey();
+                
+                List[] groupedValues = new List[aggregationTypes.size()];
+                int[] countNulls = new int[aggregationTypes.size()];
+                int countAll = entry.getValue().size();
+            for (int i = 0; i < groupedValues.length; i++) {
+                groupedValues[i] = new ArrayList();
+                countNulls[i] = 0;
+            }
+            
+            
                 for (Tuple tp : entry.getValue()) {
                     for (int i = 0; i < aggregationTypes.size(); i++) {
                         AggregationType aggregationType = aggregationTypes.get(i);
                         Comparable aggregatedValue = getValue(tp, aggregationType.aggregateColumn);
-                        groupedValues[i].add((Integer) aggregatedValue);
+                        if (aggregatedValue!=null)
+                            groupedValues[i].add((Integer) aggregatedValue);
+                        else {
+                            countNulls[i]++;
+                        }
                     }
+                    
                 }
-
                 Tuple tuple = new Tuple();
                 //BasicDataRow dataRow = new BasicDataRow();
                 LinkedDataRow dataRow = new LinkedDataRow(prototype, false);
                 dataRow.setValue(0, groupByValue);
-                aggregate(dataRow, aggregationTypes, groupedValues);
+                aggregate(dataRow, aggregationTypes, groupedValues, countNulls, countAll);
                 //dataRow.setMetadata(prototype);
                 tuple.setSingleSourceRow(alias, dataRow);
 
@@ -331,7 +340,7 @@ public class HashAggregation extends UnaryOperation implements SingleSource{
             return null;
         }
 
-        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Integer> list[]) {
+        private void aggregate(LinkedDataRow row, List<AggregationType> aggregationTypes, List<Integer> list[], int[] countNulls, int countAll) {
             for (int i = 0; i < list.length; i++) {
 
                 switch (aggregationTypes.get(i).type) {
@@ -355,6 +364,12 @@ public class HashAggregation extends UnaryOperation implements SingleSource{
                     }
                     case AggregationType.LAST -> {
                         row.setValue(i + 1, last(list[i]));
+                    }
+                    case AggregationType.COUNT_ALL -> {
+                        row.setValue(i + 1, countAll);
+                    }
+                    case AggregationType.COUNT_NULL -> {
+                        row.setValue(i + 1, countNulls[i]);
                     }
                 }
             }

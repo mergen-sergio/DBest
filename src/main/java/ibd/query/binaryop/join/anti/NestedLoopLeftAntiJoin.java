@@ -11,6 +11,7 @@ import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
 import ibd.query.binaryop.join.JoinPredicate;
 import ibd.query.binaryop.join.LookupJoin;
+import ibd.query.lookup.CompositeLookupFilter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class NestedLoopLeftAntiJoin extends LookupJoin {
 
         //the iterator over the operation on the left side
         Iterator<Tuple> leftTuples;
-
+        
         public NestedLoopLeftAntiJoinIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
 
@@ -84,7 +85,7 @@ public class NestedLoopLeftAntiJoin extends LookupJoin {
         }
 
         private boolean exists() {
-            if (rightOperation.canProcessDelegatedFilters()) {
+            if (rightOperation.canProcessDelegatedFilters() || hasNoFilters) {
                 return rightOperation.exists(processedTuples, true);
             }
 

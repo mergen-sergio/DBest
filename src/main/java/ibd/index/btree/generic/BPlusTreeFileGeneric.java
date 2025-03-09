@@ -27,7 +27,7 @@ public class BPlusTreeFileGeneric extends BPlusTreeFile {
      * @param keySchema: the schema of the keys.
      * @param valueSchema: the schema of the indexed values.
      */
-    public BPlusTreeFileGeneric(PageFile pagefile,  RowSchema valueSchema, RowSchema keySchema) throws InstantiationException, IllegalAccessException {
+    public BPlusTreeFileGeneric(PageFile pagefile,  RowSchema keySchema, RowSchema valueSchema) throws InstantiationException, IllegalAccessException {
         super(pagefile);
         this.valueSchema = valueSchema;
         this.keySchema = keySchema;
@@ -42,7 +42,7 @@ public class BPlusTreeFileGeneric extends BPlusTreeFile {
     
     @Override
     public Value createValue() {
-        return new PrimitiveValue(keySchema);
+        return new PrimitiveValue(valueSchema);
     }
 
     /**

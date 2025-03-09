@@ -76,6 +76,8 @@ public class AggregationForm extends OperationForm implements ActionListener, IO
                     case "FIRST:" -> ConstantController.getString("operationForm.first");
                     case "LAST:" -> ConstantController.getString("operationForm.last");
                     case "COUNT:" -> ConstantController.getString("operationForm.count");
+                    case "COUNT_ALL:" -> ConstantController.getString("operationForm.countAll");
+                    case "COUNT_NULL:" -> ConstantController.getString("operationForm.countNull");
                     default -> throw new IllegalStateException("Unexpected value: " + prefix);
                 });
 
@@ -116,6 +118,10 @@ public class AggregationForm extends OperationForm implements ActionListener, IO
                suffix = "FIRST:";
            else  if(selected.equals(ConstantController.getString("operationForm.first")))
                suffix = "LAST:";
+           else if(selected.equals(ConstantController.getString("operationForm.countAll")))
+               suffix = "COUNT_ALL:";
+           else if(selected.equals(ConstantController.getString("operationForm.countNull")))
+               suffix = "COUNT_NULL:";
            else if(selected.equals(ConstantController.getString("operationForm.last")))
                suffix = "SUM:";
            else

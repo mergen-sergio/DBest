@@ -10,12 +10,9 @@ import ibd.query.QueryStats;
 import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.table.prototype.LinkedDataRow;
-import ibd.table.prototype.query.fields.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Performs a difference between the left and the right operations.

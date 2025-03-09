@@ -13,13 +13,13 @@ import enums.CellType;
 import enums.OperationType;
 import gui.frames.main.MainFrame;
 import ibd.query.lookup.NoLookupFilter;
+import ibd.query.unaryop.Reference;
 import ibd.query.unaryop.filter.Condition;
 import org.apache.commons.lang3.SerializationUtils;
 
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
@@ -134,6 +134,14 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
                 try {
                     Condition condition = new Condition(new NoLookupFilter());
                     operationCell.setOperator(condition);
+                } catch (Exception ex) {
+                }
+            }
+            else if (createOperationAction.getOperationType()==OperationType.REFERENCE)
+            {
+                try {
+                    Reference reference = new Reference(new ArrayList<String>().toArray(new String[0]));
+                    operationCell.setOperator(reference);
                 } catch (Exception ex) {
                 }
             }

@@ -31,10 +31,6 @@ public class Limit extends UnaryOperation {
         this.startingTuple = startingTuple;
     }
 
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
-    }
 
     @Override
     public Iterator<Tuple> lookUp_(List<Tuple> processedTuples, boolean withFilterDelegation) {

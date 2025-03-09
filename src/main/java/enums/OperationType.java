@@ -18,6 +18,7 @@ import gui.frames.forms.operations.unary.ExplodeForm;
 import gui.frames.forms.operations.unary.GroupForm;
 import gui.frames.forms.operations.unary.LimitForm;
 import gui.frames.forms.operations.unary.ProjectionForm;
+import gui.frames.forms.operations.unary.ReferenceForm;
 import gui.frames.forms.operations.unary.RenameForm;
 import gui.frames.forms.operations.unary.SortForm;
 import operations.IOperator;
@@ -70,13 +71,14 @@ import operations.unary.Materialization;
 import operations.unary.Memoize;
 import operations.unary.SelectColumns;
 import operations.unary.Projection;
+import operations.unary.Reference;
 import operations.unary.Rename;
 import operations.unary.Scan;
 import operations.unary.Selection;
 import operations.unary.Sort;
 
 public enum OperationType {
-
+REFERENCE         (ConstantController.getString("operation.reference"), "R", "reference", "reference[args]", OperationArity.NULLARY, ReferenceForm.class, Reference.class, false, true),
     SCAN         (ConstantController.getString("operation.scan"), "→", "scan", "scan(source)", OperationArity.UNARY, null, Scan.class, false, false),
     FILTER         (ConstantController.getString("operation.filter"), "σ", "filter", "filter[args](source)", OperationArity.UNARY, BooleanExpressionForm.class, Selection.class, false, false),
     PROJECTION        (ConstantController.getString("operation.projection"), "π", "projection", "projection[args](source)", OperationArity.UNARY, ProjectionForm.class, Projection.class, false, false),
@@ -199,8 +201,8 @@ AUTO_INCREMENT            (ConstantController.getString("operation.autoInc"), "A
                 return operationType;
             }
         }
-
-        throw new IllegalArgumentException(String.format("Invalid operation type: %s", operationTypeName));
+        return null;
+        //throw new IllegalArgumentException(String.format("Invalid operation type: %s", operationTypeName));
     }
 
     public CreateOperationCellAction getAction() {

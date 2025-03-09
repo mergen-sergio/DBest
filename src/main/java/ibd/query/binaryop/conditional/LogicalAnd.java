@@ -116,6 +116,17 @@ public class LogicalAnd extends BinaryOperation implements SingleSource{
         rightSideIsCondition = isBooleanCondition(getRightOperation());
     }
     
+        @Override
+    public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation) {
+        
+        LogicalAndIterator it = new LogicalAndIterator(processedTuples, withFilterDelegation);
+        if (!it.hasNext()) return false;
+        Tuple tuple = it.next();
+        return (tuple.rows[0].getBoolean(colName));
+    }
+    
+    
+    
     /**
      * {@inheritDoc }
      *

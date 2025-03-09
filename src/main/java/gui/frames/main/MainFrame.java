@@ -511,6 +511,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.otherOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.otherOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.otherOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.REFERENCE, this, this.otherOperatorsPanel));
         
         //this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));

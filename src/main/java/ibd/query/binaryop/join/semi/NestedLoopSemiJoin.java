@@ -36,13 +36,6 @@ public class NestedLoopSemiJoin extends LookupJoin {
     }
 
 
-    /**
-     * {@inheritDoc }
-     * the data sources array is a copy of the data sources that come from the
-     * left subtree
-     *
-     * @throws Exception
-     */
     @Override
     public void setExposedDataSources() throws Exception {
 
@@ -104,13 +97,13 @@ public class NestedLoopSemiJoin extends LookupJoin {
 
 
         private boolean exists(){
-        if (rightOperation.canProcessDelegatedFilters())
+        if (rightOperation.canProcessDelegatedFilters() || hasNoFilters)
             return rightOperation.exists(processedTuples, true);
         
         Iterator tuples = rightOperation.lookUp(processedTuples, false);
         while (tuples.hasNext()){
             Tuple tuple = (Tuple)tuples.next();
-            if (rightOperation.canProcessDelegatedFilters() || lookup.match(tuple)) return true;
+            if (rightOperation.canProcessDelegatedFilters() || joinFilter.match(tuple)) return true;
         }
         
         return false;

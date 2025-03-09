@@ -21,13 +21,18 @@ public final class NullaryExpression extends OperationExpression {
         int indexOfSquareBracket = input.indexOf('[');
         int indexOfParenthesis = input.indexOf('(');
 
+        if (indexOfSquareBracket>=0 && indexOfParenthesis==-1)
+            return true;
         // Check if both symbols are present and if '[' appears before '('
         return indexOfSquareBracket != -1 && indexOfParenthesis != -1 && indexOfSquareBracket < indexOfParenthesis;
     }
 
     private void unaryRecognizer(String input, Map<String, Table> tables) throws InputException {
 
-        int endIndex = input.indexOf('(');
+        int endIndex = input.length()-1;
+        
+        if (input.indexOf('(')>0)
+            endIndex = Math.min(input.indexOf('('), endIndex);
 
         //if (input.contains("[")) 
         if (hasSquareBracketBeforeParenthesis(input)){
@@ -36,6 +41,9 @@ public final class NullaryExpression extends OperationExpression {
             setArguments(List.of(input.substring(input.indexOf("[") + 1, input.indexOf("]")).split(",")));
 
         }
+        
+       if (input.indexOf('<')>0)
+            endIndex = Math.min(input.indexOf('<'), endIndex);
 
         String type = input.substring(0, endIndex);
         int index = type.indexOf(":");

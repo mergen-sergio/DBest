@@ -60,19 +60,11 @@ public class Condition extends Operation {
         return filter;
     }
 
-
-    /**
-     *
-     * The tuples produced by a this operation contains a single schema, which
-     * contains all the projected columns.This function sets this schema.
-     *
-     * @throws java.lang.Exception
-     */
-    protected Prototype setPrototype() throws Exception {
-        Prototype prototype = new Prototype();
-        prototype.addColumn(new BooleanColumn(colName));
-        
-        
+    
+    @Override
+    public void prepare() throws Exception{
+    
+        super.prepare();
         fixedTrueTuple = new Tuple();
         LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
         row.setValue(0, true);
@@ -82,6 +74,13 @@ public class Condition extends Operation {
         row = new LinkedDataRow(dataSources[0].prototype, false);
         row.setValue(0, false);
         fixedFalseTuple.setSourceRows(new LinkedDataRow[]{row});
+    }
+
+    
+    protected Prototype setPrototype() throws Exception {
+        Prototype prototype = new Prototype();
+        prototype.addColumn(new BooleanColumn(colName));
+        
         
         return prototype;
     }

@@ -96,6 +96,8 @@ public class CrossJoinOld extends Join {
                     }
                     
                     rightTuples = rightTuplesList.iterator();
+                    //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
+                    processedTuples.remove(processedTuples.size() - 1);
                 }
 
                 //iterate through the right side tuples that satisfy the lookup
@@ -107,8 +109,7 @@ public class CrossJoinOld extends Join {
                     return tuple;
 
                 }
-                //the computed tuple from the left is removed from the processed list, since the right side of the join already finished its processing
-                processedTuples.remove(processedTuples.size() - 1);
+                
                 //All corresponding tuples from the right side processed. 
                 //set null to allow left side cursor to advance
                 currentLeftTuple = null;

@@ -53,17 +53,17 @@ public abstract class Join extends BinaryOperation {
         return (List<JoinTerm>) joinPredicate.getTerms();
     }
     
+    
     @Override
-    public void prepare() throws Exception {
-
-        
-        //sets the column indexes for the terms of the join predicate
-        setJoinTermsIndexes();
+    public void prepare() throws Exception{
+         //sets the column indexes for the terms of the join predicate
+        //setJoinTermsIndexes();
         
         super.prepare();
-
-        
-
+    }
+    
+    protected void prepareIndexes() throws Exception{
+         setJoinTermsIndexes();
     }
     
     //sets the column indexes for the terms of the join predicate
