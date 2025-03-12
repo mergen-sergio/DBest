@@ -11,6 +11,8 @@ import ibd.query.lookup.LookupFilter;
 import ibd.table.ComparisonTypes;
 import ibd.table.Table;
 import ibd.table.prototype.BasicDataRow;
+
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -148,7 +150,7 @@ public class BTreeTable extends Table {
             return;
         }
 
-        Path fileName = Paths.get(folder + "\\" + name);
+        Path fileName = Paths.get(folder + File.separator + name);
         boolean exists = Files.exists(fileName);
         if (!exists) {
             throw new Exception("The file " + fileName + " does not exists");
