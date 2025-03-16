@@ -92,7 +92,7 @@ public class NestedLoopLeftAntiJoin extends LookupJoin {
             Iterator tuples = rightOperation.lookUp(processedTuples, false);
             while (tuples.hasNext()) {
                 Tuple tuple = (Tuple) tuples.next();
-                if (rightOperation.canProcessDelegatedFilters() || lookup.match(tuple)) {
+                if (rightOperation.canProcessDelegatedFilters() || joinFilter.match(tuple)) {
                     return true;
                 }
             }

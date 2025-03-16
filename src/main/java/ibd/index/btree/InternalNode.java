@@ -357,8 +357,6 @@ public class InternalNode extends Node  {
      * @param index: the location within childPointers to be set to null
      */
     public void removePointer(int index) {
-        if (this.childPointers==null)
-            System.out.println("aqui");
         this.childPointers[index] = null;
         this.childPointersIDs[index] = null;
         this.degree--;
@@ -587,13 +585,10 @@ public class InternalNode extends Node  {
 
         //values
         childPointers = new Node[maxDegree + 1];
-        if (childPointers==null)
-            System.out.println("erro");
         childPointersIDs = new Integer[maxDegree + 1];
         for (int i = 0; i < degree; i++) {
             childPointersIDs[i] = in.readInt();
         }
-        //System.out.println("xxxxxx count  "+count);
     }
 
     

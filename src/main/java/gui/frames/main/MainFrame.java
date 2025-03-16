@@ -417,6 +417,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.algebraOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN, this, this.algebraOperatorsPanel));

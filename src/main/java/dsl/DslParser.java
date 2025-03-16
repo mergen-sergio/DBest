@@ -262,7 +262,7 @@ public class DslParser {
             return new ibd.query.unaryop.Explode(child1, arguments.get(0), arguments.get(1));
         }
         if (operationExpression.getType() == OperationType.AUTO_INCREMENT) {
-            return new ibd.query.unaryop.AutoIncrement(child1, "autoIncrement",arguments.get(0));
+            return new ibd.query.unaryop.AutoIncrement(child1, "autoIncrement",arguments.get(0), Integer.parseInt(arguments.get(1)));
         }
         if (operationExpression.getType() == OperationType.PROJECTION) {
             //return new ibd.query.unaryop.Projection(child1, "projection", arguments.toArray(new String[0]));

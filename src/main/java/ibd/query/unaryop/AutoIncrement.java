@@ -25,12 +25,11 @@ import java.util.Map;
  */
 public class AutoIncrement extends UnaryOperation {
 
-    //the name used to refer to the schema that contains the auto-increment row
-    String alias;
-    
     //the name of the column to be part of the auto-increment row
     String col;
-
+    //the increment value
+    int increment = 0;
+    
     /**
      *
      * @param op the operation to be connected into this unary operation
@@ -38,10 +37,11 @@ public class AutoIncrement extends UnaryOperation {
      * @param col the name of the column to be part of the auto-increment row
      * @throws Exception
      */
-    public AutoIncrement(Operation op, String alias, String col) throws Exception {
+    public AutoIncrement(Operation op, String alias, String col, int increment) throws Exception {
         super(op);
         this.alias = alias;
         this.col = col;
+        this.increment = increment;
         }
 
 
@@ -112,12 +112,13 @@ public class AutoIncrement extends UnaryOperation {
 
         //the iterator over the child operation
         Iterator<Tuple> tuples;
-        //the increment value
-        int increment = 0;
+        
+        int autoInc = 1;
 
         
         public AutoIncrementIterator(List<Tuple> processedTuples, boolean withFilterDelegation) {
             super(processedTuples, withFilterDelegation, getDelegatedFilters());
+            autoInc = increment;
             tuples = childOperation.lookUp(processedTuples, false);//accesses all tuples produced by the child operation 
         }
 
@@ -128,8 +129,8 @@ public class AutoIncrement extends UnaryOperation {
                 
                 //sets the row of the auto-increment schema
                 LinkedDataRow row = new LinkedDataRow(dataSources[0].prototype, false);
-                row.setValue(0, increment);
-                increment++;
+                row.setValue(0, autoInc);
+                autoInc++;
                 
                 //joins the row with the ones produced by the child operation.
                 //the auto-increment row comes first

@@ -743,12 +743,10 @@ public class CustomGraphHandler extends mxGraphHandler
 	public void paint(Graphics g)
 	{
             if (MainController.selectionRectangle != null) {
-            System.out.println("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
             Graphics2D tmp = (Graphics2D) g.create();
             tmp.setColor(new Color(0, 0, 255, 100)); // Semi-transparent blue
             tmp.fillRect(MainController.selectionRectangle.x, MainController.selectionRectangle.y, MainController.selectionRectangle.width, MainController.selectionRectangle.height);
         }
-            System.out.println("aaaaaaaaaaaaaaaaaaaaaaa");
             
 		if (isVisible() && previewBounds != null)
 		{

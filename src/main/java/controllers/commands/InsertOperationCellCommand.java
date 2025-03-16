@@ -71,7 +71,6 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         }
 
         if (this.cellReference.get() != null && !this.cellReference.get().isEdge()) {
-            System.out.println("aqui 5");
             this.insertEdge();
         }
 
@@ -180,13 +179,11 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
         if (this.currentActionType == ActionType.CREATE_EDGE && !this.edgeReference.get().hasParent() &&
             !CellRepository.getActiveCell(cellReference.get()).get().hasChild()) {
-            System.out.println("aqui 6");
             this.edgeReference.get().addParent(this.cellReference.get());
             CellUtils.addMovableEdge(this.mouseEvent, this.invisibleCellReference, this.cellReference.get());
         }
 
         if (this.currentActionType == ActionType.CREATE_EDGE) {
-            System.out.println("aqui 7");
             this.commandController.execute(new InsertEdgeCommand(
                 this.cellReference, this.invisibleCellReference,
                 this.edgeReference, this.currentActionReference

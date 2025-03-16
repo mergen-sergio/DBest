@@ -80,8 +80,6 @@ public class AllKeysIterator implements Iterator<DictionaryPair>{
                     break;
                 }
                 Parameters.RECORDS_READ++;
-                if (Parameters.RECORDS_READ%10000==0)
-                    System.out.println(Parameters.RECORDS_READ);
                 nextValue = dps[index];
                 index++;
                 return nextValue;

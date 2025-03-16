@@ -51,10 +51,15 @@ public class AutoIncrement implements IOperator {
         ibd.query.Operation operator = parentCell.getOperator();
 
         String column = arguments.get(0);
+        
+        int increment = 1;
+        
+        if (arguments.size()>1)
+            increment = Integer.parseInt(arguments.get(1));
 
         ibd.query.Operation readyOperator = null;
         try {
-            readyOperator = new ibd.query.unaryop.AutoIncrement(operator, "autoIncrement", column);
+            readyOperator = new ibd.query.unaryop.AutoIncrement(operator, "autoIncrement", column, increment);
         } catch (Exception ex) {
         }
 
