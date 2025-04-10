@@ -13,6 +13,7 @@ import ibd.table.block.Block;
 import ibd.table.block.TableHeader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Hashtable;
@@ -32,7 +33,7 @@ public class FreeBlocksManagement {
     public Hashtable<Integer, FreeBlock> blocks_ = new Hashtable();
 
     public FreeBlocksManagement(String folder, String name, int pageSize, boolean recreate) throws IOException {
-        this.freeBlocksFile = new PersistentPageFile(pageSize, Paths.get(folder + "\\" + name), recreate);
+        this.freeBlocksFile = new PersistentPageFile(pageSize, Paths.get(folder + File.separator + name), recreate);
         this.freeBlocksFile.setPageSerialization(new PageSerialization() {
             @Override
             public void writePage(DataOutputStream oos, Page page) throws IOException {

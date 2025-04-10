@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 
 import engine.exceptions.DataBaseException;
+import enums.JDBCDriver;
 
 import java.io.*;
 import java.security.InvalidParameterException;
@@ -191,13 +192,25 @@ public class ConnectionConfig {
         return type.equals(OracleConnectionConfig.class.getName());
     }
 
+    public JDBCDriver getDriver() {
+        if (isMySQL()) {
+            return JDBCDriver.MYSQL;
+        } else if (isPostgreSQL()) {
+            return JDBCDriver.POSTGRESQL;
+        } else if (isOracle()) {
+            return JDBCDriver.ORACLE;
+        } else {
+            throw new InvalidParameterException("Connection config passed as parameter isn't mapped!");
+        }
+    }
+
     public String getTableType() {
         if (isMySQL()) {
             return "MySQLTable";
         } else if (isPostgreSQL()) {
-            return "PostgreSQL";
+            return "PostgreSQLTable";
         } else if (isOracle()) {
-            return "Oracle";
+            return "OracleTable";
         } else {
             throw new InvalidParameterException("Connection config passed as parameter isn't mapped!");
         }

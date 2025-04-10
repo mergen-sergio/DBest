@@ -12,6 +12,8 @@ import ibd.persistent.PersistentPageFile;
 import ibd.persistent.cache.Cache;
 import ibd.persistent.cache.LRUCache;
 import ibd.table.block.Block;
+
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 import ibd.table.prototype.Prototype;
@@ -95,7 +97,7 @@ public class BlockIndex {
         }
         open = true;
         createIndexPrototype();
-        PersistentPageFile p = new PersistentPageFile(pageSize, Paths.get(folder + "\\" + name + ".idx"), override);
+        PersistentPageFile p = new PersistentPageFile(pageSize, Paths.get(folder + File.separator + name + ".idx"), override);
         
         cache = new LRUCache(5000000);
         cache.setPageFile(p);

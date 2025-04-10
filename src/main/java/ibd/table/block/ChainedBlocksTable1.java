@@ -17,6 +17,8 @@ import ibd.table.block.freeblocks.FreeBlocksManagement;
 import ibd.table.block.index.BlockIndex;
 import ibd.table.block.management.BlockPageSerialization;
 import ibd.table.prototype.BasicDataRow;
+
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -70,7 +72,7 @@ public class ChainedBlocksTable1 extends Table {
         
         freeBlocksFile = new FreeBlocksManagement(folder, name + ".fbf", pageSize, true);
         blockIndex = new BlockIndex(folder, name, pageSize, true, rowPrototype);
-        PageFile<Block> file = new PersistentPageFile(pageSize, Paths.get(folder + "\\" + name + ".dat"), true);
+        PageFile<Block> file = new PersistentPageFile(pageSize, Paths.get(folder + File.separator + name + ".dat"), true);
         open(file);
     }
     
@@ -82,7 +84,7 @@ public class ChainedBlocksTable1 extends Table {
         freeBlocksFile = new FreeBlocksManagement(folder, name + ".fbf", pageSize, false);
         blockIndex = new BlockIndex(folder, name, pageSize, false, rowPrototype);
 
-        PageFile<Block> file = new PersistentPageFile(pageSize, Paths.get(folder + "\\" + name + ".dat"), false);
+        PageFile<Block> file = new PersistentPageFile(pageSize, Paths.get(folder + File.separator + name + ".dat"), false);
         open(file);
     }
     

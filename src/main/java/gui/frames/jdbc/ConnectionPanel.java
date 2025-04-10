@@ -95,7 +95,7 @@ public class ConnectionPanel extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
 
         saveButton.addActionListener(e -> {
-            // TODO: Here we create a new connection file instead of updating to re-generate the
+            // TODO: Here we create a new connection file instead of updating the existing one
             if (leftPanel.getCurrentConnection() != null) {
                 leftPanel.getCurrentConnection().delete();
             }
@@ -149,12 +149,15 @@ public class ConnectionPanel extends JPanel {
 
     public void displayConnectionDetails(ConnectionConfig currentConnection) {
         if (currentConnection != null) {
+            leftPanel.setCurrentConnection(currentConnection);
+            driverComboBox.setSelectedItem(currentConnection.getDriver());
             hostTextField.setText(currentConnection.host);
             databaseTextField.setText(currentConnection.database);
             userTextField.setText(currentConnection.username);
             passwordField.setText(currentConnection.password);
             connectionURLField.setText(currentConnection.connectionURL);
         } else {
+            leftPanel.setCurrentConnection(null);
             hostTextField.setText("");
             databaseTextField.setText("");
             userTextField.setText("");

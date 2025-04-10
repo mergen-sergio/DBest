@@ -7,6 +7,8 @@ package ibd.query.unaryop.sort.external;
 
 import ibd.query.SourceTuple;
 import ibd.query.Tuple;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -48,7 +50,7 @@ public class TupleBucketIO {
 
         Path path = Paths.get(folder);
         Files.createDirectories(path);
-        file = new RandomAccessFile(folder + "\\" + name, "rw");
+        file = new RandomAccessFile(folder + File.separator + name, "rw");
         openFile = true;
         file.seek(0);
 

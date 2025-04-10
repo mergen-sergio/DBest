@@ -6,6 +6,8 @@
 package ibd.table;
 
 import ibd.table.btree.BTreeTable;
+
+import java.io.File;
 import java.util.Hashtable;
 import ibd.table.prototype.Prototype;
 
@@ -21,7 +23,7 @@ public class Directory {
     static Hashtable<String, Table> tables = new Hashtable<String, Table>();
 
     public static Table getTable(String folder, String name, Prototype prototype, int cacheSize, int pageSize, boolean override) throws Exception {
-        String key = folder + "\\" + name;
+        String key = folder + File.separator + name;
         Table t = tables.get(key);
         if (t != null && !override) {
             return t;
@@ -51,13 +53,13 @@ public class Directory {
 
     public static String getTableFolder(String key) {
 
-        return key.substring(0, key.lastIndexOf("\\"));
+        return key.substring(0, key.lastIndexOf(File.separator));
 
     }
 
     public static String getTableFile(String key) {
 
-        return key.substring(key.lastIndexOf("\\"), key.length());
+        return key.substring(key.lastIndexOf(File.separator), key.length());
 
     }
 

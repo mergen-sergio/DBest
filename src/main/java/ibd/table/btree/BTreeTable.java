@@ -134,7 +134,7 @@ public class BTreeTable extends Table {
             return;
         }
         //defines the paged file that the BTree will use
-        PersistentPageFile p = new PersistentPageFile(pageSize, Paths.get(folder + "\\" + name), true);
+        PersistentPageFile p = new PersistentPageFile(pageSize, Paths.get(folder + File.separator + name), true);
         open(p, prototype);
     }
 
