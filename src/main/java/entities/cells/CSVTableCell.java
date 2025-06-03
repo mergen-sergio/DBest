@@ -41,4 +41,18 @@ public final class CSVTableCell extends TableCell {
 //        );
     this.operator = operator;
     }
+    
+    @Override
+    public Cell copy() {
+        mxCell newCell;
+        try {
+            newCell = (mxCell) this.jCell.clone();
+        } catch (CloneNotSupportedException e) {
+            newCell = new mxCell(this.jCell.getValue(), this.jCell.getGeometry(), this.jCell.getStyle());
+        }
+        
+        CSVTableCell copy = new CSVTableCell(newCell, this.getName(), this.getTable(), this.getHeaderFile());
+        copy.alias = this.alias;
+        return copy;
+    }
 }

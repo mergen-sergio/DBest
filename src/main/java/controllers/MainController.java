@@ -894,6 +894,12 @@ public class MainController extends MainFrame {
             if (this.jCell != null && CellUtils.getActiveCell(this.jCell).isPresent()) {
                 CellUtils.getActiveCell(this.jCell).get().getTree().getTreeLayer();
             }
+        } else if (keyCode == KeyEvent.VK_C && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+            // Ctrl+C: Copy selected cells
+            commandController.execute(new CopyCellsCommand());
+        } else if (keyCode == KeyEvent.VK_V && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+            // Ctrl+V: Paste cells from clipboard
+            commandController.execute(new PasteCellsCommand());
 //        } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
 //            commandController.undo();
 //        } else if (keyCode == KeyEvent.VK_Y && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {

@@ -148,6 +148,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         return this.alias;
     }
 
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
     public boolean canBeParent(){
 
         if(this instanceof TableCell) return true;
@@ -255,6 +259,8 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     public String toString() {
         return this.name;
     }
+
+    public abstract Cell copy();
 
     public abstract boolean hasParents();
 
