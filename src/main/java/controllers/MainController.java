@@ -401,9 +401,7 @@ public class MainController extends MainFrame {
                 | IllegalAccessException | UnsupportedLookAndFeelException exception) {
             new ErrorFrame(ConstantController.getString("error"));
         }
-    }
-
-    @Override
+    }    @Override
     public void mouseClicked(MouseEvent event) {
 
         this.jCell = (mxCell) MainFrame.getGraphComponent().getCellAt(event.getX(), event.getY());
@@ -499,10 +497,8 @@ public class MainController extends MainFrame {
                 event, new AtomicReference<>(this.jCell), this.invisibleCellReference,
                 new AtomicReference<>(this.ghostCell), new AtomicReference<>(currentEdgeReference.get()),
                 this.currentActionReference
-        );
-
-        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE && !currentEdgeReference.get().hasParent()
-                && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
+        );        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE && !currentEdgeReference.get().hasParent()
+                && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent() && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
             return;
         }
 
@@ -911,32 +907,51 @@ public class MainController extends MainFrame {
 
     private void setEdgeCursor() {
         graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-    }
-
-    private void moveCell2(MouseEvent event, mxCell cellMoved) {
+    }    private void moveCell2(MouseEvent event, mxCell cellMoved) {
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
 
         graph.getModel().beginUpdate();
         try {
             mxGeometry geometry = cellMoved.getGeometry();
-            geometry.setTerminalPoint(new mxPoint(event.getX(), event.getY()), false);
+            geometry.setTerminalPoint(new mxPoint(canvasCoords.x(), canvasCoords.y()), false);
             graph.getModel().setGeometry(cellMoved, geometry);
         } finally {
             graph.getModel().endUpdate();
         }
+    }private void moveCell(MouseEvent event, mxCell cellMoved) {
 
-    }
-
-    private void moveCell(MouseEvent event, mxCell cellMoved) {
-        int spaceBetweenCursorY = 20;
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
+        
+        double scale = MainFrame.getGraph().getView().getScale();
+        int spaceBetweenCursorY = (int) (20 / scale); 
 
         mxGeometry geo = cellMoved.getGeometry();
 
-        if (cellMoved.getEdgeAt(0) != null && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < event.getY()) {
+        if (cellMoved.getEdgeAt(0) != null && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < canvasCoords.y()) {
             spaceBetweenCursorY *= -1;
         }
 
-        double dx = event.getX() - geo.getCenterX();
-        double dy = event.getY() - geo.getCenterY() + spaceBetweenCursorY;
+        double dx = canvasCoords.x() - geo.getCenterX();
+        double dy = canvasCoords.y() - geo.getCenterY() + spaceBetweenCursorY;
+
+        MainFrame.getGraph().moveCells(new Object[]{cellMoved}, dx, dy);
+    }    private void moveInvisibleCell(MouseEvent event, mxCell cellMoved) {
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
+        
+        double transformedX = canvasCoords.x();
+        double transformedY = canvasCoords.y();
+        
+        
+        int spaceBetweenCursorY = 20; 
+
+        mxGeometry geo = cellMoved.getGeometry();
+
+        if (cellMoved.getEdgeAt(0) != null && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < transformedY) {
+            spaceBetweenCursorY *= -1;
+        }
+
+        double dx = transformedX - geo.getCenterX();
+        double dy = transformedY - geo.getCenterY() + spaceBetweenCursorY;
 
         MainFrame.getGraph().moveCells(new Object[]{cellMoved}, dx, dy);
     }
@@ -950,9 +965,8 @@ public class MainController extends MainFrame {
         }
 
         if (currentActionType == ActionType.CREATE_OPERATOR_CELL && this.ghostCell != null) {
-            this.moveCell(event, this.ghostCell);
-        } else if (currentActionType == ActionType.CREATE_EDGE && this.invisibleCellReference.get() != null) {
-            this.moveCell(event, this.invisibleCellReference.get());
+            this.moveCell(event, this.ghostCell);        } else if (currentActionType == ActionType.CREATE_EDGE && this.invisibleCellReference.get() != null) {
+            this.moveInvisibleCell(event, this.invisibleCellReference.get());
         } else if (this.currentActionReference.get() instanceof CreateTableCellAction createTable) {
             this.moveCell(event, createTable.getTableCell().getJCell());
         } else if (currentActionType == ActionType.CREATE_EDGE) {
