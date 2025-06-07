@@ -70,7 +70,8 @@ public class MainController extends MainFrame {
 
     private final AtomicReference<mxCell> invisibleCellReference = new AtomicReference<>(null);
 
-    private final AtomicReference<CurrentAction> currentActionReference = new AtomicReference<>(ConstantController.NONE_ACTION);
+    private final AtomicReference<CurrentAction> currentActionReference = new AtomicReference<>(
+            ConstantController.NONE_ACTION);
 
     public static final AtomicReference<Edge> currentEdgeReference = new AtomicReference<>(new Edge());
 
@@ -91,12 +92,15 @@ public class MainController extends MainFrame {
     private static int currentTableYPosition = 0;
 
     private boolean isTableCellSelected = false;
-
     public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
+    private boolean isPanning = false;
+    private Point panStartPoint = null;
+    private Point initialViewPosition = null;
+    private long lastPanUpdateTime = 0;
 
     // Map para armazenar os estilos originais das células
-    //private static Map<mxCell, String> originalStyles = new HashMap<>();
+    // private static Map<mxCell, String> originalStyles = new HashMap<>();
     public MainController() {
         super(new HashSet<>());
         this.tablesComponent.getGraphControl().addMouseListener(new MouseAdapter() {
@@ -133,7 +137,7 @@ public class MainController extends MainFrame {
             }
         });
 
-//        graph.setAutoSizeCells(true);
+        // graph.setAutoSizeCells(true);
         mxSwingConstants.VERTEX_SELECTION_COLOR = Color.BLUE;
 
         // Set the selection stroke to a solid line
@@ -157,9 +161,8 @@ public class MainController extends MainFrame {
                             Math.min(startPoint.x, endPoint.x) - getLocationOnScreen().x,
                             Math.min(startPoint.y, endPoint.y) - getLocationOnScreen().y,
                             Math.abs(startPoint.x - endPoint.x),
-                            Math.abs(startPoint.y - endPoint.y)
-                    );
-                    graphComponent.getGraphControl().repaint();  // Refresh to show the rectangle
+                            Math.abs(startPoint.y - endPoint.y));
+                    graphComponent.getGraphControl().repaint(); // Refresh to show the rectangle
 
                 }
             }
@@ -175,9 +178,8 @@ public class MainController extends MainFrame {
                             Math.min(startPoint.x, endPoint.x) - getLocationOnScreen().x,
                             Math.min(startPoint.y, endPoint.y) - getLocationOnScreen().y,
                             Math.abs(startPoint.x - endPoint.x),
-                            Math.abs(startPoint.y - endPoint.y)
-                    );
-                    graphComponent.getGraphControl().repaint();  // Refresh while dragging
+                            Math.abs(startPoint.y - endPoint.y));
+                    graphComponent.getGraphControl().repaint(); // Refresh while dragging
                 }
             }
         });
@@ -192,76 +194,78 @@ public class MainController extends MainFrame {
                             Math.min(startPoint.x, endPoint.x),
                             Math.min(startPoint.y, endPoint.y),
                             Math.abs(startPoint.x - endPoint.x),
-                            Math.abs(startPoint.y - endPoint.y)
-                    );
+                            Math.abs(startPoint.y - endPoint.y));
                     graphComponent.getGraphControl().repaint(); // Refresh while dragging
                 }
             }
         });
 
-//        // Definir um listener para mudanças na seleção
-//        graph.getSelectionModel().addListener(mxEvent.CHANGE, new mxEventSource.mxIEventListener() {
-//            @Override
-//            public void invoke(Object sender, mxEventObject evt) {
-//                // Restaurar o estilo original das células que perderam a seleção
-//                for (Map.Entry<mxCell, String> entry : originalStyles.entrySet()) {
-//                    mxCell cell = entry.getKey();
-//                    String originalStyle = entry.getValue();
-//                    graph.getModel().setStyle(cell, originalStyle);
-//                }
-//
-//                // Limpar o map para as células deselecionadas
-//                originalStyles.clear();
-//
-//                Object[] selectedCells = graph.getSelectionCells();
-//
-//                // Para cada célula selecionada, altere o estilo e salve o original
-//                for (Object cell : selectedCells) {
-//                    if (cell instanceof mxCell) {
-//                        mxCell mxCell = (mxCell) cell;
-//                        String originalStyle = mxCell.getStyle();
-//
-//                        // Salvar o estilo original
-//                        originalStyles.put(mxCell, originalStyle);
-//
-//                        // Aplicar novo estilo
-//                        String newStyle = originalStyle + ";" 
-//                                + mxConstants.STYLE_STROKECOLOR + "=blue;"
-//                                + mxConstants.STYLE_STROKEWIDTH + "=3;";
-//                                //+ mxConstants.STYLE_FILLCOLOR + "=yellow";
-//                        graph.getModel().setStyle(mxCell, newStyle);
-//                    }
-//                }
-//            }
-//        });
-        //graphComponent.getGraphControl().setTransferHandler(new FileTransferHandler());
-        //graphComponent.setImportEnabled(true);
-        //CustomDropTarget customDropTarget = new CustomDropTarget(graphComponent);
-//        customDropTarget.addDropTargetListener(new DropTargetListener() {
-//        // Add drag-and-drop support
-//            public void dragEnter(DropTargetDragEvent dtde) {}
-//            public void dragOver(DropTargetDragEvent dtde) {}
-//            public void dropActionChanged(DropTargetDragEvent dtde) {}
-//            public void dragExit(DropTargetEvent dte) {}
-//
-//            public void drop(DropTargetDropEvent dtde) {
-//                try {
-//                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
-//                    Transferable transferable = dtde.getTransferable();
-//                    DataFlavor[] flavors = transferable.getTransferDataFlavors();
-//                    for (DataFlavor flavor : flavors) {
-//                        if (flavor.isFlavorJavaFileListType()) {
-//                            java.util.List<File> files = (java.util.List<File>) transferable.getTransferData(flavor);
-//                            for (File file : files) {
-//                                ImportFile.importTXT(file);
-//                            }
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
+        // // Definir um listener para mudanças na seleção
+        // graph.getSelectionModel().addListener(mxEvent.CHANGE, new
+        // mxEventSource.mxIEventListener() {
+        // @Override
+        // public void invoke(Object sender, mxEventObject evt) {
+        // // Restaurar o estilo original das células que perderam a seleção
+        // for (Map.Entry<mxCell, String> entry : originalStyles.entrySet()) {
+        // mxCell cell = entry.getKey();
+        // String originalStyle = entry.getValue();
+        // graph.getModel().setStyle(cell, originalStyle);
+        // }
+        //
+        // // Limpar o map para as células deselecionadas
+        // originalStyles.clear();
+        //
+        // Object[] selectedCells = graph.getSelectionCells();
+        //
+        // // Para cada célula selecionada, altere o estilo e salve o original
+        // for (Object cell : selectedCells) {
+        // if (cell instanceof mxCell) {
+        // mxCell mxCell = (mxCell) cell;
+        // String originalStyle = mxCell.getStyle();
+        //
+        // // Salvar o estilo original
+        // originalStyles.put(mxCell, originalStyle);
+        //
+        // // Aplicar novo estilo
+        // String newStyle = originalStyle + ";"
+        // + mxConstants.STYLE_STROKECOLOR + "=blue;"
+        // + mxConstants.STYLE_STROKEWIDTH + "=3;";
+        // //+ mxConstants.STYLE_FILLCOLOR + "=yellow";
+        // graph.getModel().setStyle(mxCell, newStyle);
+        // }
+        // }
+        // }
+        // });
+        // graphComponent.getGraphControl().setTransferHandler(new
+        // FileTransferHandler());
+        // graphComponent.setImportEnabled(true);
+        // CustomDropTarget customDropTarget = new CustomDropTarget(graphComponent);
+        // customDropTarget.addDropTargetListener(new DropTargetListener() {
+        // // Add drag-and-drop support
+        // public void dragEnter(DropTargetDragEvent dtde) {}
+        // public void dragOver(DropTargetDragEvent dtde) {}
+        // public void dropActionChanged(DropTargetDragEvent dtde) {}
+        // public void dragExit(DropTargetEvent dte) {}
+        //
+        // public void drop(DropTargetDropEvent dtde) {
+        // try {
+        // dtde.acceptDrop(DnDConstants.ACTION_COPY);
+        // Transferable transferable = dtde.getTransferable();
+        // DataFlavor[] flavors = transferable.getTransferDataFlavors();
+        // for (DataFlavor flavor : flavors) {
+        // if (flavor.isFlavorJavaFileListType()) {
+        // java.util.List<File> files = (java.util.List<File>)
+        // transferable.getTransferData(flavor);
+        // for (File file : files) {
+        // ImportFile.importTXT(file);
+        // }
+        // }
+        // }
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
+        // });
         this.addWindowListener(new WindowAdapter() {
 
             @Override
@@ -277,7 +281,7 @@ public class MainController extends MainFrame {
 
     private void resetAnyAction() {
 
-        graph.removeCells(new Object[]{this.ghostCell}, true);
+        graph.removeCells(new Object[] { this.ghostCell }, true);
 
         this.ghostCell = null;
 
@@ -363,9 +367,9 @@ public class MainController extends MainFrame {
         Object source = event.getSource();
         String theme = null;
 
-//        if (source == this.importTableTopMenuBarItem) {
-//            this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
-//        } else 
+        // if (source == this.importTableTopMenuBarItem) {
+        // this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
+        // } else
         if (source == this.openDatabaseConnectionTopMenuBarItem) {
             openConnections();
         } else if (source == this.openCSVTableTopMenuBarItem) {
@@ -383,10 +387,10 @@ public class MainController extends MainFrame {
             theme = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
         } else if (source == this.nimbusThemeTopMenuBarItem) {
             theme = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
-//        } else if (source == this.undoTopMenuBarItem) {
-//            commandController.undo();
-//        } else if (source == this.redoTopMenuBarItem) {
-//            commandController.redo();
+            // } else if (source == this.undoTopMenuBarItem) {
+            // commandController.undo();
+            // } else if (source == this.redoTopMenuBarItem) {
+            // commandController.redo();
         }
 
         if (theme == null) {
@@ -401,15 +405,17 @@ public class MainController extends MainFrame {
                 | IllegalAccessException | UnsupportedLookAndFeelException exception) {
             new ErrorFrame(ConstantController.getString("error"));
         }
-    }    @Override
+    }
+
+    @Override
     public void mouseClicked(MouseEvent event) {
 
         this.jCell = (mxCell) MainFrame.getGraphComponent().getCellAt(event.getX(), event.getY());
 
-//        try {
-//            Thread.sleep(500);
-//        } catch (InterruptedException ex) {
-//        }
+        // try {
+        // Thread.sleep(500);
+        // } catch (InterruptedException ex) {
+        // }
         Optional<Cell> optionalCell = CellUtils.getActiveCell(this.jCell);
 
         if (optionalCell.isPresent() && SwingUtilities.isRightMouseButton(event)) {
@@ -418,7 +424,7 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.runQueryMenuItem);
             this.popupMenuJCell.add(this.informationsMenuItem);
             this.popupMenuJCell.add(this.exportTableMenuItem);
-            //this.popupMenuJCell.add(this.generateFyiTableMenuItem);
+            // this.popupMenuJCell.add(this.generateFyiTableMenuItem);
             this.popupMenuJCell.add(this.renameOperatorMenuItem);
             this.popupMenuJCell.add(this.saveQueryMenuItem);
             this.popupMenuJCell.add(this.editMenuItem);
@@ -434,14 +440,14 @@ public class MainController extends MainFrame {
 
             }
 
-//            if (cell.isOperationCell() && !cell.hasSingleSource()) {
-//                this.popupMenuJCell.remove(this.renameOperatorMenuItem);
-//            }
+            // if (cell.isOperationCell() && !cell.hasSingleSource()) {
+            // this.popupMenuJCell.remove(this.renameOperatorMenuItem);
+            // }
 
             if (cell instanceof OperationCell operationCell && !operationCell.hasBeenInitialized()) {
                 this.popupMenuJCell.remove(this.runQueryMenuItem);
                 this.popupMenuJCell.remove(this.operationsMenuItem);
-                //this.popupMenuJCell.remove(this.editMenuItem);
+                // this.popupMenuJCell.remove(this.editMenuItem);
                 this.popupMenuJCell.remove(this.exportTableMenuItem);
                 this.popupMenuJCell.remove(this.saveQueryMenuItem);
             }
@@ -486,8 +492,7 @@ public class MainController extends MainFrame {
 
     public void executeInsertTableCellCommand(mxCell jCell, mxCell ghostCell) {
         UndoableRedoableCommand command = new InsertTableCellCommand(
-                new AtomicReference<>(jCell), new AtomicReference<>(ghostCell)
-        );
+                new AtomicReference<>(jCell), new AtomicReference<>(ghostCell));
 
         commandController.execute(command);
     }
@@ -496,9 +501,11 @@ public class MainController extends MainFrame {
         UndoableRedoableCommand command = new InsertOperationCellCommand(
                 event, new AtomicReference<>(this.jCell), this.invisibleCellReference,
                 new AtomicReference<>(this.ghostCell), new AtomicReference<>(currentEdgeReference.get()),
-                this.currentActionReference
-        );        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE && !currentEdgeReference.get().hasParent()
-                && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent() && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
+                this.currentActionReference);
+        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE
+                && !currentEdgeReference.get().hasParent()
+                && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent()
+                && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
             return;
         }
 
@@ -524,18 +531,18 @@ public class MainController extends MainFrame {
 
     private void executeAsOperator(mxCell cell) {
 
-//        if (CellUtils.getActiveCell(cell).isEmpty()
-//                || !(CellUtils.getActiveCell(cell).get().isTableCell()
-//                || CellUtils.getActiveCell(cell).get().hasSingleSource()
-//                )
-//                ) {
-//            return;
-//        }
+        // if (CellUtils.getActiveCell(cell).isEmpty()
+        // || !(CellUtils.getActiveCell(cell).get().isTableCell()
+        // || CellUtils.getActiveCell(cell).get().hasSingleSource()
+        // )
+        // ) {
+        // return;
+        // }
 
         AtomicReference<Boolean> cancelService = new AtomicReference<>(false);
 
         Cell cell_ = CellUtils.getActiveCell(cell).get();
-        
+
         AsOperatorForm form = new AsOperatorForm(cancelService, cell_.getAlias());
 
         if (!cancelService.get()) {
@@ -544,18 +551,18 @@ public class MainController extends MainFrame {
     }
 
     public static void executeAsOperator(mxCell cell, String text) {
-//        if (CellUtils.getActiveCell(cell).isEmpty()
-//                || !(CellUtils.getActiveCell(cell).get().isTableCell()
-//                || CellUtils.getActiveCell(cell).get().hasSingleSource()
-//                )) {
-//            return;
-//        }
+        // if (CellUtils.getActiveCell(cell).isEmpty()
+        // || !(CellUtils.getActiveCell(cell).get().isTableCell()
+        // || CellUtils.getActiveCell(cell).get().hasSingleSource()
+        // )) {
+        // return;
+        // }
         Cell cell_ = CellUtils.getActiveCell(cell).get();
-        
+
         if (cell_ instanceof TableCell)
-            ((TableCell)cell_ ).asOperator(text);
-        else{
-            ((OperationCell)cell_ ).asOperator(text);
+            ((TableCell) cell_).asOperator(text);
+        else {
+            ((OperationCell) cell_).asOperator(text);
         }
     }
 
@@ -572,8 +579,8 @@ public class MainController extends MainFrame {
             executeAsOperator(jCell);
         } else if (menuItem == this.exportTableMenuItem) {
             this.export();
-//        } else if (menuItem == this.generateFyiTableMenuItem) {
-//            this.generateFyiTableCell();
+            // } else if (menuItem == this.generateFyiTableMenuItem) {
+            // this.generateFyiTableCell();
         } else if (menuItem == this.saveQueryMenuItem) {
             CellUtils
                     .getActiveCell(this.jCell)
@@ -623,27 +630,27 @@ public class MainController extends MainFrame {
             createOperationAction = OperationType.SORT.getAction();
             style = OperationType.SORT.displayName;
         }
-//         else if (this.indexerMenuItem == menuItem) {
-//            createOperationAction = OperationType.INDEXER.getAction();
-//            style = OperationType.INDEXER.displayName;
-//        }
+        // else if (this.indexerMenuItem == menuItem) {
+        // createOperationAction = OperationType.INDEXER.getAction();
+        // style = OperationType.INDEXER.displayName;
+        // }
 
         if (createOperationAction != null) {
             createOperationAction.setParent(this.jCell);
             this.currentActionReference.set(createOperationAction);
         }
 
-        if (createOperationAction != null || (clickedButton != null && this.currentActionReference.get().getType() == ActionType.CREATE_OPERATOR_CELL)) {
+        if (createOperationAction != null || (clickedButton != null
+                && this.currentActionReference.get().getType() == ActionType.CREATE_OPERATOR_CELL)) {
             this.ghostCell = (mxCell) graph.insertVertex(
                     graph.getDefaultParent(), "ghost", style,
                     MouseInfo.getPointerInfo().getLocation().getX() - MainFrame.getGraphComponent().getWidth(),
                     MouseInfo.getPointerInfo().getLocation().getY() - MainFrame.getGraphComponent().getHeight(),
-                    80, 30, style
-            );
+                    80, 30, style);
         }
     }
 
-    //not used
+    // not used
     private void generateFyiTableCell() throws Exception {
 
         AtomicReference<Boolean> cancelService = new AtomicReference<>(false);
@@ -660,10 +667,11 @@ public class MainController extends MainFrame {
             for (Column pkColumns : primaryKeyColumns) {
                 columns.add(new Column(cell.getColumns().stream()
                         .filter(c -> c.getSourceAndName()
-                        .equalsIgnoreCase((primaryKeyColumns.stream()
-                                .filter(x -> x.getSourceAndName()
-                                .equalsIgnoreCase(pkColumns.getSourceAndName()))
-                                .findFirst().orElseThrow()).getSourceAndName())).findFirst().orElseThrow(), true));
+                                .equalsIgnoreCase((primaryKeyColumns.stream()
+                                        .filter(x -> x.getSourceAndName()
+                                                .equalsIgnoreCase(pkColumns.getSourceAndName()))
+                                        .findFirst().orElseThrow()).getSourceAndName()))
+                        .findFirst().orElseThrow(), true));
             }
 
             for (Column c : cell.getColumns()) {
@@ -757,11 +765,9 @@ public class MainController extends MainFrame {
             File file = fileUpload.getSelectedFile();
             AtomicReference<Boolean> exitReference = new AtomicReference();
             CSVInfo info = new CSVRecognizerForm(
-                    Path.of(file.getAbsolutePath()), exitReference
-            ).getCSVInfo();
+                    Path.of(file.getAbsolutePath()), exitReference).getCSVInfo();
             TableCell tableCell = TableCreator.createCSVTable(
-                    info.tableName(), info.columns(), info, false
-            );
+                    info.tableName(), info.columns(), info, false);
             MainController.executeImportTableCommand(tableCell);
             CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
         }
@@ -789,8 +795,7 @@ public class MainController extends MainFrame {
 
         tablesGraph.insertVertex(
                 tablesGraph.getDefaultParent(), null, tableName, 0,
-                currentTableYPosition, tableCell.getWidth(), tableCell.getHeight(), tableCell.getStyle()
-        );
+                currentTableYPosition, tableCell.getWidth(), tableCell.getHeight(), tableCell.getStyle());
 
         tables.put(tableName, tableCell);
 
@@ -800,7 +805,7 @@ public class MainController extends MainFrame {
     }
 
     private void printScreen() {
-        saveSelectedNodesAsImage(graph);//new ExportFile();
+        saveSelectedNodesAsImage(graph);// new ExportFile();
     }
 
     private void saveSelectedNodesAsImage(mxGraph graph) {
@@ -830,7 +835,8 @@ public class MainController extends MainFrame {
         try {
             Robot robot = new Robot();
             Point locationOnScreen = getLocationOnScreen();
-            Rectangle screenRect = new Rectangle(locationOnScreen.x + selectionRectangle.x, locationOnScreen.y + selectionRectangle.y,
+            Rectangle screenRect = new Rectangle(locationOnScreen.x + selectionRectangle.x,
+                    locationOnScreen.y + selectionRectangle.y,
                     selectionRectangle.width, selectionRectangle.height);
             BufferedImage screenImage = robot.createScreenCapture(screenRect);
             ImageIO.write(screenImage, "png", new File(filePath));
@@ -860,15 +866,15 @@ public class MainController extends MainFrame {
                             this.executeRemoveCellCommand((mxCell) cell);
                         }
                     }
-                    //graph.removeCells(cells);
+                    // graph.removeCells(cells);
                 }
             } finally {
                 graph.getModel().endUpdate();
             }
 
-//            if (this.jCell != null) {
-//                this.executeRemoveCellCommand(this.jCell);
-//            }
+            // if (this.jCell != null) {
+            // this.executeRemoveCellCommand(this.jCell);
+            // }
             this.resetAnyAction();
         } else if (keyCode == KeyEvent.VK_E) {
             edgeAction();
@@ -890,10 +896,12 @@ public class MainController extends MainFrame {
             if (this.jCell != null && CellUtils.getActiveCell(this.jCell).isPresent()) {
                 CellUtils.getActiveCell(this.jCell).get().getTree().getTreeLayer();
             }
-//        } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
-//            commandController.undo();
-//        } else if (keyCode == KeyEvent.VK_Y && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
-//            commandController.redo();
+            // } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() &
+            // KeyEvent.CTRL_DOWN_MASK) != 0) {
+            // commandController.undo();
+            // } else if (keyCode == KeyEvent.VK_Y && (event.getModifiersEx() &
+            // KeyEvent.CTRL_DOWN_MASK) != 0) {
+            // commandController.redo();
         } else if (keyCode == KeyEvent.VK_M) {
         }
 
@@ -907,7 +915,9 @@ public class MainController extends MainFrame {
 
     private void setEdgeCursor() {
         graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
-    }    private void moveCell2(MouseEvent event, mxCell cellMoved) {
+    }
+
+    private void moveCell2(MouseEvent event, mxCell cellMoved) {
         entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
 
         graph.getModel().beginUpdate();
@@ -918,42 +928,47 @@ public class MainController extends MainFrame {
         } finally {
             graph.getModel().endUpdate();
         }
-    }private void moveCell(MouseEvent event, mxCell cellMoved) {
+    }
+
+    private void moveCell(MouseEvent event, mxCell cellMoved) {
 
         entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
-        
+
         double scale = MainFrame.getGraph().getView().getScale();
-        int spaceBetweenCursorY = (int) (20 / scale); 
+        int spaceBetweenCursorY = (int) (20 / scale);
 
         mxGeometry geo = cellMoved.getGeometry();
 
-        if (cellMoved.getEdgeAt(0) != null && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < canvasCoords.y()) {
+        if (cellMoved.getEdgeAt(0) != null
+                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < canvasCoords.y()) {
             spaceBetweenCursorY *= -1;
         }
 
         double dx = canvasCoords.x() - geo.getCenterX();
         double dy = canvasCoords.y() - geo.getCenterY() + spaceBetweenCursorY;
 
-        MainFrame.getGraph().moveCells(new Object[]{cellMoved}, dx, dy);
-    }    private void moveInvisibleCell(MouseEvent event, mxCell cellMoved) {
+        MainFrame.getGraph().moveCells(new Object[] { cellMoved }, dx, dy);
+    }
+
+    private void moveInvisibleCell(MouseEvent event, mxCell cellMoved) {
         entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
-        
+
         double transformedX = canvasCoords.x();
         double transformedY = canvasCoords.y();
-        
-        
-        int spaceBetweenCursorY = 20; 
+
+        int spaceBetweenCursorY = 20;
 
         mxGeometry geo = cellMoved.getGeometry();
 
-        if (cellMoved.getEdgeAt(0) != null && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < transformedY) {
+        if (cellMoved.getEdgeAt(0) != null
+                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < transformedY) {
             spaceBetweenCursorY *= -1;
         }
 
         double dx = transformedX - geo.getCenterX();
         double dy = transformedY - geo.getCenterY() + spaceBetweenCursorY;
 
-        MainFrame.getGraph().moveCells(new Object[]{cellMoved}, dx, dy);
+        MainFrame.getGraph().moveCells(new Object[] { cellMoved }, dx, dy);
     }
 
     @Override
@@ -965,7 +980,8 @@ public class MainController extends MainFrame {
         }
 
         if (currentActionType == ActionType.CREATE_OPERATOR_CELL && this.ghostCell != null) {
-            this.moveCell(event, this.ghostCell);        } else if (currentActionType == ActionType.CREATE_EDGE && this.invisibleCellReference.get() != null) {
+            this.moveCell(event, this.ghostCell);
+        } else if (currentActionType == ActionType.CREATE_EDGE && this.invisibleCellReference.get() != null) {
             this.moveInvisibleCell(event, this.invisibleCellReference.get());
         } else if (this.currentActionReference.get() instanceof CreateTableCellAction createTable) {
             this.moveCell(event, createTable.getTableCell().getJCell());
@@ -976,24 +992,92 @@ public class MainController extends MainFrame {
 
     @Override
     public void mousePressed(MouseEvent event) {
+        if (SwingUtilities.isMiddleMouseButton(event)) {
+            if (isPanning) {
+                isPanning = false;
+                panStartPoint = null;
+                initialViewPosition = null;
+            }
 
-        //        startX = event.getX();
-        //        startY = event.getY();
+            isPanning = true;
+            panStartPoint = new Point(event.getX(), event.getY());
+            initialViewPosition = new Point(graphComponent.getViewport().getViewPosition());
+
+            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            event.consume();
+            return;
+        }
+
+        // startX = event.getX();
+        // startY = event.getY();
     }
 
     @Override
     public void mouseDragged(MouseEvent event) {
 
-        //        int dx = event.getX() - startX;
-        //        int dy = event.getY() - startY;
+        if (isPanning && panStartPoint != null) {
+            // calculate the difference in position
+            int dx = event.getX() - panStartPoint.x;
+            int dy = event.getY() - panStartPoint.y;
+
+            // apply a threshold to avoid small movements
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 3.0) {
+                event.consume();
+                return;
+            }
+
+            // apply throttle
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastPanUpdateTime < 16) { // ~60 FPS
+                event.consume();
+                return;
+            }
+            lastPanUpdateTime = currentTime;
+
+            // apply smoothing factor to reduce sensitivity
+            double smoothingFactor = 0.8; // reduce sensitivity in 2
+            dx = (int) (dx * smoothingFactor);
+            dy = (int) (dy * smoothingFactor);
+
+            // calculate the new view position
+            Point newViewPosition = new Point(
+                    initialViewPosition.x - dx,
+                    initialViewPosition.y - dy);
+
+            newViewPosition.x = Math.max(0, newViewPosition.x);
+            newViewPosition.y = Math.max(0, newViewPosition.y);
+
+            // set the new view position
+            graphComponent.getViewport().setViewPosition(newViewPosition);
+
+            event.consume();
+            return;
+        }
+
+        // int dx = event.getX() - startX;
+        // int dy = event.getY() - startY;
         //
-        //        int viewX = graphComponent.getViewport().getView().getX();
-        //        int viewY = graphComponent.getViewport().getView().getY();
+        // int viewX = graphComponent.getViewport().getView().getX();
+        // int viewY = graphComponent.getViewport().getView().getY();
         //
-        //        graphComponent.getViewport().setViewPosition(new java.awt.Point(viewX - dx, viewY - dy));
+        // graphComponent.getViewport().setViewPosition(new java.awt.Point(viewX - dx,
+        // viewY - dy));
         //
-        //        startX = event.getX();
-        //        startY = event.getY();
+        // startX = event.getX();
+        // startY = event.getY();
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent event) {
+        if (isPanning) {
+            isPanning = false;
+            panStartPoint = null;
+            initialViewPosition = null;
+
+            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            event.consume();
+        }
     }
 
     public static Map<Integer, Tree> getTrees() {
@@ -1036,15 +1120,15 @@ public class MainController extends MainFrame {
 
         relation.setCell(
                 switch (cellType) {
-            case FYI_TABLE ->
-                new FYITableCell((FYITableCell) tableCell, jTableCell);
-            case CSV_TABLE ->
-                new CSVTableCell((CSVTableCell) tableCell, jTableCell);
-            case MEMORY_TABLE ->
-                new MemoryTableCell((MemoryTableCell) tableCell, jTableCell);
-            default ->
-                throw new RuntimeException();
-        });
+                    case FYI_TABLE ->
+                        new FYITableCell((FYITableCell) tableCell, jTableCell);
+                    case CSV_TABLE ->
+                        new CSVTableCell((CSVTableCell) tableCell, jTableCell);
+                    case MEMORY_TABLE ->
+                        new MemoryTableCell((MemoryTableCell) tableCell, jTableCell);
+                    default ->
+                        throw new RuntimeException();
+                });
 
         try {
             relation.getCell().getTable().open();
@@ -1077,25 +1161,24 @@ public class MainController extends MainFrame {
                 .getGraph()
                 .insertVertex(
                         graph.getDefaultParent(), null, type.getFormattedDisplayName(),
-                        x, y, width, 30, CellType.OPERATION.id
-                );
+                        x, y, width, 30, CellType.OPERATION.id);
 
         List<Cell> parents = new ArrayList<>();
 
-        if (operationExpression.getSource()!=null)
-        {
+        if (operationExpression.getSource() != null) {
             parents.addAll(List.of(operationExpression.getSource().getCell()));
         }
         if (operationExpression instanceof BinaryExpression binaryExpression) {
             parents.add(binaryExpression.getSource2().getCell());
         }
-        
-        operationExpression.setCell(new OperationCell(jCell, type, parents, operationExpression.getArguments(), operationExpression.getAlias()));
+
+        operationExpression.setCell(new OperationCell(jCell, type, parents, operationExpression.getArguments(),
+                operationExpression.getAlias()));
 
         OperationCell cell = operationExpression.getCell();
 
         cell.setAllNewTrees();
-        
+
         if (!(operationExpression.getAlias().isEmpty()))
             executeAsOperator(jCell, operationExpression.getAlias());
 
