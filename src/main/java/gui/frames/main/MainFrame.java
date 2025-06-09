@@ -79,6 +79,10 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem unmarkCellMenuItem;
 
+    protected JMenuItem copyMenuItem;
+
+    protected JMenuItem pasteMenuItem;
+
     protected JMenuItem selectionMenuItem;
 
     protected JMenuItem projectionMenuItem;
@@ -190,6 +194,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.removeMenuItem = new JMenuItem(ConstantController.getString("cell.remove"));
         this.markCellMenuItem = new JMenuItem(ConstantController.getString("cell.mark"));
         this.unmarkCellMenuItem = new JMenuItem(ConstantController.getString("cell.unmark"));
+        this.copyMenuItem = new JMenuItem("Copy");
+        this.pasteMenuItem = new JMenuItem("Paste");
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
         this.selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
@@ -583,6 +589,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.removeMenuItem.addActionListener(this);
         this.markCellMenuItem.addActionListener(this);
         this.unmarkCellMenuItem.addActionListener(this);
+        this.copyMenuItem.addActionListener(this);
+        this.pasteMenuItem.addActionListener(this);
         this.selectionMenuItem.addActionListener(this);
         this.projectionMenuItem.addActionListener(this);
         this.sortMenuItem.addActionListener(this);

@@ -508,6 +508,7 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.editMenuItem);
             this.popupMenuJCell.add(this.operationsMenuItem);
             this.popupMenuJCell.add(this.removeMenuItem);
+            this.popupMenuJCell.add(this.copyMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -553,6 +554,12 @@ public class MainController extends MainFrame {
             }
 
             this.popupMenuJCell.show(MainFrame.getGraphComponent().getGraphControl(), event.getX(), event.getY());
+        } else if (SwingUtilities.isRightMouseButton(event) && !optionalCell.isPresent()) {
+            if (controllers.clipboard.Clipboard.getInstance().hasData()) {
+                this.popupMenuJCell.removeAll();
+                this.popupMenuJCell.add(this.pasteMenuItem);
+                this.popupMenuJCell.show(MainFrame.getGraphComponent().getGraphControl(), event.getX(), event.getY());
+            }
         }
 
         if (optionalCell.isPresent() || this.ghostCell != null) {
@@ -681,6 +688,12 @@ public class MainController extends MainFrame {
             CellUtils.markCell(this.jCell);
         } else if (menuItem == this.unmarkCellMenuItem) {
             CellUtils.unmarkCell(this.jCell);
+        } else if (menuItem == this.copyMenuItem) {
+            commandController.execute(new CopyCellsCommand());
+        } else if (menuItem == this.pasteMenuItem) {
+            Point mousePosition = MouseInfo.getPointerInfo().getLocation();
+            SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());
+            commandController.execute(new PasteCellsCommand(mousePosition));
         } else if (menuItem == this.selectionMenuItem) {
             createOperationAction = OperationType.FILTER.getAction();
             style = OperationType.FILTER.displayName;
