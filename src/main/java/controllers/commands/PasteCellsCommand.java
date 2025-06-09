@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * Command to paste cells and edges from clipboard
  */
 public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCommand {
+
+    private static boolean isPasting = false;
     
     private final mxGraph graph;
     private final Point pasteLocation;
@@ -48,6 +50,10 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
 
     public PasteCellsCommand() {
         this(getDefaultPasteLocation());
+    }
+
+    public static boolean getIsPasting() {
+        return isPasting;
     }
 
     private static Point getDefaultPasteLocation() {
@@ -89,6 +95,7 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
         pastedCells.clear();
         
         graph.getModel().beginUpdate();
+        isPasting = true;
         try {
             double offsetX = pasteLocation.x;
             double offsetY = pasteLocation.y;
@@ -134,6 +141,7 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
             System.out.println("Pasted " + copiedItems.size() + " item(s) from clipboard at (" + pasteLocation.x + ", " + pasteLocation.y + ")");
             
         } finally {
+            isPasting = false;
             graph.getModel().endUpdate();
         }
     }

@@ -90,10 +90,12 @@ public class MainController extends MainFrame {
 
     private static int currentTableYPosition = 0;
 
-    private boolean isTableCellSelected = false;
-
-    public static Rectangle selectionRectangle = null; // Store the last selected rectangle
+    private boolean isTableCellSelected = false;    public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
+
+    private final Map<Object, Object> lastTargets = new HashMap<>();
+    
+    private static boolean isPopupBeingActivatedByCommand = false;
 
     // Map para armazenar os estilos originais das células
     //private static Map<mxCell, String> originalStyles = new HashMap<>();
@@ -118,6 +120,86 @@ public class MainController extends MainFrame {
                 this.isTableCellSelected = false;
             }
         });
+
+        graph.addListener(mxEvent.CELL_CONNECTED, (sender, evt) -> {
+            if (PasteCellsCommand.getIsPasting()) {
+                return;
+            }
+
+            Object edge = evt.getProperties().get("edge");
+            Object terminal = evt.getProperties().get("terminal");
+            Boolean source = (Boolean) evt.getProperties().get("source");
+            Boolean shoot = false;
+
+            if (edge instanceof mxCell && terminal instanceof mxCell) {
+                mxCell edgeCell = (mxCell) edge;
+                mxCell terminalCell = (mxCell) terminal;
+
+                if (!source) {
+                    Object previousTarget = lastTargets.get(edgeCell);
+                    if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
+                        && previousTarget != terminalCell) {
+                        Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevTargetCell);
+                        if (optionalPrevCell.isPresent() && optionalPrevCell.get() instanceof OperationCell) {
+                            OperationCell prevOperationCell = (OperationCell) optionalPrevCell.get();
+                            prevOperationCell.removeParents();
+                            prevOperationCell.setOperator(null);
+                            TreeUtils.recalculateContent(prevOperationCell);
+                            graph.refresh();
+                        }
+                    }
+
+                    lastTargets.put(edgeCell, terminalCell);
+
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(terminalCell);
+                    if (optionalCell.isPresent() && optionalCell.get() instanceof OperationCell) {
+                        OperationCell operationCell = (OperationCell) optionalCell.get();
+
+                        mxCell sourceCell = (mxCell) edgeCell.getSource();
+                        if (sourceCell != null) {
+                            Optional<Cell> sourceTableCell = CellUtils.getActiveCell(sourceCell);
+                            if (sourceTableCell.isPresent()) {
+                                SwingUtilities.invokeLater(() -> {
+                                    operationCell.removeParents();
+                                    operationCell.addParent(sourceTableCell.get());
+
+                                    if (!isPopupBeingActivatedByCommand) {
+                                        operationCell.editOperation(terminalCell);
+                                    }
+                                    TreeUtils.recalculateContent(operationCell);
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    mxCell targetCell = (mxCell) edgeCell.getTarget();
+                    if (targetCell != null) {
+                        Optional<Cell> optionalCell = CellUtils.getActiveCell(targetCell);
+                        if (optionalCell.isPresent() && optionalCell.get() instanceof OperationCell) {
+                            OperationCell operationCell = (OperationCell) optionalCell.get();
+                            SwingUtilities.invokeLater(() -> {
+                                Optional<Cell> sourceTableCell = CellUtils.getActiveCell(terminalCell);
+                                if (sourceTableCell.isPresent()) {
+                                    operationCell.removeParents();
+                                    operationCell.addParent(sourceTableCell.get());
+
+                                    if (!isPopupBeingActivatedByCommand) {
+                                        operationCell.editOperation(targetCell);
+                                    }
+                                    TreeUtils.recalculateContent(operationCell);
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        });
+
+        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
+            if (edge instanceof mxCell edgeCell && edgeCell.isEdge()) {
+                lastTargets.put(edgeCell, edgeCell.getTarget());
+            }
+        }
 
         // Set the background color of the graph component
         graphComponent.getViewport().setOpaque(true);
@@ -1099,10 +1181,16 @@ public class MainController extends MainFrame {
 
     public static void incrementCurrentTableYPosition(int offset) {
         currentTableYPosition += offset;
-    }
-
-    public static void decrementCurrentTableYPosition(int offset) {
+    }    public static void decrementCurrentTableYPosition(int offset) {
         currentTableYPosition = Math.max(currentTableYPosition - offset, 0);
+    }
+    
+    public static void setPopupBeingActivatedByCommand(boolean value) {
+        isPopupBeingActivatedByCommand = value;
+    }
+    
+    public static boolean isPopupBeingActivatedByCommand() {
+        return isPopupBeingActivatedByCommand;
     }
 
 }

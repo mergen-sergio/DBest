@@ -124,6 +124,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         this.child = child;
     }
 
+    public void removeChild() {
+        this.child = null;
+    }
+
     public Boolean hasChild() {
         return this.child != null;
     }

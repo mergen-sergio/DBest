@@ -86,10 +86,12 @@ public final class OperationCell extends Cell {
 
             this.updateOperation();
         }
-    }
-
-    public void editOperation(mxCell jCell) {
-        if (!(this.hasBeenInitialized || type==OperationType.CONDITION || type==OperationType.REFERENCE)) {
+    }    public void editOperation(mxCell jCell) {
+        // Allow opening popup for:
+        // 1. Already initialized operations
+        // 2. Operations that always allow editing (CONDITION, REFERENCE)
+        // 3. Operations that have a form (configuration dialog) - this enables popup for edge reconnections
+        if (!(this.hasBeenInitialized || type == OperationType.CONDITION || type == OperationType.REFERENCE || this.form != null)) {
             return;
         }
 
@@ -437,5 +439,26 @@ public final class OperationCell extends Cell {
         for (Column c : columns)
             newColumns.add(Column.changeSourceColumn(c, newName));
 
-        columns = newColumns;    }
+        columns = newColumns;
+    }    public void setParents(List<Cell> newParents) {
+        for (Cell oldParent : this.parents) {
+            if (oldParent.getChild() == this) {
+                oldParent.removeChild();
+            }
+        }
+
+        this.parents.clear();
+
+        if (newParents != null) {
+            this.parents.addAll(newParents);
+
+            for (Cell newParent : newParents) {
+                newParent.setChild(this);
+            }
+        }
+
+        if (this.hasBeenInitialized) {
+            this.updateOperation();
+        }
+    }
 }
