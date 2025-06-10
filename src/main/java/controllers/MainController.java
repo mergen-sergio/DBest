@@ -992,7 +992,11 @@ public class MainController extends MainFrame {
 
     @Override
     public void mousePressed(MouseEvent event) {
-        if (SwingUtilities.isMiddleMouseButton(event)) {
+        boolean isMiddleButton = SwingUtilities.isMiddleMouseButton(event) ||
+                event.getButton() == MouseEvent.BUTTON2 ||
+                (event.getModifiersEx() & InputEvent.BUTTON2_DOWN_MASK) != 0;
+
+        if (isMiddleButton) {
             if (isPanning) {
                 isPanning = false;
                 panStartPoint = null;
