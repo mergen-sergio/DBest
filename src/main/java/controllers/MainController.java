@@ -27,6 +27,7 @@ import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
 import enums.CellType;
 import enums.FileType;
+import enums.OperationArity;
 import enums.OperationType;
 import files.ExportFile;
 import files.FileUtils;
@@ -94,6 +95,7 @@ public class MainController extends MainFrame {
     private static Point startPoint = null; // Starting point of the rectangle
 
     private final Map<Object, Object> lastTargets = new HashMap<>();
+    private final Map<Object, Object> lastSources = new HashMap<>();
     
     private static boolean isPopupBeingActivatedByCommand = false;
 
@@ -120,7 +122,7 @@ public class MainController extends MainFrame {
                 this.isTableCellSelected = false;
             }
         });
-
+        
         graph.addListener(mxEvent.CELL_CONNECTED, (sender, evt) -> {
             if (PasteCellsCommand.getIsPasting()) {
                 return;
@@ -135,14 +137,21 @@ public class MainController extends MainFrame {
                 mxCell edgeCell = (mxCell) edge;
                 mxCell terminalCell = (mxCell) terminal;
 
-                if (!source) {
-                    Object previousTarget = lastTargets.get(edgeCell);
+                if (!source) {                    Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
                         && previousTarget != terminalCell) {
                         Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevTargetCell);
                         if (optionalPrevCell.isPresent() && optionalPrevCell.get() instanceof OperationCell) {
                             OperationCell prevOperationCell = (OperationCell) optionalPrevCell.get();
-                            prevOperationCell.removeParents();
+                            
+                            mxCell sourceCell = (mxCell) edgeCell.getSource();
+                            if (sourceCell != null) {
+                                Optional<Cell> sourceTableCell = CellUtils.getActiveCell(sourceCell);
+                                if (sourceTableCell.isPresent()) {
+                                    prevOperationCell.removeParent(sourceTableCell.get());
+                                }
+                            }
+                            
                             prevOperationCell.setOperator(null);
                             TreeUtils.recalculateContent(prevOperationCell);
                             graph.refresh();
@@ -156,34 +165,72 @@ public class MainController extends MainFrame {
                         OperationCell operationCell = (OperationCell) optionalCell.get();
 
                         mxCell sourceCell = (mxCell) edgeCell.getSource();
-                        if (sourceCell != null) {
+                        if (sourceCell != null) {                            
                             Optional<Cell> sourceTableCell = CellUtils.getActiveCell(sourceCell);
                             if (sourceTableCell.isPresent()) {
-                                SwingUtilities.invokeLater(() -> {
-                                    operationCell.removeParents();
-                                    operationCell.addParent(sourceTableCell.get());
+                                    SwingUtilities.invokeLater(() -> {
+                                    boolean addingNewParent = false;
+                                    
+                                    if (!operationCell.getParents().contains(sourceTableCell.get())) {
+                                        operationCell.addParent(sourceTableCell.get());
+                                        addingNewParent = true;                                    }
 
-                                    if (!isPopupBeingActivatedByCommand) {
+                                    boolean shouldActivatePopup = !isPopupBeingActivatedByCommand;
+                                    if (shouldActivatePopup && operationCell.getArity() == OperationArity.BINARY) {
+                                        shouldActivatePopup = addingNewParent && operationCell.getParents().size() >= 2;
+                                    }
+
+                                    if (shouldActivatePopup) {
                                         operationCell.editOperation(terminalCell);
                                     }
                                     TreeUtils.recalculateContent(operationCell);
                                 });
                             }
                         }
-                    }
+                    }                
                 } else {
+                    Object previousSource = lastSources.get(edgeCell);
+                    if (previousSource != null && previousSource instanceof mxCell prevSourceCell
+                        && previousSource != terminalCell) {
+                        Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevSourceCell);
+                        if (optionalPrevCell.isPresent()) {
+                            Cell prevSourceTableCell = optionalPrevCell.get();
+                            
+                            mxCell targetCell = (mxCell) edgeCell.getTarget();
+                            if (targetCell != null) {
+                                Optional<Cell> targetCellOpt = CellUtils.getActiveCell(targetCell);
+                                if (targetCellOpt.isPresent() && targetCellOpt.get() instanceof OperationCell) {
+                                    OperationCell targetOperationCell = (OperationCell) targetCellOpt.get();
+                                    prevSourceTableCell.removeChild();
+                                    targetOperationCell.removeParent(prevSourceTableCell);
+                                    TreeUtils.recalculateContent(targetOperationCell);
+                                    graph.refresh();
+                                }
+                            }
+                        }
+                    }
+
+                    lastSources.put(edgeCell, terminalCell);
+
                     mxCell targetCell = (mxCell) edgeCell.getTarget();
                     if (targetCell != null) {
                         Optional<Cell> optionalCell = CellUtils.getActiveCell(targetCell);
                         if (optionalCell.isPresent() && optionalCell.get() instanceof OperationCell) {
-                            OperationCell operationCell = (OperationCell) optionalCell.get();
-                            SwingUtilities.invokeLater(() -> {
+                            OperationCell operationCell = (OperationCell) optionalCell.get();                            SwingUtilities.invokeLater(() -> {
                                 Optional<Cell> sourceTableCell = CellUtils.getActiveCell(terminalCell);
                                 if (sourceTableCell.isPresent()) {
-                                    operationCell.removeParents();
-                                    operationCell.addParent(sourceTableCell.get());
+                                    boolean addingNewParent = false;
+                                    
+                                    if (!operationCell.getParents().contains(sourceTableCell.get())) {
+                                        operationCell.addParent(sourceTableCell.get());
+                                        addingNewParent = true;
+                                    }                                    
+                                    boolean shouldActivatePopup = !isPopupBeingActivatedByCommand;
+                                    if (shouldActivatePopup && operationCell.getArity() == OperationArity.BINARY) {
+                                        shouldActivatePopup = addingNewParent && operationCell.getParents().size() >= 2;
+                                    }
 
-                                    if (!isPopupBeingActivatedByCommand) {
+                                    if (shouldActivatePopup) {
                                         operationCell.editOperation(targetCell);
                                     }
                                     TreeUtils.recalculateContent(operationCell);
@@ -193,11 +240,10 @@ public class MainController extends MainFrame {
                     }
                 }
             }
-        });
-
-        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
+        });        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
             if (edge instanceof mxCell edgeCell && edgeCell.isEdge()) {
                 lastTargets.put(edgeCell, edgeCell.getTarget());
+                lastSources.put(edgeCell, edgeCell.getSource());
             }
         }
 
