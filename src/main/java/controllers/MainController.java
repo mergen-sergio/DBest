@@ -106,8 +106,18 @@ public class MainController extends MainFrame {
                 Object cell = MainController.this.tablesComponent.getCellAt(event.getX(), event.getY());
 
                 if (cell != null) {
-                    graph.setSelectionCell(new mxCell(((mxCell) cell).getValue()));
-                    MainController.this.isTableCellSelected = true;
+                    // Handle right-click for context menu
+                    if (SwingUtilities.isRightMouseButton(event)) {
+                        String tableName = (String) ((mxCell) cell).getValue();
+                        TableCell tableCell = tables.get(tableName);
+                        if (tableCell != null) {
+                            showTableContextMenu(event, tableCell);
+                        }
+                    } else {
+                        // Handle left-click for selection
+                        graph.setSelectionCell(new mxCell(((mxCell) cell).getValue()));
+                        MainController.this.isTableCellSelected = true;
+                    }
                 }
             }
         });
@@ -1097,6 +1107,222 @@ public class MainController extends MainFrame {
 
     public static void decrementCurrentTableYPosition(int offset) {
         currentTableYPosition = Math.max(currentTableYPosition - offset, 0);
+    }
+
+    /**
+     * Shows a context menu for table operations when right-clicking on a table in the sidebar
+     */
+    private void showTableContextMenu(MouseEvent event, TableCell tableCell) {
+        JPopupMenu contextMenu = new JPopupMenu();
+        
+        // Menu item for setting cache size
+        JMenuItem setCacheSizeMenuItem = new JMenuItem("Set Cache Size");
+        setCacheSizeMenuItem.addActionListener(e -> showSetCacheSizeDialog(tableCell));
+        
+        // Menu item for resetting cache
+        JMenuItem resetCacheMenuItem = new JMenuItem("Reset Cache");
+        resetCacheMenuItem.addActionListener(e -> resetTableCache(tableCell));
+        
+        contextMenu.add(setCacheSizeMenuItem);
+        contextMenu.add(resetCacheMenuItem);
+        
+        // Show the context menu at the mouse position
+        contextMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
+    }
+      /**
+     * Shows a dialog to set the cache size for a specific table
+     */
+    private void showSetCacheSizeDialog(TableCell tableCell) {
+        try {
+            // Get current cache size if available
+            String currentCacheSize = "Unknown";
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                
+                try {
+                    // Access the cache field to get actual cache size
+                    java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                    cacheField.setAccessible(true);
+                    Object cache = cacheField.get(btreeTable);
+                    
+                    if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                        ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                        
+                        // Get cacheSizeBytes field
+                        java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                        cacheSizeBytesField.setAccessible(true);
+                        int cacheSizeBytes = cacheSizeBytesField.getInt(tableCache);
+                        
+                        currentCacheSize = String.valueOf(cacheSizeBytes);
+                    } else {
+                        currentCacheSize = "No cache";
+                    }
+                } catch (Exception ex) {
+                    // Fallback to default cache size
+                    currentCacheSize = String.valueOf(TableCreator.cacheSize);
+                }
+            }
+            
+            String input = JOptionPane.showInputDialog(
+                this,
+                String.format("Current cache size: %s bytes\nEnter new cache size (in bytes):", currentCacheSize),
+                "Set Cache Size for " + tableCell.getName(),
+                JOptionPane.QUESTION_MESSAGE
+            );
+            
+            if (input != null && !input.trim().isEmpty()) {
+                try {
+                    int newCacheSize = Integer.parseInt(input.trim());
+                    if (newCacheSize <= 0) {
+                        JOptionPane.showMessageDialog(
+                            this,
+                            "Cache size must be a positive number.",
+                            "Invalid Cache Size",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        return;
+                    }
+                    
+                    setTableCacheSize(tableCell, newCacheSize);
+                    
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Cache size for table '%s' has been set to %d bytes.\n" +
+                                     "The change has been applied immediately.",
+                                     tableCell.getName(), newCacheSize),
+                        "Cache Size Updated",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                    
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter a valid number.",
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error setting cache size: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+      /**
+     * Sets the cache size for a specific table
+     */
+    private void setTableCacheSize(TableCell tableCell, int newCacheSize) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+                
+                if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                    
+                    // Update cacheSizeBytes field
+                    java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                    cacheSizeBytesField.setAccessible(true);
+                    cacheSizeBytesField.setInt(tableCache, newCacheSize);
+                    
+                    // Update cacheSize field (calculated from cacheSizeBytes / pageSize)
+                    java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                    cacheSizeField.setAccessible(true);
+                    int pageSize = tableCache.getPageSize();
+                    int newCacheSizeInPages = newCacheSize / pageSize;
+                    if (newCacheSizeInPages <= 0) {
+                        newCacheSizeInPages = 1; // Minimum cache size of 1 page
+                    }
+                    cacheSizeField.setInt(tableCache, newCacheSizeInPages);
+                      // Clear the cache to apply the new size settings
+                    java.lang.reflect.Method clearCacheMethod = tableCache.getClass().getDeclaredMethod("clearCache");
+                    clearCacheMethod.setAccessible(true);
+                    clearCacheMethod.invoke(tableCache);
+                    
+                    // Re-initialize the cache with new settings if it's an LRU cache
+                    if (cache instanceof ibd.persistent.cache.LRUCache) {
+                        java.lang.reflect.Method initCacheMethod = tableCache.getClass().getDeclaredMethod("initCache");
+                        initCacheMethod.setAccessible(true);
+                        initCacheMethod.invoke(tableCache);
+                    }
+                    
+                    System.out.println(String.format("Updated cache size for table '%s' to %d bytes (%d pages)", 
+                                     tableCell.getName(), newCacheSize, newCacheSizeInPages));
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache to modify.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Error updating table cache size: " + ex.getMessage());
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                this,
+                "Error updating cache size: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    
+    /**
+     * Resets the cache for a specific table
+     */
+    private void resetTableCache(TableCell tableCell) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+                  if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                      // Use reflection to access the protected clearCache method
+                    java.lang.reflect.Method clearCacheMethod = tableCache.getClass().getDeclaredMethod("clearCache");
+                    clearCacheMethod.setAccessible(true);
+                    clearCacheMethod.invoke(tableCache);
+                    
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Cache for table '%s' has been reset successfully.", tableCell.getName()),
+                        "Cache Reset",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                    
+                    System.out.println(String.format("Reset cache for table '%s'", tableCell.getName()));
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache to reset.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error resetting cache: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.err.println("Error resetting table cache: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
 }
