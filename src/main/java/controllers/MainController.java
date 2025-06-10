@@ -44,6 +44,7 @@ import gui.frames.forms.importexport.ExportAsForm;
 import gui.frames.forms.importexport.ImportAsForm;
 import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
+import gui.frames.forms.operations.JoinForm;
 import gui.frames.jdbc.ConnectionsFrame;
 import gui.frames.main.MainFrame;
 import ibd.query.SingleSource;
@@ -89,14 +90,33 @@ public class MainController extends MainFrame {
 
     public static ConnectionsFrame connectionsFrame = null;
 
-    private static int currentTableYPosition = 0;
-
-    private boolean isTableCellSelected = false;    public static Rectangle selectionRectangle = null; // Store the last selected rectangle
+    private static int currentTableYPosition = 0;    private boolean isTableCellSelected = false;
+    
+    public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
-
+    
     private final Map<Object, Object> lastTargets = new HashMap<>();
     private final Map<Object, Object> lastSources = new HashMap<>();
     
+    /**
+     * Checks if an OperationCell represents a join operation by checking its form
+     */
+    private boolean isJoinOperation(OperationCell operationCell) {
+        if (operationCell == null || operationCell.getType() == null) {
+            return false;
+        }
+        return operationCell.getType().form == gui.frames.forms.operations.JoinForm.class;
+    }
+    
+    /**
+     * Clears edge labels when disconnecting from join operations
+     */
+    private void clearEdgeLabelsIfNeeded(mxCell edgeCell, OperationCell previousOperationCell) {
+        if (edgeCell != null && isJoinOperation(previousOperationCell)) {
+            graph.getModel().setValue(edgeCell, "");
+        }
+    }
+
     private static boolean isPopupBeingActivatedByCommand = false;
 
     // Map para armazenar os estilos originais das células
@@ -137,12 +157,15 @@ public class MainController extends MainFrame {
                 mxCell edgeCell = (mxCell) edge;
                 mxCell terminalCell = (mxCell) terminal;
 
-                if (!source) {                    Object previousTarget = lastTargets.get(edgeCell);
+                if (!source) {
+                    Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
                         && previousTarget != terminalCell) {
                         Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevTargetCell);
                         if (optionalPrevCell.isPresent() && optionalPrevCell.get() instanceof OperationCell) {
                             OperationCell prevOperationCell = (OperationCell) optionalPrevCell.get();
+                            
+                            clearEdgeLabelsIfNeeded(edgeCell, prevOperationCell);
                             
                             mxCell sourceCell = (mxCell) edgeCell.getSource();
                             if (sourceCell != null) {
@@ -201,6 +224,9 @@ public class MainController extends MainFrame {
                                 Optional<Cell> targetCellOpt = CellUtils.getActiveCell(targetCell);
                                 if (targetCellOpt.isPresent() && targetCellOpt.get() instanceof OperationCell) {
                                     OperationCell targetOperationCell = (OperationCell) targetCellOpt.get();
+                                    
+                                    clearEdgeLabelsIfNeeded(edgeCell, targetOperationCell);
+                                    
                                     prevSourceTableCell.removeChild();
                                     targetOperationCell.removeParent(prevSourceTableCell);
                                     TreeUtils.recalculateContent(targetOperationCell);
@@ -240,7 +266,9 @@ public class MainController extends MainFrame {
                     }
                 }
             }
-        });        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
+        });        
+        
+        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
             if (edge instanceof mxCell edgeCell && edgeCell.isEdge()) {
                 lastTargets.put(edgeCell, edgeCell.getTarget());
                 lastSources.put(edgeCell, edgeCell.getSource());
