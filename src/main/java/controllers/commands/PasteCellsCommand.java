@@ -19,6 +19,8 @@ import entities.cells.MemoryTableCell;
 import gui.frames.main.MainFrame;
 import entities.utils.cells.CellUtils;
 import entities.utils.TreeUtils;
+import entities.utils.CoordinatesUtils;
+import entities.Coordinates;
 
 import java.awt.*;
 import java.awt.MouseInfo;
@@ -36,13 +38,11 @@ import java.util.concurrent.atomic.AtomicReference;
 public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCommand {
 
     private static boolean isPasting = false;
-    
     private final mxGraph graph;
-    private final Point pasteLocation;
+    private final Coordinates pasteLocation;
     private Map<mxCell, mxCell> pastedCells;
     private static final double PASTE_OFFSET = 1.0;
-    
-    public PasteCellsCommand(Point pasteLocation) {
+      public PasteCellsCommand(Coordinates pasteLocation) {
         this.graph = MainFrame.getGraph();
         this.pasteLocation = pasteLocation;
         this.pastedCells = new HashMap<>();
@@ -54,9 +54,7 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
 
     public static boolean getIsPasting() {
         return isPasting;
-    }
-
-    private static Point getDefaultPasteLocation() {
+    }    private static Coordinates getDefaultPasteLocation() {
         try {
             mxGraphComponent graphComponent = MainFrame.getGraphComponent();
             PointerInfo pointerInfo = MouseInfo.getPointerInfo();
@@ -64,21 +62,16 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
 
             SwingUtilities.convertPointFromScreen(mouseScreenPos, graphComponent);
 
-            mxGraph graph = MainFrame.getGraph();
-            double scale = graph.getView().getScale();
-            mxPoint translate = graph.getView().getTranslate();
+            Coordinates canvasCoords = CoordinatesUtils.transformScreenToCanvasCoordinates(mouseScreenPos.x, mouseScreenPos.y);
 
-            double graphX = (mouseScreenPos.x / scale) - translate.getX();
-            double graphY = (mouseScreenPos.y / scale) - translate.getY();
-
-            return new Point(
-                (int)graphX + (int)PASTE_OFFSET,
-                (int)graphY + (int)PASTE_OFFSET
+            return new Coordinates(
+                (int)(canvasCoords.x() + PASTE_OFFSET),
+                (int)(canvasCoords.y() + PASTE_OFFSET)
             );
 
         } catch (Exception e) {
             System.err.println("Error getting paste location: " + e.getMessage());
-            return new Point(100, 100);
+            return new Coordinates(100, 100);
         }
     }
 
@@ -93,12 +86,11 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
         
         List<CopiedItem> copiedItems = clipboard.getCopiedItems();
         pastedCells.clear();
-        
-        graph.getModel().beginUpdate();
+          graph.getModel().beginUpdate();
         isPasting = true;
         try {
-            double offsetX = pasteLocation.x;
-            double offsetY = pasteLocation.y;
+            double offsetX = pasteLocation.x();
+            double offsetY = pasteLocation.y();
             
             double minX = Double.MAX_VALUE;
             double minY = Double.MAX_VALUE;
@@ -112,8 +104,8 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
             }
             
             if (minX != Double.MAX_VALUE && minY != Double.MAX_VALUE) {
-                offsetX = pasteLocation.x - minX;
-                offsetY = pasteLocation.y - minY;
+                offsetX = pasteLocation.x() - minX;
+                offsetY = pasteLocation.y() - minY;
             }
             
             for (CopiedItem item : copiedItems) {
@@ -134,11 +126,9 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
                 if (activeCell instanceof OperationCell operationCell) {
                     rebuildParentChildRelationships(operationCell);
                 }
-            }
-
-            recalculateOperationCellsBottomUp();
+            }            recalculateOperationCellsBottomUp();
             
-            System.out.println("Pasted " + copiedItems.size() + " item(s) from clipboard at (" + pasteLocation.x + ", " + pasteLocation.y + ")");
+            System.out.println("Pasted " + copiedItems.size() + " item(s) from clipboard at (" + pasteLocation.x() + ", " + pasteLocation.y() + ")");
             
         } finally {
             isPasting = false;
