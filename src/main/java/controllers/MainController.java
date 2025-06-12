@@ -1128,8 +1128,7 @@ public class MainController extends MainFrame {
         
         // Show the context menu at the mouse position
         contextMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
-    }
-      /**
+    }    /**
      * Shows a dialog to set the cache size for a specific table
      */
     private void showSetCacheSizeDialog(TableCell tableCell) {
@@ -1163,12 +1162,32 @@ public class MainController extends MainFrame {
                     currentCacheSize = String.valueOf(TableCreator.cacheSize);
                 }
             }
-            String input = JOptionPane.showInputDialog(
+            
+            // Create custom dialog with Reset Default button
+            JTextField inputField = new JTextField(15);
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(new JLabel(String.format("Current cache size: %s bytes\nEnter new cache size (in bytes):", currentCacheSize)), BorderLayout.NORTH);
+            panel.add(inputField, BorderLayout.CENTER);
+            
+            String[] options = {"Reset Default", "OK", "Cancel"};
+            int result = JOptionPane.showOptionDialog(
                 this,
-                String.format("Current cache size: %s bytes\nEnter new cache size (in bytes):", currentCacheSize),
+                panel,
                 "Set Cache Size for " + tableCell.getName(),
-                JOptionPane.QUESTION_MESSAGE
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1] // Default to "OK"
             );
+            
+            String input = null;
+            if (result == 0) { // Reset Default button clicked
+                input = "5000000";
+            } else if (result == 1) { // OK button clicked
+                input = inputField.getText();
+            }
+            
             if (input != null && !input.trim().isEmpty()) {
                 try {
                     int newCacheSize = Integer.parseInt(input.trim());
@@ -1199,10 +1218,14 @@ public class MainController extends MainFrame {
                             // ignore, keep previous value
                         }
                     }
+                    String message = String.format("Cache size for table '%s' has been set to %d bytes.\nThe number of pages has been set to %d pages.",
+                                                 tableCell.getName(), newCacheSize, newCacheSizeInPages);
+                    if (result == 0) { // If Reset Default was used
+                        message += "\n(Set to default size)";
+                    }
                     JOptionPane.showMessageDialog(
                         this,
-                        String.format("Cache size for table '%s' has been set to %d bytes.\nThe number of pages has been set to %d pages.",
-                                     tableCell.getName(), newCacheSize, newCacheSizeInPages),
+                        message,
                         "Cache Size Updated",
                         JOptionPane.INFORMATION_MESSAGE
                     );
