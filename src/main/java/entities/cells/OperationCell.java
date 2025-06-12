@@ -86,10 +86,12 @@ public final class OperationCell extends Cell {
 
             this.updateOperation();
         }
-    }
-
-    public void editOperation(mxCell jCell) {
-        if (!(this.hasBeenInitialized || type==OperationType.CONDITION || type==OperationType.REFERENCE)) {
+    }    public void editOperation(mxCell jCell) {
+        // Allow opening popup for:
+        // 1. Already initialized operations
+        // 2. Operations that always allow editing (CONDITION, REFERENCE)
+        // 3. Operations that have a form (configuration dialog) - this enables popup for edge reconnections
+        if (!(this.hasBeenInitialized || type == OperationType.CONDITION || type == OperationType.REFERENCE || this.form != null)) {
             return;
         }
 
@@ -250,23 +252,47 @@ public final class OperationCell extends Cell {
     public void reset() {
         this.name = this.type.getFormattedDisplayName();
         this.parents.clear();
-        this.arguments.clear();
-        this.hasBeenInitialized = false;
+        this.arguments.clear();        this.hasBeenInitialized = false;
 
         this.removeError();
 
         MainFrame.getGraph().getModel().setValue(this.jCell, this.name);
     }
-
+    
     public OperationCell copy() {
-        OperationCell operationCell = new OperationCell(
-                this.jCell, this.type, new ArrayList<>(this.parents), new ArrayList<>(this.arguments), getAlias()
-        );
-
+        // Create a new mxCell instance to avoid shared state
+        mxCell newCell;
+        try {
+            newCell = (mxCell) this.jCell.clone();
+        } catch (CloneNotSupportedException e) {
+            // Fallback to creating a new cell with same properties
+            newCell = new mxCell(this.jCell.getValue(), this.jCell.getGeometry(), this.jCell.getStyle());
+        }
+        
+        // Use the simple constructor to avoid automatic parent-child connections
+        OperationCell operationCell = new OperationCell(newCell, this.type);
+        
+        // Manually copy the properties without creating graph connections
         operationCell.name = this.name;
         operationCell.alias = this.alias;
-
-        return operationCell;
+        operationCell.arguments = new ArrayList<>(this.arguments);
+        operationCell.hasBeenInitialized = this.hasBeenInitialized;
+        operationCell.error = this.error;
+        operationCell.errorMessage = this.errorMessage;        // IMPORTANT: Don't copy parents list - the copied cell should be independent
+        // operationCell.parents remains empty (new ArrayList<>() from constructor)
+        // This ensures the copied cell has no parent relationships initially        // Don't copy the operator - it will be rebuilt by TreeUtils.recalculateContent()
+        // This ensures no shared state between original and copied cells
+        operationCell.setOperator(null);
+          // Ensure columns are independent copies if they exist
+        if (this.columns != null && !this.columns.isEmpty()) {
+            operationCell.columns = new ArrayList<>();
+            for (Column column : this.columns) {
+                // Create a new Column instance to avoid shared references
+                Column newColumn = new Column(column.NAME, column.SOURCE, 
+                                           column.DATA_TYPE, column.IS_PRIMARY_KEY);
+                operationCell.columns.add(newColumn);
+            }
+        }        return operationCell;
     }
 
     public void updateFrom(OperationCell cell) {
@@ -296,7 +322,7 @@ public final class OperationCell extends Cell {
         return this.columns;
         
     }
-
+    
     public void setColumns() {
         //List<Column> columns = new ArrayList<>();
         columns.clear();
@@ -305,12 +331,35 @@ public final class OperationCell extends Cell {
             this.getOperator().prepareAllDataSources();
             dataSources = this.getOperator().getExposedDataSources();
         } catch (Exception ex) {
+            return; // Exit early if we can't get data sources
         }
+        
+        // Check if dataSources is null to prevent NullPointerException
+        if (dataSources == null) {
+            System.err.println("Warning: dataSources is null, cannot set columns");
+            return;
+        }
+        
         for (int i = 0; i < dataSources.length; i++) {
             ReferedDataSource dataSource = dataSources[i];
+            if (dataSource == null || dataSource.prototype == null) {
+                System.err.println("Warning: Null data source or prototype at index " + i);
+                continue;
+            }
+            
             List<ibd.table.prototype.column.Column> sourceColumns = dataSource.prototype.getColumns();
+            if (sourceColumns == null) {
+                System.err.println("Warning: Source columns is null for data source " + dataSource.alias);
+                continue;
+            }
+            
             for (int j = 0; j < sourceColumns.size(); j++) {
                 ibd.table.prototype.column.Column col = sourceColumns.get(j);
+                if (col == null) {
+                    System.err.println("Warning: Null column at index " + j);
+                    continue;
+                }
+                
                 ColumnDataType dataType = RowConverter.convertDataType(col);
                 Column column = new Column(col.getName(), dataSource.alias, dataType, false);
                 columns.add(column);
@@ -391,6 +440,25 @@ public final class OperationCell extends Cell {
             newColumns.add(Column.changeSourceColumn(c, newName));
 
         columns = newColumns;
+    }    public void setParents(List<Cell> newParents) {
+        for (Cell oldParent : this.parents) {
+            if (oldParent.getChild() == this) {
+                oldParent.removeChild();
+            }
+        }
 
+        this.parents.clear();
+
+        if (newParents != null) {
+            this.parents.addAll(newParents);
+
+            for (Cell newParent : newParents) {
+                newParent.setChild(this);
+            }
+        }
+
+        if (this.hasBeenInitialized) {
+            this.updateOperation();
+        }
     }
 }

@@ -181,11 +181,21 @@ public class IndexScan extends SourceOperation {
                         break; // Move to the next PK column
                     }
                 }
-            }
-
-            // Replace the original fastFilters list with the reorganized version
+            }            // Replace the original fastFilters list with the reorganized version
             fastFilters.clear();
             fastFilters.addAll(reorganizedFilters);
+
+            // Set column location information for each fast filter's ColumnDescriptor
+            // This is essential to prevent NullPointerException when accessing colIndex later
+            for (SingleColumnLookupFilter fastFilter : fastFilters) {
+                try {
+                    setColumnLocation(fastFilter.getColumnDescriptor());
+                } catch (Exception e) {
+                    // If setColumnLocation fails, the filter won't work properly
+                    // Log the error and continue - this will be handled at runtime
+                    System.err.println("Warning: Could not set column location for filter: " + fastFilter);
+                }
+            }
 
             List<SingleColumnLookupFilter> unnModifiedFastFilters = new ArrayList();
             for (SingleColumnLookupFilter fastFilter : fastFilters) {

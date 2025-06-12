@@ -27,4 +27,18 @@ public final class JDBCTableCell extends TableCell {
     public JDBCTableCell(JDBCTableCell tableCell, mxCell jCell) {
         super(jCell, tableCell.getName(), tableCell.getTable(), tableCell.getHeaderFile());
     }
+    
+    @Override
+    public Cell copy() {
+        mxCell newCell;
+        try {
+            newCell = (mxCell) this.jCell.clone();
+        } catch (CloneNotSupportedException e) {
+            newCell = new mxCell(this.jCell.getValue(), this.jCell.getGeometry(), this.jCell.getStyle());
+        }
+        
+        JDBCTableCell copy = new JDBCTableCell(newCell, this.getName(), this.getTable(), this.getHeaderFile());
+        copy.alias = this.alias;
+        return copy;
+    }
 }
