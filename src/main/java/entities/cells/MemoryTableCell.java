@@ -31,5 +31,18 @@ public final class MemoryTableCell extends TableCell {
     public MemoryTableCell(MemoryTableCell tableCell, mxCell jCell){
         super(jCell, tableCell.getName(), tableCell.getTable(), null);
     }
-
+    
+    @Override
+    public Cell copy() {
+        mxCell newCell;
+        try {
+            newCell = (mxCell) this.jCell.clone();
+        } catch (CloneNotSupportedException e) {
+            newCell = new mxCell(this.jCell.getValue(), this.jCell.getGeometry(), this.jCell.getStyle());
+        }
+        
+        MemoryTableCell copy = new MemoryTableCell(this, newCell);
+        copy.alias = this.alias;
+        return copy;
+    }
 }

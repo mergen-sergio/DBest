@@ -124,6 +124,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         this.child = child;
     }
 
+    public void removeChild() {
+        this.child = null;
+    }
+
     public Boolean hasChild() {
         return this.child != null;
     }
@@ -146,6 +150,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     
     public String getAlias() {
         return this.alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 
     public boolean canBeParent(){
@@ -255,6 +263,8 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     public String toString() {
         return this.name;
     }
+
+    public abstract Cell copy();
 
     public abstract boolean hasParents();
 

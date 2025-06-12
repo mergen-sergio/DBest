@@ -66,7 +66,7 @@ public class Test_11 {
             //System.out.println("insert "+count);
             count++;
             Key key = new PrimitiveKey(prototype);
-            key.setKeys(new Long[]{new Long(level), new Long(outerSeq), new Long(innerSeq)});
+            key.setKeys(new Long[]{Long.valueOf(level), Long.valueOf(outerSeq), Long.valueOf(innerSeq)});
             list.add(key);
 
         }
@@ -79,7 +79,7 @@ public class Test_11 {
         Random r = new Random();
         for (int i = start; i < end; i++) {
             Key key = new PrimitiveKey(prototype);
-            key.setKeys(new Long[]{new Long(r.nextInt(5)), new Long(r.nextInt(5)), new Long(i)});
+            key.setKeys(new Long[]{Long.valueOf(r.nextInt(5)), Long.valueOf(r.nextInt(5)), Long.valueOf(i)});
             list.add(key);
         }
 
@@ -100,7 +100,7 @@ public class Test_11 {
             int outerSeq = r.nextInt(end2);
 
             Key query = new PrimitiveKey(prototype);
-            query.setKeys(new Long[]{new Long(level), new Long(outerSeq), new Long(innerSeq)});
+            query.setKeys(new Long[]{Long.valueOf(level), Long.valueOf(outerSeq), Long.valueOf(innerSeq)});
             list.add(query);
         }
     }
@@ -113,7 +113,7 @@ public class Test_11 {
             for (int j = 0; j < end2; j++) {
                 for (int l = 0; l < 10; l++) {
                     Key key = new PrimitiveKey(prototype);
-                    key.setKeys(new Long[]{new Long(i), new Long(j), new Long(l)});
+                    key.setKeys(new Long[]{Long.valueOf(i), Long.valueOf(j), Long.valueOf(l)});
                     list.add(key);
                 }
             }
