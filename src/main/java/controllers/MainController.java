@@ -1136,24 +1136,25 @@ public class MainController extends MainFrame {
         try {
             // Get current cache size if available
             String currentCacheSize = "Unknown";
+            int newCacheSizeInPages = -1; // <-- Add this variable to store the number of pages
             if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
                 ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
-                
                 try {
                     // Access the cache field to get actual cache size
                     java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
                     cacheField.setAccessible(true);
                     Object cache = cacheField.get(btreeTable);
-                    
                     if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
                         ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
-                        
                         // Get cacheSizeBytes field
                         java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
                         cacheSizeBytesField.setAccessible(true);
                         int cacheSizeBytes = cacheSizeBytesField.getInt(tableCache);
-                        
                         currentCacheSize = String.valueOf(cacheSizeBytes);
+                        // Get cacheSize (pages)
+                        java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                        cacheSizeField.setAccessible(true);
+                        newCacheSizeInPages = cacheSizeField.getInt(tableCache);
                     } else {
                         currentCacheSize = "No cache";
                     }
@@ -1162,14 +1163,12 @@ public class MainController extends MainFrame {
                     currentCacheSize = String.valueOf(TableCreator.cacheSize);
                 }
             }
-            
             String input = JOptionPane.showInputDialog(
                 this,
                 String.format("Current cache size: %s bytes\nEnter new cache size (in bytes):", currentCacheSize),
                 "Set Cache Size for " + tableCell.getName(),
                 JOptionPane.QUESTION_MESSAGE
             );
-            
             if (input != null && !input.trim().isEmpty()) {
                 try {
                     int newCacheSize = Integer.parseInt(input.trim());
@@ -1182,18 +1181,31 @@ public class MainController extends MainFrame {
                         );
                         return;
                     }
-                    
                     setTableCacheSize(tableCell, newCacheSize);
-                    
+                    // After setting, try to get the new number of pages again
+                    if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                        ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                        try {
+                            java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                            cacheField.setAccessible(true);
+                            Object cache = cacheField.get(btreeTable);
+                            if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                                ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                                java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                                cacheSizeField.setAccessible(true);
+                                newCacheSizeInPages = cacheSizeField.getInt(tableCache);
+                            }
+                        } catch (Exception ex) {
+                            // ignore, keep previous value
+                        }
+                    }
                     JOptionPane.showMessageDialog(
                         this,
-                        String.format("Cache size for table '%s' has been set to %d bytes.\n" +
-                                     "The change has been applied immediately.",
-                                     tableCell.getName(), newCacheSize),
+                        String.format("Cache size for table '%s' has been set to %d bytes.\nThe number of pages has been set to %d pages.",
+                                     tableCell.getName(), newCacheSize, newCacheSizeInPages),
                         "Cache Size Updated",
                         JOptionPane.INFORMATION_MESSAGE
                     );
-                    
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(
                         this,
@@ -1254,8 +1266,8 @@ public class MainController extends MainFrame {
                         initCacheMethod.invoke(tableCache);
                     }
                     
-                    System.out.println(String.format("Updated cache size for table '%s' to %d bytes (%d pages)", 
-                                     tableCell.getName(), newCacheSize, newCacheSizeInPages));
+                    /*System.out.println(String.format("Updated cache size for table '%s' to %d bytes (%d pages)",
+                                     tableCell.getName(), newCacheSize, newCacheSizeInPages));*/
                 } else {
                     JOptionPane.showMessageDialog(
                         this,
@@ -1303,7 +1315,7 @@ public class MainController extends MainFrame {
                         JOptionPane.INFORMATION_MESSAGE
                     );
                     
-                    System.out.println(String.format("Reset cache for table '%s'", tableCell.getName()));
+                    //System.out.println(String.format("Reset cache for table '%s'", tableCell.getName()));
                 } else {
                     JOptionPane.showMessageDialog(
                         this,
