@@ -27,7 +27,6 @@ import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
 import enums.CellType;
 import enums.FileType;
-import enums.OperationArity;
 import enums.OperationType;
 import files.ExportFile;
 import files.FileUtils;
@@ -44,7 +43,6 @@ import gui.frames.forms.importexport.ExportAsForm;
 import gui.frames.forms.importexport.ImportAsForm;
 import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
-import gui.frames.forms.operations.JoinForm;
 import gui.frames.jdbc.ConnectionsFrame;
 import gui.frames.main.MainFrame;
 import ibd.query.SingleSource;
@@ -92,37 +90,14 @@ public class MainController extends MainFrame {
     public static ConnectionsFrame connectionsFrame = null;
 
     private static int currentTableYPosition = 0;
-    private boolean isTableCellSelected = false;
 
+    private boolean isTableCellSelected = false;
     public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
     private boolean isPanning = false;
     private Point panStartPoint = null;
     private Point initialViewPosition = null;
     private long lastPanUpdateTime = 0;
-    private final Map<Object, Object> lastTargets = new HashMap<>();
-    private final Map<Object, Object> lastSources = new HashMap<>();
-
-    /**
-     * Checks if an OperationCell represents a join operation by checking its form
-     */
-    private boolean isJoinOperation(OperationCell operationCell) {
-        if (operationCell == null || operationCell.getType() == null) {
-            return false;
-        }
-        return operationCell.getType().form == gui.frames.forms.operations.JoinForm.class;
-    }
-
-    /**
-     * Clears edge labels when disconnecting from join operations
-     */
-    private void clearEdgeLabelsIfNeeded(mxCell edgeCell, OperationCell previousOperationCell) {
-        if (edgeCell != null && isJoinOperation(previousOperationCell)) {
-            graph.getModel().setValue(edgeCell, "");
-        }
-    }
-
-    private static boolean isPopupBeingActivatedByCommand = false;
 
     // Map para armazenar os estilos originais das células
     // private static Map<mxCell, String> originalStyles = new HashMap<>();
@@ -147,140 +122,6 @@ public class MainController extends MainFrame {
                 this.isTableCellSelected = false;
             }
         });
-
-        graph.addListener(mxEvent.CELL_CONNECTED, (sender, evt) -> {
-            if (PasteCellsCommand.getIsPasting()) {
-                return;
-            }
-
-            Object edge = evt.getProperties().get("edge");
-            Object terminal = evt.getProperties().get("terminal");
-            Boolean source = (Boolean) evt.getProperties().get("source");
-            Boolean shoot = false;
-
-            if (edge instanceof mxCell && terminal instanceof mxCell) {
-                mxCell edgeCell = (mxCell) edge;
-                mxCell terminalCell = (mxCell) terminal;
-
-                if (!source) {
-                    Object previousTarget = lastTargets.get(edgeCell);
-                    if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
-                            && previousTarget != terminalCell) {
-                        Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevTargetCell);
-                        if (optionalPrevCell.isPresent() && optionalPrevCell.get() instanceof OperationCell) {
-                            OperationCell prevOperationCell = (OperationCell) optionalPrevCell.get();
-
-                            clearEdgeLabelsIfNeeded(edgeCell, prevOperationCell);
-
-                            mxCell sourceCell = (mxCell) edgeCell.getSource();
-                            if (sourceCell != null) {
-                                Optional<Cell> sourceTableCell = CellUtils.getActiveCell(sourceCell);
-                                if (sourceTableCell.isPresent()) {
-                                    prevOperationCell.removeParent(sourceTableCell.get());
-                                }
-                            }
-
-                            prevOperationCell.setOperator(null);
-                            TreeUtils.recalculateContent(prevOperationCell);
-                            graph.refresh();
-                        }
-                    }
-
-                    lastTargets.put(edgeCell, terminalCell);
-
-                    Optional<Cell> optionalCell = CellUtils.getActiveCell(terminalCell);
-                    if (optionalCell.isPresent() && optionalCell.get() instanceof OperationCell) {
-                        OperationCell operationCell = (OperationCell) optionalCell.get();
-
-                        mxCell sourceCell = (mxCell) edgeCell.getSource();
-                        if (sourceCell != null) {
-                            Optional<Cell> sourceTableCell = CellUtils.getActiveCell(sourceCell);
-                            if (sourceTableCell.isPresent()) {
-                                SwingUtilities.invokeLater(() -> {
-                                    boolean addingNewParent = false;
-
-                                    if (!operationCell.getParents().contains(sourceTableCell.get())) {
-                                        operationCell.addParent(sourceTableCell.get());
-                                        addingNewParent = true;
-                                    }
-
-                                    boolean shouldActivatePopup = !isPopupBeingActivatedByCommand;
-                                    if (shouldActivatePopup && operationCell.getArity() == OperationArity.BINARY) {
-                                        shouldActivatePopup = addingNewParent && operationCell.getParents().size() >= 2;
-                                    }
-
-                                    if (shouldActivatePopup) {
-                                        operationCell.editOperation(terminalCell);
-                                    }
-                                    TreeUtils.recalculateContent(operationCell);
-                                });
-                            }
-                        }
-                    }
-                } else {
-                    Object previousSource = lastSources.get(edgeCell);
-                    if (previousSource != null && previousSource instanceof mxCell prevSourceCell
-                            && previousSource != terminalCell) {
-                        Optional<Cell> optionalPrevCell = CellUtils.getActiveCell(prevSourceCell);
-                        if (optionalPrevCell.isPresent()) {
-                            Cell prevSourceTableCell = optionalPrevCell.get();
-
-                            mxCell targetCell = (mxCell) edgeCell.getTarget();
-                            if (targetCell != null) {
-                                Optional<Cell> targetCellOpt = CellUtils.getActiveCell(targetCell);
-                                if (targetCellOpt.isPresent() && targetCellOpt.get() instanceof OperationCell) {
-                                    OperationCell targetOperationCell = (OperationCell) targetCellOpt.get();
-
-                                    clearEdgeLabelsIfNeeded(edgeCell, targetOperationCell);
-
-                                    prevSourceTableCell.removeChild();
-                                    targetOperationCell.removeParent(prevSourceTableCell);
-                                    TreeUtils.recalculateContent(targetOperationCell);
-                                    graph.refresh();
-                                }
-                            }
-                        }
-                    }
-
-                    lastSources.put(edgeCell, terminalCell);
-
-                    mxCell targetCell = (mxCell) edgeCell.getTarget();
-                    if (targetCell != null) {
-                        Optional<Cell> optionalCell = CellUtils.getActiveCell(targetCell);
-                        if (optionalCell.isPresent() && optionalCell.get() instanceof OperationCell) {
-                            OperationCell operationCell = (OperationCell) optionalCell.get();
-                            SwingUtilities.invokeLater(() -> {
-                                Optional<Cell> sourceTableCell = CellUtils.getActiveCell(terminalCell);
-                                if (sourceTableCell.isPresent()) {
-                                    boolean addingNewParent = false;
-
-                                    if (!operationCell.getParents().contains(sourceTableCell.get())) {
-                                        operationCell.addParent(sourceTableCell.get());
-                                        addingNewParent = true;
-                                    }
-                                    boolean shouldActivatePopup = !isPopupBeingActivatedByCommand;
-                                    if (shouldActivatePopup && operationCell.getArity() == OperationArity.BINARY) {
-                                        shouldActivatePopup = addingNewParent && operationCell.getParents().size() >= 2;
-                                    }
-
-                                    if (shouldActivatePopup) {
-                                        operationCell.editOperation(targetCell);
-                                    }
-                                    TreeUtils.recalculateContent(operationCell);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        });
-
-        for (Object edge : graph.getEdges(graph.getDefaultParent())) {
-            if (edge instanceof mxCell edgeCell && edgeCell.isEdge()) {
-                lastTargets.put(edgeCell, edgeCell.getTarget());
-                lastSources.put(edgeCell, edgeCell.getSource());
-            }
-        }
 
         // Set the background color of the graph component
         graphComponent.getViewport().setOpaque(true);
@@ -589,7 +430,6 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.editMenuItem);
             this.popupMenuJCell.add(this.operationsMenuItem);
             this.popupMenuJCell.add(this.removeMenuItem);
-            this.popupMenuJCell.add(this.copyMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -635,12 +475,6 @@ public class MainController extends MainFrame {
             }
 
             this.popupMenuJCell.show(MainFrame.getGraphComponent().getGraphControl(), event.getX(), event.getY());
-        } else if (SwingUtilities.isRightMouseButton(event) && !optionalCell.isPresent()) {
-            if (controllers.clipboard.Clipboard.getInstance().hasData()) {
-                this.popupMenuJCell.removeAll();
-                this.popupMenuJCell.add(this.pasteMenuItem);
-                this.popupMenuJCell.show(MainFrame.getGraphComponent().getGraphControl(), event.getX(), event.getY());
-            }
         }
 
         if (optionalCell.isPresent() || this.ghostCell != null) {
@@ -668,7 +502,6 @@ public class MainController extends MainFrame {
                 event, new AtomicReference<>(this.jCell), this.invisibleCellReference,
                 new AtomicReference<>(this.ghostCell), new AtomicReference<>(currentEdgeReference.get()),
                 this.currentActionReference);
-
         if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE
                 && !currentEdgeReference.get().hasParent()
                 && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent()
@@ -769,12 +602,6 @@ public class MainController extends MainFrame {
             CellUtils.markCell(this.jCell);
         } else if (menuItem == this.unmarkCellMenuItem) {
             CellUtils.unmarkCell(this.jCell);
-        } else if (menuItem == this.copyMenuItem) {
-            commandController.execute(new CopyCellsCommand());
-        } else if (menuItem == this.pasteMenuItem) {
-            Point mousePosition = MouseInfo.getPointerInfo().getLocation();
-            SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());
-            commandController.execute(new PasteCellsCommand(mousePosition));
         } else if (menuItem == this.selectionMenuItem) {
             createOperationAction = OperationType.FILTER.getAction();
             style = OperationType.FILTER.displayName;
@@ -1069,12 +896,6 @@ public class MainController extends MainFrame {
             if (this.jCell != null && CellUtils.getActiveCell(this.jCell).isPresent()) {
                 CellUtils.getActiveCell(this.jCell).get().getTree().getTreeLayer();
             }
-        } else if (keyCode == KeyEvent.VK_C && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
-            // Ctrl+C: Copy selected cells
-            commandController.execute(new CopyCellsCommand());
-        } else if (keyCode == KeyEvent.VK_V && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
-            // Ctrl+V: Paste cells from clipboard
-            commandController.execute(new PasteCellsCommand());
             // } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() &
             // KeyEvent.CTRL_DOWN_MASK) != 0) {
             // commandController.undo();
@@ -1377,14 +1198,6 @@ public class MainController extends MainFrame {
 
     public static void decrementCurrentTableYPosition(int offset) {
         currentTableYPosition = Math.max(currentTableYPosition - offset, 0);
-    }
-
-    public static void setPopupBeingActivatedByCommand(boolean value) {
-        isPopupBeingActivatedByCommand = value;
-    }
-
-    public static boolean isPopupBeingActivatedByCommand() {
-        return isPopupBeingActivatedByCommand;
     }
 
 }
