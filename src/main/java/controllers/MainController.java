@@ -96,7 +96,10 @@ public class MainController extends MainFrame {
 
     public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
-
+    private boolean isPanning = false;
+    private Point panStartPoint = null;
+    private Point initialViewPosition = null;
+    private long lastPanUpdateTime = 0;
     private final Map<Object, Object> lastTargets = new HashMap<>();
     private final Map<Object, Object> lastSources = new HashMap<>();
 
@@ -668,6 +671,7 @@ public class MainController extends MainFrame {
 
         if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE
                 && !currentEdgeReference.get().hasParent()
+                && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent()
                 && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
             return;
         }
@@ -1093,30 +1097,55 @@ public class MainController extends MainFrame {
     }
 
     private void moveCell2(MouseEvent event, mxCell cellMoved) {
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
 
         graph.getModel().beginUpdate();
         try {
             mxGeometry geometry = cellMoved.getGeometry();
-            geometry.setTerminalPoint(new mxPoint(event.getX(), event.getY()), false);
+            geometry.setTerminalPoint(new mxPoint(canvasCoords.x(), canvasCoords.y()), false);
             graph.getModel().setGeometry(cellMoved, geometry);
         } finally {
             graph.getModel().endUpdate();
         }
-
     }
 
     private void moveCell(MouseEvent event, mxCell cellMoved) {
+
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
+
+        double scale = MainFrame.getGraph().getView().getScale();
+        int spaceBetweenCursorY = (int) (20 / scale);
+
+        mxGeometry geo = cellMoved.getGeometry();
+
+        if (cellMoved.getEdgeAt(0) != null
+                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < canvasCoords.y()) {
+            spaceBetweenCursorY *= -1;
+        }
+
+        double dx = canvasCoords.x() - geo.getCenterX();
+        double dy = canvasCoords.y() - geo.getCenterY() + spaceBetweenCursorY;
+
+        MainFrame.getGraph().moveCells(new Object[] { cellMoved }, dx, dy);
+    }
+
+    private void moveInvisibleCell(MouseEvent event, mxCell cellMoved) {
+        entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
+
+        double transformedX = canvasCoords.x();
+        double transformedY = canvasCoords.y();
+
         int spaceBetweenCursorY = 20;
 
         mxGeometry geo = cellMoved.getGeometry();
 
         if (cellMoved.getEdgeAt(0) != null
-                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < event.getY()) {
+                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < transformedY) {
             spaceBetweenCursorY *= -1;
         }
 
-        double dx = event.getX() - geo.getCenterX();
-        double dy = event.getY() - geo.getCenterY() + spaceBetweenCursorY;
+        double dx = transformedX - geo.getCenterX();
+        double dy = transformedY - geo.getCenterY() + spaceBetweenCursorY;
 
         MainFrame.getGraph().moveCells(new Object[] { cellMoved }, dx, dy);
     }
@@ -1132,7 +1161,7 @@ public class MainController extends MainFrame {
         if (currentActionType == ActionType.CREATE_OPERATOR_CELL && this.ghostCell != null) {
             this.moveCell(event, this.ghostCell);
         } else if (currentActionType == ActionType.CREATE_EDGE && this.invisibleCellReference.get() != null) {
-            this.moveCell(event, this.invisibleCellReference.get());
+            this.moveInvisibleCell(event, this.invisibleCellReference.get());
         } else if (this.currentActionReference.get() instanceof CreateTableCellAction createTable) {
             this.moveCell(event, createTable.getTableCell().getJCell());
         } else if (currentActionType == ActionType.CREATE_EDGE) {
@@ -1142,6 +1171,25 @@ public class MainController extends MainFrame {
 
     @Override
     public void mousePressed(MouseEvent event) {
+        boolean isMiddleButton = SwingUtilities.isMiddleMouseButton(event) ||
+                event.getButton() == MouseEvent.BUTTON2 ||
+                (event.getModifiersEx() & InputEvent.BUTTON2_DOWN_MASK) != 0;
+
+        if (isMiddleButton) {
+            if (isPanning) {
+                isPanning = false;
+                panStartPoint = null;
+                initialViewPosition = null;
+            }
+
+            isPanning = true;
+            panStartPoint = new Point(event.getX(), event.getY());
+            initialViewPosition = new Point(graphComponent.getViewport().getViewPosition());
+
+            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            event.consume();
+            return;
+        }
 
         // startX = event.getX();
         // startY = event.getY();
@@ -1149,6 +1197,46 @@ public class MainController extends MainFrame {
 
     @Override
     public void mouseDragged(MouseEvent event) {
+
+        if (isPanning && panStartPoint != null) {
+            // calculate the difference in position
+            int dx = event.getX() - panStartPoint.x;
+            int dy = event.getY() - panStartPoint.y;
+
+            // apply a threshold to avoid small movements
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 3.0) {
+                event.consume();
+                return;
+            }
+
+            // apply throttle
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastPanUpdateTime < 16) { // ~60 FPS
+                event.consume();
+                return;
+            }
+            lastPanUpdateTime = currentTime;
+
+            // apply smoothing factor to reduce sensitivity
+            double smoothingFactor = 0.8; // reduce sensitivity in 2
+            dx = (int) (dx * smoothingFactor);
+            dy = (int) (dy * smoothingFactor);
+
+            // calculate the new view position
+            Point newViewPosition = new Point(
+                    initialViewPosition.x - dx,
+                    initialViewPosition.y - dy);
+
+            newViewPosition.x = Math.max(0, newViewPosition.x);
+            newViewPosition.y = Math.max(0, newViewPosition.y);
+
+            // set the new view position
+            graphComponent.getViewport().setViewPosition(newViewPosition);
+
+            event.consume();
+            return;
+        }
 
         // int dx = event.getX() - startX;
         // int dy = event.getY() - startY;
@@ -1161,6 +1249,18 @@ public class MainController extends MainFrame {
         //
         // startX = event.getX();
         // startY = event.getY();
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent event) {
+        if (isPanning) {
+            isPanning = false;
+            panStartPoint = null;
+            initialViewPosition = null;
+
+            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            event.consume();
+        }
     }
 
     public static Map<Integer, Tree> getTrees() {
