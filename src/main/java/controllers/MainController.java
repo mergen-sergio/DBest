@@ -774,7 +774,8 @@ public class MainController extends MainFrame {
         } else if (menuItem == this.pasteMenuItem) {
             Point mousePosition = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());
-            commandController.execute(new PasteCellsCommand(mousePosition));
+            entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(mousePosition.x, mousePosition.y);
+            commandController.execute(new PasteCellsCommand(canvasCoords));
         } else if (menuItem == this.selectionMenuItem) {
             createOperationAction = OperationType.FILTER.getAction();
             style = OperationType.FILTER.displayName;
