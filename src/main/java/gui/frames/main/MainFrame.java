@@ -1,11 +1,13 @@
 package gui.frames.main;
 
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import com.mxgraph.model.mxCell;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
 import com.mxgraph.view.mxStylesheet;
 import controllers.ConstantController;
+import controllers.MainController;
 import entities.Action.CurrentAction;
 import entities.buttons.Button;
 import entities.buttons.OperationButton;
@@ -54,6 +56,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JToolBar toolBar;
 
     protected Set<Button<?>> buttons;
+
+    protected JPopupMenu tablesPopupMenu;
+
+    protected JMenuItem removeTableMenuItem;
+
+    protected JMenuItem renameTableMenuItem;
 
     protected JPopupMenu popupMenuJCell;
 
@@ -183,6 +191,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.toolBar = new JToolBar();
         this.buttons = buttons;
         this.popupMenuJCell = new JPopupMenu();
+        this.tablesPopupMenu = new JPopupMenu();
         this.topMenuBar = new JMenuBar();
         this.runQueryMenuItem = new JMenuItem(ConstantController.getString("cell.runQuery"));
         this.informationsMenuItem = new JMenuItem(ConstantController.getString("cell.informations"));
@@ -196,6 +205,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.unmarkCellMenuItem = new JMenuItem(ConstantController.getString("cell.unmark"));
         this.copyMenuItem = new JMenuItem("Copy");
         this.pasteMenuItem = new JMenuItem("Paste");
+        this.removeTableMenuItem = new JMenuItem("Remove Table");
+        this.renameTableMenuItem = new JMenuItem("Rename Table");
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
         this.selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
@@ -242,7 +253,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.getContentPane().add(scrollPane, BorderLayout.EAST);
         this.getContentPane().add(this.toolBar, BorderLayout.SOUTH);
 
-        
+
         
         this.addOperationButtons();
         this.addBottomButtons();
@@ -261,6 +272,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.setMenuItemsListener();
 
         this.addMenuItemOperations();
+
+        this.tablesPopupMenu.add(this.removeTableMenuItem);
+        this.tablesPopupMenu.add(this.renameTableMenuItem);
 
         mainContainer = this.getContentPane();
 
@@ -540,16 +554,92 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     }
 
     private void setTablesSavedGraphConfig() {
-        this.tablesComponent.getGraphControl().addMouseListener(this);
+        this.tablesComponent.getGraphControl().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                Object cell = tablesComponent.getCellAt(event.getX(), event.getY());
+                if (cell != null) {
+                    tablesGraph.setSelectionCell(cell);
+
+                    if (SwingUtilities.isRightMouseButton(event)) {
+                        tablesPopupMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
+                    }
+                }
+            }
+        });
+
+        this.removeTableMenuItem.addActionListener(e -> {
+            Object[] selectedCells = tablesGraph.getSelectionCells();
+
+            if (selectedCells != null && selectedCells.length > 0) {
+                mxCell selectedCell = (mxCell) selectedCells[0];
+                String tableName = selectedCell.getValue().toString();
+
+                int confirm = JOptionPane.showConfirmDialog(
+                    MainFrame.this,
+                    "Are you sure you want to remove table '" + tableName + "'?",
+                    "Confirm Removal",
+                    JOptionPane.YES_NO_OPTION
+                );
+
+                if (confirm == JOptionPane.YES_OPTION) {
+                    MainController.removeTable(tableName, selectedCell);
+                }
+            }
+        });
+
+        this.renameTableMenuItem.addActionListener(e -> {
+
+            Object[] selectedCells = tablesGraph.getSelectionCells();
+            if (selectedCells != null && selectedCells.length > 0) {
+                mxCell selectedCell = (mxCell) selectedCells[0];
+                String currentName = selectedCell.getValue().toString();
+
+                while (true) {
+                    String newName = JOptionPane.showInputDialog(
+                        MainFrame.this,
+                        "Enter new name for the table:",
+                        "Rename Table",
+                        JOptionPane.QUESTION_MESSAGE
+                    );
+
+                    if (newName == null) break;
+
+                    if (newName.trim().isEmpty()) {
+                        JOptionPane.showMessageDialog(
+                            MainFrame.this,
+                            "Table name cannot be empty!",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        continue;
+                    }
+
+                    if (!MainController.isValidNewTableName(newName)) {
+                        JOptionPane.showMessageDialog(
+                            MainFrame.this,
+                            "A table with this name already exists!",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        continue;
+                    }
+
+                    MainController.renameTable(currentName, newName, selectedCell);
+                    break;
+                }
+            }
+        });
+
         this.tablesComponent.setConnectable(false);
 
         tablesGraph.setAutoSizeCells(false);
         tablesGraph.setCellsResizable(false);
         tablesGraph.setAutoOrigin(false);
-        tablesGraph.setCellsEditable(false);
+        tablesGraph.setCellsEditable(true);
         tablesGraph.setAllowDanglingEdges(false);
         tablesGraph.setCellsMovable(false);
-        tablesGraph.setCellsDeletable(false);
+        tablesGraph.setCellsDeletable(true);
     }
 
     private void setGraphConfig() {
