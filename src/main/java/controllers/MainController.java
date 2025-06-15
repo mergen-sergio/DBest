@@ -1430,6 +1430,7 @@ public class MainController extends MainFrame {
                     }
                 }
             }
+
             graph.removeCells(cellsToRemove.toArray(new Object[0]));
         } finally {
             graph.getModel().endUpdate();
@@ -1443,6 +1444,7 @@ public class MainController extends MainFrame {
 
     public static void renameTable(String currentName, String newName, mxCell cell) {
         TableCell tableCell = tables.remove(currentName);
+
         if (tableCell != null) {
             tableCell.setName(newName);
             tables.put(newName, tableCell);

@@ -558,7 +558,6 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
             @Override
             public void mousePressed(MouseEvent event) {
                 Object cell = tablesComponent.getCellAt(event.getX(), event.getY());
-
                 if (cell != null) {
                     tablesGraph.setSelectionCell(cell);
 
