@@ -1455,6 +1455,7 @@ public class MainController extends MainFrame {
             tablesGraph.getModel().endUpdate();
             tablesGraph.refresh();
         }
+
         graph.getModel().beginUpdate();
         try {
             for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {

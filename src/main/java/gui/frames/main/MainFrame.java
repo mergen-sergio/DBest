@@ -571,6 +571,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         this.removeTableMenuItem.addActionListener(e -> {
             Object[] selectedCells = tablesGraph.getSelectionCells();
+
             if (selectedCells != null && selectedCells.length > 0) {
                 mxCell selectedCell = (mxCell) selectedCells[0];
                 String tableName = selectedCell.getValue().toString();
@@ -589,6 +590,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         });
 
         this.renameTableMenuItem.addActionListener(e -> {
+
             Object[] selectedCells = tablesGraph.getSelectionCells();
             if (selectedCells != null && selectedCells.length > 0) {
                 mxCell selectedCell = (mxCell) selectedCells[0];
