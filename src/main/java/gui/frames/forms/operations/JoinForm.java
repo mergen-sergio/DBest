@@ -25,6 +25,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
     private final JButton btnColumnSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
     private final JButton btnRemove = new JButton(ConstantController.getString("operationForm.remove"));
     private final JButton btnClear = new JButton(ConstantController.getString("operationForm.clear"));
+    private final JButton btnAutoJoin = new JButton(ConstantController.getString("operationForm.automaticJoin"));
 
     private final JPanel checkBoxPanel = new JPanel();
     private final ArrayList<JCheckBox> joinCheckBoxes = new ArrayList<JCheckBox>();
@@ -114,6 +115,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         btnColumnSet1.addActionListener(this);
         btnRemove.addActionListener(this);
         btnClear.addActionListener(this);
+        btnAutoJoin.addActionListener(this);
 
         checkBoxPanel.setLayout(new BoxLayout(checkBoxPanel, BoxLayout.Y_AXIS));
         checkBoxPanel.setPreferredSize(new Dimension(300, 300));
@@ -131,6 +133,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         addExtraComponent(btnColumnSet1, 7, 0, 1, 1);
         addExtraComponent(btnRemove, 7, 1, 1, 1);
         addExtraComponent(btnClear, 7, 2, 1, 1);
+        addExtraComponent(btnAutoJoin, 5, 2, 2, 1);
 
         addExtraComponent(new JScrollPane(checkBoxPanel), 0, 3, 8, 3);
 
@@ -178,9 +181,8 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         }
 
         if (e.getSource() == btnColumnSet1) {
-            String col1 = comboBoxSource.getSelectedItem() + "." + comboBoxColumn.getSelectedItem();
-            String col2 = comboBoxSource2.getSelectedItem() + "." + comboBoxColumn2.getSelectedItem();
-            String join = col1 + "=" + col2;
+            String join = createJoinCriteria((String) comboBoxSource.getSelectedItem(), (String) comboBoxSource2.getSelectedItem(),
+                (String) comboBoxColumn.getSelectedItem(), (String) comboBoxColumn2.getSelectedItem());
             if (joinCheckBoxes.stream().noneMatch((checkBox) -> checkBox.getText().equals(join))) {
                 joinCheckBoxes.add(new JCheckBox(join));
                 refreshCheckBoxPanel();
@@ -194,8 +196,10 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         } else if (e.getSource() == btnReady) {
             arguments.addAll(joinCheckBoxes.stream().map(JCheckBox::getText).toList());
             btnReady();
-
-        } else if (e.getSource() == btnCancel) {
+        } else if (e.getSource() == btnAutoJoin) {
+           autoJoin();
+        }
+        else if (e.getSource() == btnCancel) {
             closeWindow();
         }
 
@@ -210,6 +214,34 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         }
         checkBoxPanel.revalidate();
         checkBoxPanel.repaint();
+    }
+
+    private void autoJoin() {
+        ArrayList<String> joins = new ArrayList<>();
+
+        leftChild.getColumns().forEach(leftColumn -> {
+            rightChild.getColumns().forEach(rightColumn -> {
+                if (leftColumn.NAME.equalsIgnoreCase(rightColumn.NAME)) {
+                    String join = createJoinCriteria(leftColumn.SOURCE, rightColumn.SOURCE, leftColumn.NAME, rightColumn.NAME);
+                    joins.add(join);
+                }
+            });
+        });
+
+        for (String join : joins) {
+            if (joinCheckBoxes.stream().noneMatch(checkBox -> checkBox.getText().equals(join))) {
+                joinCheckBoxes.add(new JCheckBox(join));
+            }
+        }
+
+        refreshCheckBoxPanel();
+    }
+
+
+    private String createJoinCriteria(String table1, String table2, String col1, String col2) {
+        String firstPart = table1 + "." + col1;
+        String secondPart = table2 + "." + col2;
+        return firstPart + "=" + secondPart;
     }
 
     protected void closeWindow() {
