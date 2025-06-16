@@ -12,8 +12,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Objects;
-
 
 public class JoinForm extends OperationForm implements ActionListener, IOperationForm, IFormCondition {
 
@@ -23,16 +23,16 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
     private final JComboBox<String> comboBoxColumn2 = new JComboBox<>();
 
     private final JButton btnColumnSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnClear = new JButton(ConstantController.getString("operationForm.remove"));
+    private final JButton btnRemove = new JButton(ConstantController.getString("operationForm.remove"));
+    private final JButton btnClear = new JButton(ConstantController.getString("operationForm.clear"));
 
-    private final JTextArea textArea = new JTextArea();
+    private final JPanel checkBoxPanel = new JPanel();
+    private final ArrayList<JCheckBox> joinCheckBoxes = new ArrayList<JCheckBox>();
 
     @Override
     public void checkBtnReady() {
 
-        boolean isTxtField1Empty = textArea.getText().isEmpty() || textArea.getText().isBlank();
-
-        //btnReady.setEnabled(!isTxtField1Empty);
+        boolean isTxtField1Empty = joinCheckBoxes.isEmpty();
 
         updateToolTipText(isTxtField1Empty);
 
@@ -112,12 +112,11 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         btnCancel.addActionListener(this);
 
         btnColumnSet1.addActionListener(this);
+        btnRemove.addActionListener(this);
         btnClear.addActionListener(this);
 
-        //txtFieldValue1.setEditable(false);
-        //txtFieldValue2.setEditable(false);
-        textArea.setPreferredSize(new Dimension(300, 300));
-        textArea.setEditable(false);
+        checkBoxPanel.setLayout(new BoxLayout(checkBoxPanel, BoxLayout.Y_AXIS));
+        checkBoxPanel.setPreferredSize(new Dimension(300, 300));
 
         addExtraComponent(new JLabel("  " + ConstantController.getString("operationForm.join.outerTable") + ": "), 0, 0, 1, 1);
         addExtraComponent(comboBoxSource, 1, 0, 1, 1);
@@ -130,9 +129,10 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         addExtraComponent(comboBoxColumn2, 6, 1, 1, 1);
 
         addExtraComponent(btnColumnSet1, 7, 0, 1, 1);
-        addExtraComponent(btnClear, 7, 1, 1, 1);
+        addExtraComponent(btnRemove, 7, 1, 1, 1);
+        addExtraComponent(btnClear, 7, 2, 1, 1);
 
-        addExtraComponent(new JScrollPane(textArea), 0, 2, 8, 3);
+        addExtraComponent(new JScrollPane(checkBoxPanel), 0, 3, 8, 3);
 
         setPreviousArgs();
 
@@ -147,33 +147,17 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
 
     @Override
     protected void setPreviousArgs() {
-
         if(previousArguments.isEmpty()) return;
         
-        String text = String.join("\n", previousArguments);
-        textArea.setText(text);
-//
-//        try {
-//
-//            System.out.println((previousArguments.get(0)));
-//            this.atomicExpression =
-//                (AtomicExpression) new BooleanExpressionRecognizer(jCell).recognizer(previousArguments.get(0));
-//
-//            txtFieldValue1.setText(getText(atomicExpression.getFirstElement()));
-//            txtFieldValue2.setText(getText(atomicExpression.getSecondElement()));
-//
-//            comboBoxOperator.setSelectedIndex(Arrays.stream(RelationalOperator
-//                .values()).toList().indexOf(atomicExpression.getRelationalOperator()));
-//
-//        } catch (BooleanExpressionException e) {
-//            new ErrorFrame(e.getMessage());
-//        }
+        for (String previousArgument : previousArguments) {
+            joinCheckBoxes.add(new JCheckBox(previousArgument));
+            refreshCheckBoxPanel();
+        }
     }
 
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         checkBtnReady();
 
         if (e.getSource() == comboBoxSource) {
@@ -197,21 +181,18 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
             String col1 = comboBoxSource.getSelectedItem() + "." + comboBoxColumn.getSelectedItem();
             String col2 = comboBoxSource2.getSelectedItem() + "." + comboBoxColumn2.getSelectedItem();
             String join = col1 + "=" + col2;
-            String previousValue = textArea.getText();
-            if (!previousValue.contains(join)) {
-                if (previousValue.isBlank()) {
-                    textArea.setText(join);
-                } else {
-                    textArea.setText(previousValue + "\n" + join);
-                }
-            }
-
+            if (joinCheckBoxes.stream().noneMatch((checkBox) -> checkBox.getText().equals(join))) {
+                joinCheckBoxes.add(new JCheckBox(join));
+                refreshCheckBoxPanel();
+            };
+        } else if (e.getSource() == btnRemove) {
+            joinCheckBoxes.removeIf(AbstractButton::isSelected);
+            refreshCheckBoxPanel();
         } else if (e.getSource() == btnClear) {
-            textArea.setText("");
-
+            joinCheckBoxes.clear();
+            refreshCheckBoxPanel();
         } else if (e.getSource() == btnReady) {
-            arguments.addAll(java.util.List.of(textArea.getText().split("\n")));
-            //arguments.remove(0);
+            arguments.addAll(joinCheckBoxes.stream().map(JCheckBox::getText).toList());
             btnReady();
 
         } else if (e.getSource() == btnCancel) {
@@ -220,6 +201,15 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
 
         checkBtnReady();
 
+    }
+
+    private void refreshCheckBoxPanel() {
+        checkBoxPanel.removeAll();
+        for (JCheckBox checkBox : joinCheckBoxes) {
+            checkBoxPanel.add(checkBox);
+        }
+        checkBoxPanel.revalidate();
+        checkBoxPanel.repaint();
     }
 
     protected void closeWindow() {
