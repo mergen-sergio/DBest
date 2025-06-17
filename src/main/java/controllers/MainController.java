@@ -1115,6 +1115,10 @@ public class MainController extends MainFrame {
         
         // Only show cache management options for B-Tree tables
         if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+            // Menu item for cache information
+            JMenuItem cacheInfoMenuItem = new JMenuItem("Cache Info");
+            cacheInfoMenuItem.addActionListener(e -> showCacheInfo(tableCell));
+            
             // Menu item for setting cache size
             JMenuItem setCacheSizeMenuItem = new JMenuItem("Set Cache Size");
             setCacheSizeMenuItem.addActionListener(e -> showSetCacheSizeDialog(tableCell));
@@ -1123,6 +1127,8 @@ public class MainController extends MainFrame {
             JMenuItem resetCacheMenuItem = new JMenuItem("Reset Cache");
             resetCacheMenuItem.addActionListener(e -> resetTableCache(tableCell));
             
+            contextMenu.add(cacheInfoMenuItem);
+            contextMenu.addSeparator();
             contextMenu.add(setCacheSizeMenuItem);
             contextMenu.add(resetCacheMenuItem);
             
@@ -1383,6 +1389,88 @@ public class MainController extends MainFrame {
                 JOptionPane.ERROR_MESSAGE
             );
             System.err.println("Error resetting table cache: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+      /**
+     * Shows information about cache functionality for a specific table
+     */
+    private void showCacheInfo(TableCell tableCell) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+                
+                if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                    
+                    // Get cache information
+                    int pageSize = tableCache.getPageSize();
+                    
+                    // Get current cache size in bytes and pages
+                    java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                    cacheSizeBytesField.setAccessible(true);
+                    int cacheSizeBytes = cacheSizeBytesField.getInt(tableCache);
+                    
+                    java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                    cacheSizeField.setAccessible(true);
+                    int cacheSizePages = cacheSizeField.getInt(tableCache);
+                    
+                    // Calculate how many complete pages fit in the current cache size
+                    int calculatedPages = cacheSizeBytes / pageSize;
+                    
+                    StringBuilder infoMessage = new StringBuilder();
+                    infoMessage.append("<html><body style='width: 400px;'>");
+                    infoMessage.append("<h3>Cache Information for Table: ").append(tableCell.getName()).append("</h3>");
+                    infoMessage.append("<hr>");
+                    
+                    infoMessage.append("<b>Page Size:</b> ").append(pageSize).append(" bytes<br><br>");
+                    
+                    infoMessage.append("<b>Current Cache Configuration:</b><br>");
+                    infoMessage.append("• Cache Size (bytes): ").append(cacheSizeBytes).append(" bytes<br>");
+                    infoMessage.append("• Cache Size (pages): ").append(cacheSizePages).append(" pages<br><br>");
+                    
+                    infoMessage.append("<b>How Cache Size Calculation Works:</b><br>");
+                    infoMessage.append("When you set a cache size in bytes, the system calculates how many complete pages can fit:<br>");
+                    infoMessage.append("• Number of pages = Cache size ÷ Page size<br>");
+                    infoMessage.append("• Example: ").append(cacheSizeBytes).append(" ÷ ").append(pageSize).append(" = ").append(calculatedPages).append(" pages<br>");
+                    infoMessage.append("• The result is rounded down to the nearest whole number<br>");
+                    infoMessage.append("• Minimum cache size is 1 page (").append(pageSize).append(" bytes)<br><br>");
+                    
+                    infoMessage.append("<b>Cache Functions:</b><br>");
+                    infoMessage.append("• <i>Set Cache Size:</i> Change the cache size in bytes<br>");
+                    infoMessage.append("• <i>Reset Cache:</i> Clear all cached pages from memory<br>");
+                    infoMessage.append("• Default cache size: 5,000,000 bytes<br>");
+                    
+                    infoMessage.append("</body></html>");
+                    
+                    JOptionPane.showMessageDialog(
+                        this,
+                        infoMessage.toString(),
+                        "Cache Information",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error retrieving cache information: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.err.println("Error showing cache info: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
