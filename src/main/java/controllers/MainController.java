@@ -1107,28 +1107,31 @@ public class MainController extends MainFrame {
 
     public static void decrementCurrentTableYPosition(int offset) {
         currentTableYPosition = Math.max(currentTableYPosition - offset, 0);
-    }
-
-    /**
+    }    /**
      * Shows a context menu for table operations when right-clicking on a table in the sidebar
      */
     private void showTableContextMenu(MouseEvent event, TableCell tableCell) {
         JPopupMenu contextMenu = new JPopupMenu();
         
-        // Menu item for setting cache size
-        JMenuItem setCacheSizeMenuItem = new JMenuItem("Set Cache Size");
-        setCacheSizeMenuItem.addActionListener(e -> showSetCacheSizeDialog(tableCell));
-        
-        // Menu item for resetting cache
-        JMenuItem resetCacheMenuItem = new JMenuItem("Reset Cache");
-        resetCacheMenuItem.addActionListener(e -> resetTableCache(tableCell));
-        
-        contextMenu.add(setCacheSizeMenuItem);
-        contextMenu.add(resetCacheMenuItem);
-        
-        // Show the context menu at the mouse position
-        contextMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
-    }    /**
+        // Only show cache management options for B-Tree tables
+        if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+            // Menu item for setting cache size
+            JMenuItem setCacheSizeMenuItem = new JMenuItem("Set Cache Size");
+            setCacheSizeMenuItem.addActionListener(e -> showSetCacheSizeDialog(tableCell));
+            
+            // Menu item for resetting cache
+            JMenuItem resetCacheMenuItem = new JMenuItem("Reset Cache");
+            resetCacheMenuItem.addActionListener(e -> resetTableCache(tableCell));
+            
+            contextMenu.add(setCacheSizeMenuItem);
+            contextMenu.add(resetCacheMenuItem);
+            
+            // Show the context menu at the mouse position
+            contextMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
+        }
+        // For other table types (CSV, relational database tables), don't show context menu
+        // or you could add other relevant options here in the future
+    }/**
      * Shows a dialog to set the cache size for a specific table
      */
     private void showSetCacheSizeDialog(TableCell tableCell) {
@@ -1186,8 +1189,7 @@ public class MainController extends MainFrame {
             } else if (result == 1) { // OK button clicked
                 input = inputField.getText();
             }
-            
-            if (input != null && !input.trim().isEmpty()) {
+              if (input != null && !input.trim().isEmpty()) {
                 try {
                     int newCacheSize = Integer.parseInt(input.trim());
                     if (newCacheSize <= 0) {
@@ -1198,6 +1200,32 @@ public class MainController extends MainFrame {
                             JOptionPane.ERROR_MESSAGE
                         );
                         return;
+                    }
+                    
+                    // Check if cache size is smaller than page size
+                    if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                        ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                        try {
+                            java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                            cacheField.setAccessible(true);
+                            Object cache = cacheField.get(btreeTable);
+                            if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                                ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                                int pageSize = tableCache.getPageSize();
+                                if (newCacheSize < pageSize) {
+                                    JOptionPane.showMessageDialog(
+                                        this,
+                                        String.format("Cache size (%d bytes) cannot be smaller than page size (%d bytes).", newCacheSize, pageSize),
+                                        "Invalid Cache Size",
+                                        JOptionPane.ERROR_MESSAGE
+                                    );
+                                    return;
+                                }
+                            }
+                        } catch (Exception ex) {
+                            // If we can't get page size, continue with validation
+                            System.err.println("Warning: Could not validate against page size: " + ex.getMessage());
+                        }
                     }
                     setTableCacheSize(tableCell, newCacheSize);
                     // After setting, try to get the new number of pages again
