@@ -1162,11 +1162,10 @@ public class MainController extends MainFrame {
                     currentCacheSize = String.valueOf(TableCreator.cacheSize);
                 }
             }
-            
-            // Create custom dialog with Reset Default button
+              // Create custom dialog with Reset Default button
             JTextField inputField = new JTextField(15);
             JPanel panel = new JPanel(new BorderLayout());
-            panel.add(new JLabel(String.format("Current cache size: %s bytes\nEnter new cache size (in bytes):", currentCacheSize)), BorderLayout.NORTH);
+            panel.add(new JLabel(String.format("<html>Current cache size: %s bytes<br>Enter new cache size (in bytes):</html>", currentCacheSize)), BorderLayout.NORTH);
             panel.add(inputField, BorderLayout.CENTER);
             
             String[] options = {"Reset Default", "OK", "Cancel"};
