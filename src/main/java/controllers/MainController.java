@@ -1172,6 +1172,7 @@ public class MainController extends MainFrame {
 
     @Override
     public void mousePressed(MouseEvent event) {
+
         boolean isMiddleButton = SwingUtilities.isMiddleMouseButton(event) ||
                 event.getButton() == MouseEvent.BUTTON2 ||
                 (event.getModifiersEx() & InputEvent.BUTTON2_DOWN_MASK) != 0;
@@ -1388,4 +1389,93 @@ public class MainController extends MainFrame {
         return isPopupBeingActivatedByCommand;
     }
 
+    public static void removeTable(String tableName, mxCell cell) {
+        double yPosOfRemovedCell = cell.getGeometry().getY();
+
+        tables.remove(tableName);
+
+        tablesGraph.getModel().beginUpdate();
+        try {
+            tablesGraph.removeCells(new Object[]{cell});
+
+            Object[] remainingCells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+
+            for (Object c : remainingCells) {
+                if (c instanceof mxCell) {
+                    mxCell currentCell = (mxCell) c;
+                    if (currentCell.getGeometry().getY() > yPosOfRemovedCell) {
+                        tablesGraph.moveCells(new Object[]{currentCell}, 0, -40);
+                    }
+                }
+            }
+        } finally {
+            tablesGraph.getModel().endUpdate();
+            decrementCurrentTableYPosition(40);
+            tablesGraph.refresh();
+            tablesPanel.revalidate();
+        }
+
+        graph.getModel().beginUpdate();
+        try {
+            List<Object> cellsToRemove = new ArrayList<>();
+            for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+                if (vertex instanceof mxCell) {
+                    mxCell mainGraphCell = (mxCell) vertex;
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+                    if (optionalCell.isPresent() && optionalCell.get() instanceof TableCell) {
+                        TableCell tableCell = (TableCell) optionalCell.get();
+                        if (tableName.equals(tableCell.getName())) {
+                            cellsToRemove.add(mainGraphCell);
+                        }
+                    }
+                }
+            }
+
+            graph.removeCells(cellsToRemove.toArray(new Object[0]));
+        } finally {
+            graph.getModel().endUpdate();
+            graph.refresh();
+        }
+    }
+
+    public static boolean isValidNewTableName(String newName) {
+        return newName != null && !newName.trim().isEmpty() && !tables.containsKey(newName);
+    }
+
+    public static void renameTable(String currentName, String newName, mxCell cell) {
+        TableCell tableCell = tables.remove(currentName);
+
+        if (tableCell != null) {
+            tableCell.setName(newName);
+            tables.put(newName, tableCell);
+        }
+
+        tablesGraph.getModel().beginUpdate();
+        try {
+            cell.setValue(newName);
+        } finally {
+            tablesGraph.getModel().endUpdate();
+            tablesGraph.refresh();
+        }
+
+        graph.getModel().beginUpdate();
+        try {
+            for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+                if (vertex instanceof mxCell) {
+                    mxCell mainGraphCell = (mxCell) vertex;
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+                    if (optionalCell.isPresent() && optionalCell.get() instanceof TableCell) {
+                        TableCell cellToRename = (TableCell) optionalCell.get();
+                        if (currentName.equals(cellToRename.getName())) {
+                            cellToRename.setName(newName);
+                            mainGraphCell.setValue(newName);
+                        }
+                    }
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+            graph.refresh();
+        }
+    }
 }
