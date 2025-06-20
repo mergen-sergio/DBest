@@ -34,6 +34,7 @@ import files.ImportFile;
 import files.csv.CSVInfo;
 import gui.frames.CellInformationFrame;
 import gui.frames.ComparatorFrame;
+import gui.frames.DataFrame;
 import gui.frames.ErrorFrame;
 import gui.frames.dsl.ConsoleFrame;
 import gui.frames.dsl.TextEditor;
@@ -45,6 +46,7 @@ import gui.frames.forms.importexport.PKAndNameChooserForm;
 import gui.frames.forms.operations.unary.AsOperatorForm;
 import gui.frames.jdbc.ConnectionsFrame;
 import gui.frames.main.MainFrame;
+import ibd.query.Operation;
 import ibd.query.SingleSource;
 import utils.RandomUtils;
 
@@ -61,6 +63,21 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
+
+import static enums.OperationType.AGGREGATION;
+import static enums.OperationType.FILTER;
+import static enums.OperationType.GROUP;
+import static enums.OperationType.HASH_GROUP;
+import static enums.OperationType.HASH_JOIN;
+import static enums.OperationType.HASH_LEFT_OUTER_JOIN;
+import static enums.OperationType.MERGE_JOIN;
+import static enums.OperationType.MERGE_LEFT_OUTER_JOIN;
+import static enums.OperationType.NESTED_LOOP_JOIN;
+import static enums.OperationType.NESTED_LOOP_LEFT_OUTER_JOIN;
+import static enums.OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN;
+import static enums.OperationType.PROJECTION;
+import static enums.OperationType.SELECT_COLUMNS;
+import static enums.OperationType.SORT;
 
 public class MainController extends MainFrame {
 
@@ -610,20 +627,20 @@ public class MainController extends MainFrame {
         } else if (menuItem == this.unmarkCellMenuItem) {
             CellUtils.unmarkCell(this.jCell);
         } else if (menuItem == this.selectionMenuItem) {
-            createOperationAction = OperationType.FILTER.getAction();
-            style = OperationType.FILTER.displayName;
+            createOperationAction = FILTER.getAction();
+            style = FILTER.displayName;
         } else if (menuItem == this.projectionMenuItem) {
-            createOperationAction = OperationType.PROJECTION.getAction();
-            style = OperationType.PROJECTION.displayName;
+            createOperationAction = PROJECTION.getAction();
+            style = PROJECTION.displayName;
         } else if (menuItem == this.joinMenuItem) {
-            createOperationAction = OperationType.NESTED_LOOP_JOIN.getAction();
-            style = OperationType.NESTED_LOOP_JOIN.displayName;
+            createOperationAction = NESTED_LOOP_JOIN.getAction();
+            style = NESTED_LOOP_JOIN.displayName;
         } else if (menuItem == this.leftJoinMenuItem) {
-            createOperationAction = OperationType.NESTED_LOOP_LEFT_OUTER_JOIN.getAction();
-            style = OperationType.NESTED_LOOP_LEFT_OUTER_JOIN.displayName;
+            createOperationAction = NESTED_LOOP_LEFT_OUTER_JOIN.getAction();
+            style = NESTED_LOOP_LEFT_OUTER_JOIN.displayName;
         } else if (menuItem == this.rightJoinMenuItem) {
-            createOperationAction = OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN.getAction();
-            style = OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN.displayName;
+            createOperationAction = NESTED_LOOP_RIGHT_OUTER_JOIN.getAction();
+            style = NESTED_LOOP_RIGHT_OUTER_JOIN.displayName;
         } else if (menuItem == this.cartesianProductMenuItem) {
             createOperationAction = OperationType.CARTESIAN_PRODUCT.getAction();
             style = OperationType.CARTESIAN_PRODUCT.displayName;
@@ -634,8 +651,8 @@ public class MainController extends MainFrame {
             createOperationAction = OperationType.INTERSECTION.getAction();
             style = OperationType.INTERSECTION.displayName;
         } else if (menuItem == this.sortMenuItem) {
-            createOperationAction = OperationType.SORT.getAction();
-            style = OperationType.SORT.displayName;
+            createOperationAction = SORT.getAction();
+            style = SORT.displayName;
         }
 //         else if (this.indexerMenuItem == menuItem) {
 //            createOperationAction = OperationType.INDEXER.getAction();
@@ -1112,7 +1129,96 @@ public class MainController extends MainFrame {
      */
     private void showTableContextMenu(MouseEvent event, TableCell tableCell) {
         JPopupMenu contextMenu = new JPopupMenu();
-        
+        // Add Rename Table menu item
+        JMenuItem renameTableMenuItem = new JMenuItem("Rename Table");
+        renameTableMenuItem.addActionListener(e -> {
+            String currentName = tableCell.getName();
+            while (true) {
+                String newName = JOptionPane.showInputDialog(
+                    this,
+                    "Enter new name for the table:",
+                    "Rename Table",
+                    JOptionPane.QUESTION_MESSAGE
+                );
+
+                if (newName == null) break; // User canceled
+
+                if (newName.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Table name cannot be empty!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    continue; // Allow user to try again
+                }
+
+                if (!MainController.isValidNewTableName(newName)) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "A table with this name already exists!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    continue; // Allow user to try again
+                }
+
+                // Get the mxCell associated with this table
+                mxCell cell = null;
+                Object[] cells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+                for (Object c : cells) {
+                    if (c instanceof mxCell) {
+                        mxCell currentCell = (mxCell) c;
+                        if (currentCell.getValue().equals(currentName)) {
+                            cell = currentCell;
+                            break;
+                        }
+                    }
+                }
+
+                if (cell != null) {
+                    MainController.renameTable(currentName, newName, cell);}
+                break;
+            }
+        });
+        contextMenu.add(renameTableMenuItem);
+
+        // Add Remove Table menu item
+        JMenuItem removeTableMenuItem = new JMenuItem("Remove Table");
+        removeTableMenuItem.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to remove table '" + tableCell.getName() + "'?",
+                "Confirm Removal",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Get the mxCell associated with this table
+                mxCell cell = null;
+                Object[] cells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+                for (Object c : cells) {
+                    if (c instanceof mxCell) {
+                        mxCell currentCell = (mxCell) c;
+                        if (currentCell.getValue().equals(tableCell.getName())) {
+                            cell = currentCell;
+                            break;
+                        }
+                    }
+                }
+
+                if (cell != null) {
+                    MainController.removeTable(tableCell.getName(), cell);
+                }
+            }
+        });
+        contextMenu.add(removeTableMenuItem);
+
+        // Add a separator before cache options if any
+        if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+            contextMenu.addSeparator();
+        }
+
         // Only show cache management options for B-Tree tables
         if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
             // Menu item for cache information
@@ -1475,4 +1581,235 @@ public class MainController extends MainFrame {
         }
     }
 
+    public static void removeTable(String tableName, mxCell cell) {
+        double yPosOfRemovedCell = cell.getGeometry().getY();
+
+        tables.remove(tableName);
+
+        tablesGraph.getModel().beginUpdate();
+        try {
+            tablesGraph.removeCells(new Object[]{cell});
+
+            Object[] remainingCells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+
+            for (Object c : remainingCells) {
+                if (c instanceof mxCell) {
+                    mxCell currentCell = (mxCell) c;
+                    if (currentCell.getGeometry().getY() > yPosOfRemovedCell) {
+                        tablesGraph.moveCells(new Object[]{currentCell}, 0, -40);
+                    }
+                }
+            }
+            decrementCurrentTableYPosition(40);
+            tablesGraph.refresh();
+            tablesPanel.revalidate();
+        } finally {
+            tablesGraph.getModel().endUpdate();
+        }
+
+        graph.getModel().beginUpdate();
+        try {
+            List<Object> cellsToRemove = new ArrayList<>();
+            for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+                if (vertex instanceof mxCell) {
+                    mxCell mainGraphCell = (mxCell) vertex;
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+                    if (optionalCell.isPresent() && optionalCell.get() instanceof TableCell) {
+                        TableCell tableCell = (TableCell) optionalCell.get();
+                        if (tableName.equals(tableCell.getName())) {
+                            cellsToRemove.add(mainGraphCell);
+                        }
+                    }
+                }
+            }
+
+            graph.removeCells(cellsToRemove.toArray(new Object[0]));
+            graph.refresh();
+        } finally {
+            graph.getModel().endUpdate();
+        }
+    }
+
+    public static boolean isValidNewTableName(String newName) {
+        return newName != null && !newName.trim().isEmpty() && !tables.containsKey(newName);
+    }
+
+    public static void renameTable(String currentName, String newName, mxCell cell) {
+        TableCell tableCell = tables.remove(currentName);
+
+        if (tableCell != null) {
+            tableCell.setName(newName);
+            tables.put(newName, tableCell);
+        }
+
+        tablesGraph.getModel().beginUpdate();
+        try {
+            //cell.setValue(newName);
+            tablesGraph.getModel().setValue(cell, newName);
+            tablesGraph.refresh();
+            tablesGraph.repaint();
+        } finally {
+            tablesGraph.getModel().endUpdate();
+        }
+        updateExecutionPlanAfterTableRename(currentName, newName);
+        updateOtherReferences(currentName, newName);
+        updateTableReferences(currentName, newName);
+    }
+
+    public static void updateExecutionPlanAfterTableRename(String oldName, String newName) {
+        for (Cell cell : CellUtils.getActiveCells().values()) {
+            // Atualiza o nome da TableCell
+            if (cell instanceof TableCell tableCell && tableCell.getName().equals(oldName)) {
+                tableCell.setName(newName); // Implemente setName se necessário
+                tableCell.asOperator(newName); // Atualiza alias e visualização
+            }
+            // Atualiza referências em OperationCell
+            if (cell instanceof OperationCell opCell) {
+                opCell.getColumns().replaceAll(col -> {
+                    if (col.SOURCE.equals(oldName)) {
+                        return Column.changeSourceColumn(col, newName);
+                    }
+                    return col;
+                });
+                // Atualize o display se necessário
+                String displayName = opCell.getType().symbol;
+                if (opCell.getArguments() != null && !opCell.getArguments().isEmpty()) {
+                    displayName += "[" + String.join(", ", opCell.getArguments()) + "]";
+                }
+                if (opCell.getAlias() != null && !opCell.getAlias().isEmpty()) {
+                    displayName += " AS " + opCell.getAlias();
+                }
+                opCell.getJCell().setValue(displayName);
+            }
+        }
+        MainFrame.getGraph().refresh();
+    }
+
+    private static void updateOtherReferences(String oldName, String newName) {
+        // Atualizar referências nas células do gráfico principal
+        graph.getModel().beginUpdate();
+        try {
+            for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+                if (vertex instanceof mxCell) {
+                    mxCell mainGraphCell = (mxCell) vertex;
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+
+                    if (optionalCell.isPresent()) {
+                        Cell cellToUpdate = optionalCell.get();
+
+                        // Atualiza tabelas
+                        if (cellToUpdate instanceof TableCell tableCellToRename) {
+                            if (oldName.equals(tableCellToRename.getName())) {
+                                tableCellToRename.setName(newName);
+                                mainGraphCell.setValue(newName);
+                            }
+                        }
+                        // Atualiza operações
+                        else if (cellToUpdate instanceof OperationCell operationCell) {
+                            // Atualiza argumentos que referenciam o nome antigo
+                            if (operationCell.getArguments() != null) {
+                                List<String> updatedArguments = new ArrayList<>();
+                                for (String arg : operationCell.getArguments()) {
+                                    if (arg != null) {
+                                        // Atualiza referências da tabela nos argumentos
+                                        String updatedArg = arg.replaceAll("\\b" + oldName + "\\.", newName + ".");
+                                        // Atualiza referências diretas ao nome da tabela
+                                        updatedArg = updatedArg.replaceAll("\\b" + oldName + "\\b", newName);
+                                        updatedArguments.add(updatedArg);
+                                    } else {
+                                        updatedArguments.add(arg);
+                                    }
+                                }
+                                operationCell.setArguments(updatedArguments);
+
+                                // Atualiza o valor exibido na célula
+                                String displayName = operationCell.getType().getFormattedDisplayName();
+                                if (!updatedArguments.isEmpty()) {
+                                    displayName += "[" + String.join(", ", updatedArguments) + "]";
+                                }
+                                if (operationCell.getAlias() != null && !operationCell.getAlias().isEmpty()) {
+                                    displayName += " AS " + operationCell.getAlias();
+                                }
+                                mainGraphCell.setValue(displayName);
+                            }
+
+                            // Atualiza o alias se necessário
+                            if (operationCell.getAlias() != null && operationCell.getAlias().equals(oldName)) {
+                                operationCell.setAlias(newName);
+                            }
+
+                            // Força recálculo do conteúdo da operação
+                            try {
+                                TreeUtils.recalculateContent(operationCell);
+                            } catch (Exception e) {
+                                System.err.println("Erro ao recalcular conteúdo: " + e.getMessage());
+                            }
+                        }
+
+                        // Atualiza as colunas da célula
+                        List<Column> updatedColumns = new ArrayList<>();
+                        for (Column column : cellToUpdate.getColumns()) {
+                            if (column.SOURCE.equals(oldName)) {
+                                updatedColumns.add(new Column(newName, column.NAME));
+                            } else {
+                                updatedColumns.add(column);
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+            graph.refresh();
+        }
+    }
+
+    private static void updateTableReferences(String oldTableName, String newTableName) {
+        Object[] cells = graph.getChildCells(graph.getDefaultParent());
+
+        for (Object cell : cells) {
+            if (cell instanceof mxCell) {
+                mxCell mxCell = (mxCell) cell;
+                Optional<Cell> optionalCell = CellUtils.getActiveCell(mxCell);
+
+                if (optionalCell.isPresent()) {
+                    Cell activeCell = optionalCell.get();
+
+                    // Atualizar argumentos de células de operação
+                    if (activeCell instanceof OperationCell operationCell) {
+                        if (operationCell.getArguments() != null) {
+                            List<String> updatedArguments = operationCell.getArguments().stream()
+                                .map(arg -> arg.replaceAll("\\b" + oldTableName + "\\.", newTableName + "."))
+                                .toList();
+                            operationCell.setArguments(updatedArguments);
+
+                            // Atualizar exibição da célula
+                            String displayName = operationCell.getType().getFormattedDisplayName();
+                            if (!updatedArguments.isEmpty()) {
+                                displayName += "[" + String.join(", ", updatedArguments) + "]";
+                            }
+                            if (operationCell.getAlias() != null && !operationCell.getAlias().isEmpty()) {
+                                displayName += " AS " + operationCell.getAlias();
+                            }
+                            mxCell.setValue(displayName);
+
+                            try {
+                                TreeUtils.recalculateContent(operationCell);
+                            } catch (Exception e) {
+                                System.err.println("Erro ao recalcular conteúdo: " + e.getMessage());
+                            }
+                        }
+                    }
+
+                    // Atualizar colunas da célula
+                    List<Column> updatedColumns = activeCell.getColumns().stream()
+                        .map(column -> column.SOURCE.equals(oldTableName)
+                            ? new Column(column.NAME, newTableName, column.DATA_TYPE, column.IS_PRIMARY_KEY, column.IS_IGNORED_COLUMN)
+                            : column)
+                        .toList();
+                }
+            }
+        }
+        graph.refresh();
+    }
 }
