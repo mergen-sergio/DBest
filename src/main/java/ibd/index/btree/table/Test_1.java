@@ -427,18 +427,16 @@ public class Test_1 {
         System.out.println("******* PARTIAl KEYS *****");
         
         for (Key deletedKey : deletedKeys) {
-            System.out.println("key = new Key(tree.getKeySchema());");
-            System.out.println("key.setKeys(new Long[]{new Long(" + deletedKey.get(0) + "L),"
-                    + "  new Long(" + deletedKey.get(1) + "L),"
-                    + "  new Long(" + deletedKey.get(2) + "L)});");
+            System.out.println("key = new Key(tree.getKeySchema());");            System.out.println("key.setKeys(new Long[]{Long.valueOf(" + deletedKey.get(0) + "L),"
+                    + "  Long.valueOf(" + deletedKey.get(1) + "L),"
+                    + "  Long.valueOf(" + deletedKey.get(2) + "L)});");
             System.out.println("deletedKeys.add(key);");
         }
         
         for (Key addedKey : keys) {
-            System.out.println("key = new Key(tree.getKeySchema());");
-            System.out.println("key.setKeys(new Long[]{new Long(" + addedKey.get(0) + "L),"
-                    + "  new Long(" + addedKey.get(1) + "L),"
-                    + "  new Long(" + addedKey.get(2) + "L)});");
+            System.out.println("key = new Key(tree.getKeySchema());");            System.out.println("key.setKeys(new Long[]{Long.valueOf(" + addedKey.get(0) + "L),"
+                    + "  Long.valueOf(" + addedKey.get(1) + "L),"
+                    + "  Long.valueOf(" + addedKey.get(2) + "L)});");
             System.out.println("keys.add(key);");
         }
         

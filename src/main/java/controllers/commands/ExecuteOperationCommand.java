@@ -1,6 +1,7 @@
 package controllers.commands;
 
 import com.mxgraph.model.mxCell;
+import controllers.MainController;
 import entities.Edge;
 import entities.cells.Cell;
 import entities.cells.OperationCell;
@@ -136,6 +137,8 @@ public class ExecuteOperationCommand extends BaseUndoableRedoableCommand {
 
     private void executeOperationWithForm(OperationType operationType) {
         try {
+            MainController.setPopupBeingActivatedByCommand(true);
+            
             Constructor<? extends IOperationForm> constructor = operationType.form.getDeclaredConstructor(mxCell.class);
             constructor.newInstance(this.cellReference.get());
         } catch (
@@ -143,6 +146,8 @@ public class ExecuteOperationCommand extends BaseUndoableRedoableCommand {
             NoSuchMethodException | InvocationTargetException exception
         ) {
             exception.printStackTrace();
+        } finally {
+            MainController.setPopupBeingActivatedByCommand(false);
         }
     }
 

@@ -5,8 +5,10 @@ import entities.Action;
 import entities.Action.CreateOperationCellAction;
 import entities.Action.CurrentAction;
 import entities.Action.CurrentAction.ActionType;
+import entities.Coordinates;
 import entities.Edge;
 import entities.cells.OperationCell;
+import entities.utils.CoordinatesUtils;
 import entities.utils.cells.CellRepository;
 import entities.utils.cells.CellUtils;
 import enums.CellType;
@@ -113,17 +115,22 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         while (this.commandController.canRedo()) {
             this.commandController.redo();
         }
-    }
-
-    private void insertCell() {
+    }    private void insertCell() {
         if (this.currentActionReference.get() instanceof CreateOperationCellAction createOperationAction) {
+            Coordinates canvasCoords = CoordinatesUtils.transformScreenToCanvasCoordinates(this.mouseEvent);
+            
             int width = CellUtils.getCellWidth(createOperationAction.getName());
+            int height = 30;
+     
+            double centeredX = canvasCoords.x() - (width / 2.0);
+            double centeredY = canvasCoords.y() - (height / 2.0);
+            
             this.mxCell = (mxCell) MainFrame
                 .getGraph()
                 .insertVertex(
                     MainFrame.getGraph().getDefaultParent(), null,
-                    createOperationAction.getName(), this.mouseEvent.getX(),
-                    this.mouseEvent.getY(), width, 30, CellType.OPERATION.id
+                    createOperationAction.getName(), centeredX,
+                    centeredY, width, height, CellType.OPERATION.id
                 );
 
             this.cellReference.set(this.mxCell);
@@ -155,18 +162,25 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
                 this.cellReference.set(this.mxCell);
 
                 this.removeCell(this.ghostCellReference);
-            }
-        } else if (this.currentActionReference.get() instanceof Action.CreateTableCellAction createTableAction) {
+            }        } else if (this.currentActionReference.get() instanceof Action.CreateTableCellAction createTableAction) {
             this.mxCell = createTableAction.getTableCell().getJCell();
             this.cellReference.set(this.mxCell);
-
+ 
+            Coordinates canvasCoords = CoordinatesUtils.transformScreenToCanvasCoordinates(this.mouseEvent);
+            
+            double tableWidth = this.mxCell.getGeometry().getWidth();
+            double tableHeight = this.mxCell.getGeometry().getHeight();
+            
+            double centeredX = canvasCoords.x() - (tableWidth / 2.0);
+            double centeredY = canvasCoords.y() - (tableHeight / 2.0);
+            
             int currentX = (int) this.mxCell.getGeometry().getX();
             int currentY = (int) this.mxCell.getGeometry().getY();
 
             MainFrame.getGraph().moveCells(
                 new Object[]{this.mxCell},
-                (double) currentX - this.mouseEvent.getX(),
-                (double) currentY - this.mouseEvent.getY()
+                centeredX - currentX,
+                centeredY - currentY
             );
         }
 
@@ -175,9 +189,8 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
     private void insertEdge() {
 
-        MainFrame.getGraph().getModel().getValue(this.cellReference.get());
-
-        if (this.currentActionType == ActionType.CREATE_EDGE && !this.edgeReference.get().hasParent() &&
+        MainFrame.getGraph().getModel().getValue(this.cellReference.get());        if (this.currentActionType == ActionType.CREATE_EDGE && !this.edgeReference.get().hasParent() &&
+            this.cellReference.get() != null && CellRepository.getActiveCell(cellReference.get()).isPresent() &&
             !CellRepository.getActiveCell(cellReference.get()).get().hasChild()) {
             this.edgeReference.get().addParent(this.cellReference.get());
             CellUtils.addMovableEdge(this.mouseEvent, this.invisibleCellReference, this.cellReference.get());
