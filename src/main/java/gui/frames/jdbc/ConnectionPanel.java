@@ -266,12 +266,12 @@ public class ConnectionPanel extends JPanel {
         boolean driverAvailable = DynamicDriverManager.isDriverAvailable(databaseType);
 
         if (driverAvailable) {
-            downloadDriverButton.setText("Driver Installed");
+            downloadDriverButton.setText(ConstantController.getString("jdbc.form.driverInstalled"));
             downloadDriverButton.setEnabled(false);
             downloadDriverButton.setBackground(new Color(230, 255, 230));
             downloadDriverButton.setForeground(new Color(0, 128, 0));
         } else {
-            downloadDriverButton.setText("Download Driver");
+            downloadDriverButton.setText(ConstantController.getString("jdbc.form.downloadDriver"));
             downloadDriverButton.setEnabled(true);
             downloadDriverButton.setBackground(null);
             downloadDriverButton.setForeground(null);
@@ -441,8 +441,8 @@ public class ConnectionPanel extends JPanel {
         if (currentConnection != null) {
             int result = JOptionPane.showConfirmDialog(
                     this,
-                    ConstantController.getString("jdbc.frame.dialog.jdbc.form.delete"),
-                    ConstantController.getString("jdbc.frame.dialog.jdbc.form.delete.title"),
+                    ConstantController.getString("jdbc.form.delete.message"),
+                    ConstantController.getString("jdbc.form.delete.title"),
                     JOptionPane.YES_NO_OPTION);
 
             if (result == JOptionPane.YES_OPTION) {
@@ -708,18 +708,18 @@ public class ConnectionPanel extends JPanel {
     }
 
     private void displayTestResult(boolean testResult) {
-        String dialogTitle = ConstantController.getString("jdbc.form.validation.testResult");
+        String dialogTitle = ConstantController.getString("jdbc.form.test.title");
 
         if (testResult) {
             JOptionPane.showMessageDialog(
                     this,
-                    ConstantController.getString("jdbc.form.validation.connectionSuccessful"),
+                    ConstantController.getString("jdbc.form.test.success"),
                     dialogTitle,
                     JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(
                     this,
-                    ConstantController.getString("jdbc.form.validation.connectionFailed"),
+                    ConstantController.getString("jdbc.form.test.failed"),
                     dialogTitle,
                     JOptionPane.ERROR_MESSAGE);
         }
