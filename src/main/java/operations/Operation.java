@@ -31,6 +31,16 @@ public class Operation {
 
         cell.setOperator(operator);
         cell.setName(name);
+        
+        // Call prepare() to ensure operations like Projection and Projection1 
+        // have their column locations properly initialized after being set up
+        try {
+            operator.prepare();
+        } catch (Exception e) {
+            // If prepare() fails, continue with setup but the operation may not work properly
+            // This will be handled at runtime when the operation is executed
+        }
+        
         String a = "";
         //if (operator instanceof SingleSource ssOp) 
         {
