@@ -872,7 +872,7 @@ public class MainController extends MainFrame {
         }
 
     }
-
+    
     private void openConnections() {
         if (connectionsFrame == null) {
             connectionsFrame = new ConnectionsFrame();
