@@ -1,6 +1,8 @@
 package ibd.table.jdbc;
 
+import database.jdbc.DynamicDriverManager;
 import engine.exceptions.DataBaseException;
+import enums.DatabaseType;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -17,10 +19,8 @@ import ibd.table.prototype.LinkedDataRow;
 import ibd.table.prototype.Prototype;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.column.*;
-import ibd.table.prototype.query.fields.NullField;
 import ibd.table.prototype.Header;
 import ibd.table.Table;
-import ibd.table.util.Util;
 
 public class JDBCTable extends Table {
     public Connection connection;
@@ -31,7 +31,7 @@ public class JDBCTable extends Table {
         this.validateHeaderConnection(header);
         this.name = header.get("tablename");
     }
-
+    
     public JDBCTable(Header header, String connectionUrl, String connectionUser, String connectionPassword) {
         super(header);
         this.header.set("connection-url", connectionUrl);
@@ -48,16 +48,26 @@ public class JDBCTable extends Table {
     @Override
     public String getHeaderName() {
         return header.getFileName();
-    }
-
-    @Override
+    }    @Override
     public void open() throws Exception {
         try {
             if (this.connection == null || this.connection.isClosed()) {
                 String connectionUrl = this.header.get("connection-url");
                 String connectionUser = this.header.get("connection-user");
                 String connectionPassword = this.header.get("connection-password");
-                if (connectionUser != null && connectionPassword != null) {
+                
+                DatabaseType databaseType = detectDatabaseTypeFromUrl(connectionUrl);
+
+                if (databaseType != null) {
+                    if (!DynamicDriverManager.isDriverAvailable(databaseType)) {
+                        throw new DataBaseException("JDBCTable", 
+                            "Driver not available for " + databaseType.getDisplayName() + 
+                            ". Please download the driver first.");
+                    }
+                }
+                
+                if (connectionUser != null && connectionPassword != null && 
+                    !connectionUser.trim().isEmpty() && !connectionPassword.trim().isEmpty()) {
                     this.connection = DriverManager.getConnection(connectionUrl, connectionUser, connectionPassword);
                 } else {
                     this.connection = DriverManager.getConnection(connectionUrl);
@@ -279,22 +289,36 @@ public class JDBCTable extends Table {
     @Override
     public LinkedDataRow removeRecord(BasicDataRow rowdata) {
         throw new DataBaseException("JDBCTable", "This type of table (JDBCTable) is not writable");
-    }
-
-    private void validateHeaderConnection(Header header) {
+    }    private void validateHeaderConnection(Header header) {
         ArrayList<String> missingConnectionFields = new ArrayList<>();
         if (header.get("connection-url") == null) {
             missingConnectionFields.add("connection-url");
         }
-        if (header.get("connection-user") == null) {
-            missingConnectionFields.add("connection-user");
-        }
-        if (header.get("connection-password") == null) {
-            missingConnectionFields.add("connection-password");
-        }
         if (!missingConnectionFields.isEmpty()) {
             throw new DataBaseException("JDBCTable", "Header must contain: " + String.join(", ", missingConnectionFields));
         }
+    } 
+
+    private static DatabaseType detectDatabaseTypeFromUrl(String connectionUrl) {
+        if (connectionUrl == null) {
+            return null;
+        }
+        
+        String url = connectionUrl.toLowerCase();
+        
+        if (url.startsWith("jdbc:mysql:")) {
+            return DatabaseType.MYSQL;
+        } else if (url.startsWith("jdbc:postgresql:")) {
+            return DatabaseType.POSTGRESQL;
+        } else if (url.startsWith("jdbc:oracle:")) {
+            return DatabaseType.ORACLE;
+        } else if (url.startsWith("jdbc:sqlite:")) {
+            return DatabaseType.SQLITE;
+        } else if (url.startsWith("jdbc:mariadb:")) {
+            return DatabaseType.MARIADB;
+        }
+        
+        return null;
     }
 
     protected void setPrototype() {
@@ -304,6 +328,7 @@ public class JDBCTable extends Table {
             ResultSet columns = metaData.getColumns(null, null, this.header.get("tablename"), null);
             ResultSet pkColumns = metaData.getPrimaryKeys(null, null, this.header.get("tablename"));
             ArrayList<String> pkColumnsNames = new ArrayList<>();
+            ArrayList<String> addedColumnNames = new ArrayList<>();
 
             while (pkColumns.next()) {
                 pkColumnsNames.add(pkColumns.getString("COLUMN_NAME"));
@@ -311,17 +336,25 @@ public class JDBCTable extends Table {
 
             while (columns.next()) {
                 String columnName = columns.getString("COLUMN_NAME");
+                
+                if (addedColumnNames.contains(columnName)) {
+                    continue;
+                }
+
+                addedColumnNames.add(columnName);
+                
                 int columnType = Integer.parseInt(columns.getString("DATA_TYPE"));
                 boolean isPk = pkColumnsNames.contains(columnName);
 
                 Column newColumn = switch (columnType) {
-                    case -5 -> new LongColumn(columnName, isPk);
-                    case 4 -> new IntegerColumn(columnName, isPk);
-                    case 6 -> new FloatColumn(columnName);
-                    case 8 -> new DoubleColumn(columnName);
-                    case 16 -> new BooleanColumn(columnName);
-                    default -> new StringColumn(columnName);
+                    case java.sql.Types.BIGINT -> new LongColumn(columnName, isPk);
+                    case java.sql.Types.INTEGER, java.sql.Types.SMALLINT, java.sql.Types.TINYINT -> new IntegerColumn(columnName, isPk);
+                    case java.sql.Types.REAL -> new FloatColumn(columnName);
+                    case java.sql.Types.DOUBLE, java.sql.Types.FLOAT, java.sql.Types.NUMERIC, java.sql.Types.DECIMAL -> new DoubleColumn(columnName);
+                    case java.sql.Types.BOOLEAN, java.sql.Types.BIT -> new BooleanColumn(columnName);
+                    default -> new StringColumn(columnName); // Default to string for VARCHAR, CHAR, TEXT, etc.
                 };
+
                 pt.addColumn(newColumn);
             }
 
@@ -338,7 +371,6 @@ public class JDBCTable extends Table {
             boolean isNull = (val == null || val.compareToIgnoreCase("null") == 0 || val.isEmpty() || val.strip().isEmpty());
 
             if (isNull) {
-                row.setField(col.getName(), new NullField(col));
                 continue;
             }
 

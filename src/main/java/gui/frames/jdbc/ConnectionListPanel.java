@@ -1,23 +1,26 @@
 package gui.frames.jdbc;
 
-import controllers.ConstantController;
-import database.jdbc.ConnectionConfig;
+import database.jdbc.UniversalConnectionConfig;
+import enums.DatabaseType;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import controllers.ConstantController;
+
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectionListPanel extends JPanel {
-    private static ConnectionConfig currentConnection;
-    private JList<String> connectionList;
-    private DefaultListModel<String> connectionListModel;
+    private static UniversalConnectionConfig currentConnection;
+    private JList<UniversalConnectionConfig> connectionList;
+    private DefaultListModel<UniversalConnectionConfig> connectionListModel;
     private ConnectionPanel rightPanel;
     private TablesPanel tablesPanel;
     private final JLabel titleLabel;
 
     public ConnectionListPanel() {
-        titleLabel = new JLabel("Connection List");
+        titleLabel = new JLabel(ConstantController.getString("jdbc.connections.title"));
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -36,6 +39,7 @@ public class ConnectionListPanel extends JPanel {
         setLayout(new BorderLayout());
         connectionListModel = new DefaultListModel<>();
         connectionList = new JList<>(connectionListModel);
+        connectionList.setCellRenderer(new ConnectionListCellRenderer());
         updateConnectionList();
         setBorder(new EmptyBorder(20, 10, 20, 10));
 
@@ -46,43 +50,49 @@ public class ConnectionListPanel extends JPanel {
         JScrollPane configuredConnectionsList = new JScrollPane(connectionList);
         add(configuredConnectionsList, BorderLayout.CENTER);
 
-        JButton addButton = new JButton(ConstantController.getString("connections.frame.button.new"));
+        JButton newButton = new JButton(ConstantController.getString("jdbc.connections.new"));
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        buttonPanel.add(addButton);
+        buttonPanel.add(newButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        addButton.addActionListener(e -> {
+        newButton.addActionListener(e -> {
             rightPanel.displayConnectionDetails(null);
             connectionList.clearSelection();
             updateConnectionList();
         });
 
         connectionList.addListSelectionListener(e -> {
-            tablesPanel.setVisible(true);
+            if (tablesPanel != null) {
+                tablesPanel.setVisible(true);
+            }
+
             if (!e.getValueIsAdjusting()) {
                 int selectedIndex = connectionList.getSelectedIndex();
                 if (selectedIndex >= 0) {
-                    currentConnection = ConnectionConfig.getAllConfiguredConnections().get(selectedIndex);
+                    currentConnection = connectionListModel.getElementAt(selectedIndex);
                     rightPanel.displayConnectionDetails(currentConnection);
-                    // Test connection and load tables automatically
                     if (currentConnection.test()) {
-                        tablesPanel.updateTables(currentConnection);
+                        if (tablesPanel != null) {
+                            tablesPanel.updateTables(currentConnection);
+                        }
                     } else {
-                        tablesPanel.clear();
+                        if (tablesPanel != null) {
+                            tablesPanel.clear();
+                        }
                     }
                 }
             }
         });
     }
 
-    public static ConnectionConfig getCurrentConnection() {
+    public static UniversalConnectionConfig getCurrentConnection() {
         return currentConnection;
     }
 
-    public void setCurrentConnection(ConnectionConfig connection) {
+    public void setCurrentConnection(UniversalConnectionConfig connection) {
         currentConnection = connection;
-        tablesPanel.setVisible(true);
         if (tablesPanel != null) {
+            tablesPanel.setVisible(true);
             if (connection != null && connection.test()) {
                 tablesPanel.updateTables(connection);
             } else {
@@ -93,9 +103,9 @@ public class ConnectionListPanel extends JPanel {
 
     public void updateConnectionList() {
         connectionListModel.clear();
-        ArrayList<ConnectionConfig> configuredConnections = ConnectionConfig.getAllConfiguredConnections();
-        for (ConnectionConfig connection : configuredConnections) {
-            connectionListModel.addElement(connection.host);
+        List<UniversalConnectionConfig> configuredConnections = UniversalConnectionConfig.getAllConfiguredConnections();
+        for (UniversalConnectionConfig connection : configuredConnections) {
+            connectionListModel.addElement(connection);
         }
         connectionList.revalidate();
         if (tablesPanel != null) {
@@ -105,8 +115,22 @@ public class ConnectionListPanel extends JPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        // Dynamically calculate width as 1/6 of the parent frame's width
-        int width = getParent() != null ? getParent().getWidth() / 6 : 300;
+        int width = getParent() != null ? getParent().getWidth() / 4 : 300;
         return new Dimension(width, super.getPreferredSize().height);
+    }
+
+
+    private static class ConnectionListCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            if (value instanceof UniversalConnectionConfig config) {
+                DatabaseType type = config.getDatabaseType();
+                setText(type.getDisplayIcon() + " " + config.getName() + " (" + type.getDisplayName() + ")");
+            }
+
+            return this;
+        }
     }
 }

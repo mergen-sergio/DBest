@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import controllers.ConstantController;
-import database.jdbc.ConnectionConfig;
+import database.jdbc.UniversalConnectionConfig;
 import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.Cell;
@@ -21,6 +21,7 @@ import static enums.ColumnDataType.FLOAT;
 import static enums.ColumnDataType.INTEGER;
 import static enums.ColumnDataType.LONG;
 import static enums.ColumnDataType.STRING;
+import enums.DatabaseType;
 import enums.FileType;
 import files.csv.CSVInfo;
 import gui.frames.main.MainFrame;
@@ -28,9 +29,6 @@ import ibd.table.btree.BTreeTable;
 import ibd.table.csv.CSVTable;
 import ibd.table.Table;
 import ibd.table.jdbc.JDBCTable;
-import ibd.table.jdbc.MySQLTable;
-import ibd.table.jdbc.OracleTable;
-import ibd.table.jdbc.PostgreSQLTable;
 import ibd.table.memory.MemoryTable;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
@@ -104,30 +102,25 @@ public class TableCreator {
 
     private static Table openTable(Header header, boolean clear) throws IOException, Exception {
         header.setBool("clear", clear);
-        if (header.get(Header.TABLE_TYPE) == null) //return new SimpleTable(header);
-        {
+
+        if (header.get(Header.TABLE_TYPE) == null) {
             return new BTreeTable(header, null, null, cacheSize);
         }
+        
         return switch (header.get(Header.TABLE_TYPE)) {
             case "CSVTable" ->
                 new CSVTable(header);
             case "MemoryTable" ->
                 new MemoryTable(header);
-            case "MySQLTable" ->
-                new MySQLTable(header);
-            case "OracleTable" ->
-                new OracleTable(header);
-            case "PostgreSQLTable" ->
-                new PostgreSQLTable(header);
+            case "JDBCTable" ->
+                new JDBCTable(header);
             default ->
                 new BTreeTable(header, null, null, cacheSize);
         };
     }
     
     public static Table openBTreeTable(String fileName) throws IOException, Exception {
-        
         return new BTreeTable(fileName, cacheSize);
-        
     }
 
     public static CSVTableCell createCSVTable(
@@ -356,19 +349,20 @@ public class TableCreator {
 
         return prototype;
     }
-
+    
     public static JDBCTableCell createJDBCTable(
-        String tableName, ConnectionConfig connectionConfig, Boolean mustExport
+        String tableName, UniversalConnectionConfig connectionConfig, Boolean mustExport
     ) {
         Header header = new Header(null, tableName);
-        String tableType = connectionConfig.getTableType();
-        header.set(Header.TABLE_TYPE, tableType);
-        header.set("connection-url", connectionConfig.connectionURL);
-        header.set("connection-user", connectionConfig.username);
-        header.set("connection-password", connectionConfig.password);
+        
+        header.set(Header.TABLE_TYPE, "JDBCTable");
+        header.set("connection-url", connectionConfig.constructConnectionURL());
+        header.set("connection-user", connectionConfig.getUsername());
+        header.set("connection-password", connectionConfig.getPassword());
 
         Table table = null;
         mxCell jCell = null;
+
         try {
             table = openTable(header, false);
             table.open();

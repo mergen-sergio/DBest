@@ -9,16 +9,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 public class ConnectionsFrame extends JFrame {
-
     public ConnectionsFrame() {
         initGUI();
     }
 
     private void initGUI() {
-        setSize(1000, 600);
-        setResizable(false);
+        setSize(1200, 700);
+        setResizable(true);
         setLocationRelativeTo(null);
-        setTitle(ConstantController.getString("connections"));
+        setTitle(ConstantController.getString("jdbc.title"));
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -31,7 +30,7 @@ public class ConnectionsFrame extends JFrame {
         ConnectionListPanel leftPanel = new ConnectionListPanel();
         TablesPanel tablesPanel = new TablesPanel();
 
-        connectionPanel.setLeftPanel(leftPanel);
+        connectionPanel.setListPanel(leftPanel);
         leftPanel.setRightPanel(connectionPanel);
         leftPanel.setTablesPanel(tablesPanel);
 
@@ -44,11 +43,15 @@ public class ConnectionsFrame extends JFrame {
 
         mainSplitPane.setRightComponent(rightSplitPane);
 
-        rightSplitPane.setDividerLocation(350);
+        leftPanel.setPreferredSize(new Dimension(300, 0));
+        connectionPanel.setPreferredSize(new Dimension(500, 0));
+        tablesPanel.setPreferredSize(new Dimension(300, 0));
+
+        mainSplitPane.setDividerLocation(300);
+        rightSplitPane.setDividerLocation(500);
 
         getContentPane().add(mainSplitPane);
 
         setVisible(true);
-        pack();
     }
 }
