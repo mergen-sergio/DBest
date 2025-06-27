@@ -70,6 +70,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     //protected JMenuItem generateFyiTableMenuItem;
 
     protected JMenuItem saveQueryMenuItem;
+    
+    protected JMenuItem saveQueryAsImageMenuItem;
 
     protected JMenuItem editMenuItem;
 
@@ -190,6 +192,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.exportTableMenuItem = new JMenuItem(ConstantController.getString("cell.exportTable"));
         //this.generateFyiTableMenuItem = new JMenuItem(ConstantController.getString("cell.generateFyiTable"));
         this.saveQueryMenuItem = new JMenuItem(ConstantController.getString("cell.saveQuery"));
+        this.saveQueryAsImageMenuItem = new JMenuItem(ConstantController.getString("cell.saveQueryAsImage"));
         this.editMenuItem = new JMenuItem(ConstantController.getString("cell.edit"));
         this.removeMenuItem = new JMenuItem(ConstantController.getString("cell.remove"));
         this.markCellMenuItem = new JMenuItem(ConstantController.getString("cell.mark"));
@@ -584,6 +587,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.exportTableMenuItem.addActionListener(this);
         //this.generateFyiTableMenuItem.addActionListener(this);
         this.saveQueryMenuItem.addActionListener(this);
+        this.saveQueryAsImageMenuItem.addActionListener(this);
         this.runQueryMenuItem.addActionListener(this);
         this.editMenuItem.addActionListener(this);
         this.removeMenuItem.addActionListener(this);
