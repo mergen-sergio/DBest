@@ -1,7 +1,8 @@
 package ibd.table.jdbc;
 
-import ibd.query.lookup.LookupFilter;
 import ibd.table.prototype.LinkedDataRow;
+import ibd.table.prototype.column.Column;
+import ibd.table.prototype.query.fields.NullField;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,15 +46,17 @@ class JDBCRowsIterator implements Iterator<LinkedDataRow> {
                 String val = resultSet.getString(col.getName());
                 boolean isNull = (val == null || val.compareToIgnoreCase("null") == 0 || val.isEmpty() || val.strip().isEmpty());
 
-                if (!isNull) {
-                    switch (col.getType()) {
-                        case "STRING" -> row.setString(col.getName(), val);
-                        case "INTEGER" -> row.setInt(col.getName(), resultSet.getInt(col.getName()));
-                        case "LONG" -> row.setLong(col.getName(), resultSet.getLong(col.getName()));
-                        case "DOUBLE" -> row.setDouble(col.getName(), resultSet.getDouble(col.getName()));
-                        case "FLOAT" -> row.setFloat(col.getName(), resultSet.getFloat(col.getName()));
-                        case "BOOLEAN" -> row.setBoolean(col.getName(), resultSet.getBoolean(col.getName()));
-                    }
+                if (isNull) {
+                    continue;
+                }
+
+                switch (col.getType()) {
+                    case Column.STRING_TYPE -> row.setString(col.getName(), val);
+                    case Column.INTEGER_TYPE -> row.setInt(col.getName(), resultSet.getInt(col.getName()));
+                    case Column.LONG_TYPE -> row.setLong(col.getName(), resultSet.getLong(col.getName()));
+                    case Column.DOUBLE_TYPE -> row.setDouble(col.getName(), resultSet.getDouble(col.getName()));
+                    case Column.FLOAT_TYPE -> row.setFloat(col.getName(), resultSet.getFloat(col.getName()));
+                    case Column.BOOLEAN_TYPE -> row.setBoolean(col.getName(), resultSet.getBoolean(col.getName()));
                 }
             }
 

@@ -1,14 +1,14 @@
 package gui.frames.jdbc;
 
+import controllers.ConstantController;
 import controllers.MainController;
 import database.TableCreator;
-import database.jdbc.ConnectionConfig;
+import database.jdbc.UniversalConnectionConfig;
 import entities.cells.TableCell;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TablesPanel extends JPanel {
@@ -24,12 +24,11 @@ public class TablesPanel extends JPanel {
         tableListModel = new DefaultListModel<>();
         tableList = new JList<>(tableListModel);
         JScrollPane scrollPane = new JScrollPane(tableList);
-
-        titleLabel = new JLabel("Database Tables");
+        titleLabel = new JLabel(ConstantController.getString("jdbc.tables.title"));
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        importButton = new JButton("Import Selected Tables");
+        importButton = new JButton(ConstantController.getString("jdbc.tables.import"));
         importButton.setEnabled(false);
 
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -45,19 +44,30 @@ public class TablesPanel extends JPanel {
         importButton.addActionListener(e -> importSelectedTables());
     }
 
-    public void updateTables(ConnectionConfig connection) {
+    public void updateTables(UniversalConnectionConfig connection) {
         clear();
         if (connection != null) {
-            ArrayList<String> tables = connection.getTableNames();
-            if (tables != null && !tables.isEmpty()) {
-                for (String table : tables) {
-                    tableListModel.addElement(table);
+            try {
+                List<String> tables = connection.getTableNames();
+
+                if (tables != null && !tables.isEmpty()) {
+                    for (String table : tables) {
+                        tableListModel.addElement(table);
+                    }
+                    importButton.setEnabled(true);
+                    titleLabel.setText(ConstantController.getString("jdbc.tables.inDatabase").replace("{0}",
+                            connection.getName()));
+                } else {
+                    importButton.setEnabled(false);
+                    titleLabel.setText(ConstantController.getString("jdbc.tables.noTablesFound"));
                 }
-                importButton.setEnabled(true);
-                titleLabel.setText("Tables in " + connection.database);
-            } else {
+            } catch (Exception e) {
                 importButton.setEnabled(false);
-                titleLabel.setText("No tables found");
+                titleLabel.setText(ConstantController.getString("jdbc.tables.errorLoading"));
+                JOptionPane.showMessageDialog(this,
+                        ConstantController.getString("jdbc.tables.errorLoadingMessage").replace("{0}",
+                                e.getMessage()),
+                        ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -65,24 +75,30 @@ public class TablesPanel extends JPanel {
     private void importSelectedTables() {
         List<String> selectedTables = tableList.getSelectedValuesList();
         if (!selectedTables.isEmpty() && ConnectionListPanel.getCurrentConnection() != null) {
-            for (String selectedTable : selectedTables) {
-                TableCell tableCell = TableCreator.createJDBCTable(
-                    selectedTable,
-                    ConnectionListPanel.getCurrentConnection(),
-                    true
-                );
-                MainController.saveTable(tableCell);
+            try {
+                for (String selectedTable : selectedTables) {
+                    TableCell tableCell = TableCreator.createJDBCTable(
+                            selectedTable,
+                            ConnectionListPanel.getCurrentConnection(),
+                            true);
+                    MainController.saveTable(tableCell);
+                }
+                JOptionPane.showMessageDialog(this,
+                        ConstantController.getString("jdbc.tables.importSuccess"),
+                        ConstantController.getString("jdbc.tables.importSuccessTitle"),
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this,
+                        ConstantController.getString("jdbc.tables.importError").replace("{0}", e.getMessage()),
+                        ConstantController.getString("jdbc.tables.importErrorTitle"),
+                        JOptionPane.ERROR_MESSAGE);
             }
-            JOptionPane.showMessageDialog(this,
-                "Selected tables have been imported successfully.",
-                "Import Success",
-                JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     public void clear() {
         tableListModel.clear();
         importButton.setEnabled(false);
-        titleLabel.setText("Database Tables");
+        titleLabel.setText(ConstantController.getString("jdbc.tables.title"));
     }
 }
