@@ -8,6 +8,7 @@ import com.mxgraph.util.mxEvent;
 import com.mxgraph.util.mxPoint;
 import com.mxgraph.view.mxGraph;
 import controllers.commands.*;
+import controllers.commands.RedistributeNodesCommand;
 import database.TableCreator;
 import dsl.entities.BinaryExpression;
 import dsl.entities.OperationExpression;
@@ -455,6 +456,24 @@ public class MainController extends MainFrame {
 
     }
 
+    /**
+     * Redistribui os nós da árvore a partir do nó selecionado
+     * usando layout hierárquico automático
+     */
+    private void redistributeNodes() {
+        if (this.jCell == null) {
+            return;
+        }
+
+        Optional<Cell> optionalCell = CellUtils.getActiveCell(this.jCell);
+        if (optionalCell.isEmpty()) {
+            return;
+        }
+
+        RedistributeNodesCommand command = new RedistributeNodesCommand(this.jCell);
+        commandController.execute(command);
+    }
+
     @Override
     public void actionPerformed(ActionEvent event) {
 
@@ -590,6 +609,7 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.operationsMenuItem);
             this.popupMenuJCell.add(this.removeMenuItem);
             this.popupMenuJCell.add(this.copyMenuItem);
+            this.popupMenuJCell.add(this.redistributeNodesMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -771,10 +791,13 @@ public class MainController extends MainFrame {
             CellUtils.unmarkCell(this.jCell);
         } else if (menuItem == this.copyMenuItem) {
             commandController.execute(new CopyCellsCommand());
+        } else if (menuItem == this.redistributeNodesMenuItem) {
+            this.redistributeNodes();
         } else if (menuItem == this.pasteMenuItem) {
             Point mousePosition = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());
-            entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(mousePosition.x, mousePosition.y);
+            entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils
+                    .transformScreenToCanvasCoordinates(mousePosition.x, mousePosition.y);
             commandController.execute(new PasteCellsCommand(canvasCoords));
         } else if (menuItem == this.selectionMenuItem) {
             createOperationAction = OperationType.FILTER.getAction();
@@ -872,7 +895,7 @@ public class MainController extends MainFrame {
         }
 
     }
-    
+
     private void openConnections() {
         if (connectionsFrame == null) {
             connectionsFrame = new ConnectionsFrame();
