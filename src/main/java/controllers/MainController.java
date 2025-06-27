@@ -39,6 +39,7 @@ import gui.frames.ErrorFrame;
 import gui.frames.dsl.ConsoleFrame;
 import gui.frames.dsl.TextEditor;
 import gui.frames.forms.create.FormFrameCreateTable;
+import gui.frames.forms.create.FormFrameCreateTableImproved;
 import gui.frames.forms.importexport.CSVRecognizerForm;
 import gui.frames.forms.importexport.ExportAsForm;
 import gui.frames.forms.importexport.ImportAsForm;
@@ -586,6 +587,7 @@ public class MainController extends MainFrame {
             // this.popupMenuJCell.add(this.generateFyiTableMenuItem);
             this.popupMenuJCell.add(this.renameOperatorMenuItem);
             this.popupMenuJCell.add(this.saveQueryMenuItem);
+            this.popupMenuJCell.add(this.saveQueryAsImageMenuItem);
             this.popupMenuJCell.add(this.editMenuItem);
             this.popupMenuJCell.add(this.operationsMenuItem);
             this.popupMenuJCell.add(this.removeMenuItem);
@@ -610,6 +612,7 @@ public class MainController extends MainFrame {
                 // this.popupMenuJCell.remove(this.editMenuItem);
                 this.popupMenuJCell.remove(this.exportTableMenuItem);
                 this.popupMenuJCell.remove(this.saveQueryMenuItem);
+                this.popupMenuJCell.remove(this.saveQueryAsImageMenuItem);
             }
 
             if (cell.isTableCell()) {
@@ -752,6 +755,10 @@ public class MainController extends MainFrame {
             CellUtils
                     .getActiveCell(this.jCell)
                     .ifPresent(cell -> new ExportFile().exportToDsl(cell.getTree()));
+        } else if (menuItem == this.saveQueryAsImageMenuItem) {
+            CellUtils
+                    .getActiveCell(this.jCell)
+                    .ifPresent(cell -> new ExportFile().exportSubtreeToImage(cell.getTree(), cell));
         } else if (menuItem == this.editMenuItem) {
             Optional<Cell> activeCell = CellUtils.getActiveCell(this.jCell);
             if (activeCell.isPresent()) {
@@ -915,7 +922,7 @@ public class MainController extends MainFrame {
         AtomicReference<Boolean> cancelServiceReference = new AtomicReference<>(false);
 
         TableCell tableCell = action == CurrentAction.ActionType.CREATE_TABLE_CELL
-                ? new FormFrameCreateTable(cancelServiceReference).getResult()
+                ? new FormFrameCreateTableImproved(cancelServiceReference).getResult()
                 : new ImportAsForm(cancelServiceReference).getResult();
 
         if (!cancelServiceReference.get()) {
