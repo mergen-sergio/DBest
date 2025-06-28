@@ -29,9 +29,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class DataFrame extends JDialog implements ActionListener {
-
-    private final JLabel lblText = new JLabel();
+public class DataFrame extends JDialog implements ActionListener {    private final JLabel lblText = new JLabel();
 
     private final JLabel lblPages = new JLabel();
 
@@ -86,6 +84,9 @@ public class DataFrame extends JDialog implements ActionListener {
     private int currentLastPage = -1;
 
     private int largestElement = -1;
+
+    private SwingWorker<Void, Tuple> tupleLoaderWorker;
+    private JDialog cancelDialog;
 
     public DataFrame(Cell cell) throws Exception {
 
@@ -237,15 +238,76 @@ public class DataFrame extends JDialog implements ActionListener {
     }
 
     private void getAllTuples() throws Exception {
-        while (this.cell.getOperator().hasNext()) {
-            Tuple tuple = this.cell.getOperator().next();
-            this.rows.add(tuple);
-            largestElement++;
+        cancelDialog = new JDialog(this, "Loading All Tuples", true);
+        JButton cancelButton = new JButton("Cancel");
+        MovingSquareBar movingBar = new MovingSquareBar();
 
-        }
+        JPanel dialogPanel = new JPanel();
+        dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
+        dialogPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        this.lastPage = largestElement / 15;
-        this.currentIndex = lastPage;
+        JLabel messageLabel = new JLabel("Loading all tuples. You can cancel the operation.");
+        messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        movingBar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        dialogPanel.add(messageLabel);
+        dialogPanel.add(Box.createVerticalStrut(15));
+        dialogPanel.add(movingBar);
+        dialogPanel.add(Box.createVerticalStrut(15));
+        dialogPanel.add(cancelButton);
+
+        cancelDialog.setContentPane(dialogPanel);
+        cancelDialog.setSize(400, 150);
+        cancelDialog.setLocationRelativeTo(this);
+        cancelDialog.setResizable(false);
+        tupleLoaderWorker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                while (cell.getOperator().hasNext() && !isCancelled()) {
+                    Tuple tuple = cell.getOperator().next();
+                    rows.add(tuple);
+                    largestElement++;
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                movingBar.stopAnimation();
+                cancelDialog.dispose();
+                
+                if (isCancelled()) {
+                    currentIndex = 0;
+                    lastPage = null;
+                    try {
+                        updateTable(currentIndex);
+                        updateTuplesLoaded();
+                        verifyButtons();
+                    } catch (Exception ex) {
+                        Logger.getLogger(DataFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    lastPage = largestElement / 15;
+                    currentIndex = lastPage;
+                    try {
+                        updateTable(currentIndex);
+                        updateTuplesLoaded();
+                        verifyButtons();
+                    } catch (Exception ex) {
+                        Logger.getLogger(DataFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        };
+
+        cancelButton.addActionListener(e -> {
+            movingBar.stopAnimation();
+            tupleLoaderWorker.cancel(true);
+        });
+
+        tupleLoaderWorker.execute();
+        cancelDialog.setVisible(true);
     }
 
     private void initializeGUI() {
@@ -253,8 +315,8 @@ public class DataFrame extends JDialog implements ActionListener {
         contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         this.setContentPane(contentPane);
-
         this.setIcons();
+        
         this.btnLeft.addActionListener(this);
         this.btnAllLeft.addActionListener(this);
         this.btnRight.addActionListener(this);
@@ -325,21 +387,25 @@ public class DataFrame extends JDialog implements ActionListener {
                 this.currentIndex++;
                 this.getTuples(this.currentIndex);
                 this.updateTable(this.currentIndex);
-            } else if (event.getSource() == this.btnLeft) {
+            }
+            else if (event.getSource() == this.btnLeft) {
                 this.currentIndex--;
                 this.getTuples(this.currentIndex);
                 this.updateTable(this.currentIndex);
             }
-
+            
             if (event.getSource() == this.btnAllLeft) {
                 this.currentIndex = 0;
                 this.getTuples(this.currentIndex);
                 this.updateTable(this.currentIndex);
-            } else if (event.getSource() == this.btnAllRight) {
-
+            }
+            else if (event.getSource() == this.btnAllRight) {
                 this.getAllTuples();
-                this.updateTable(lastPage);
-            } else if (event.getSource() == this.btnStats) {
+                if (this.lastPage != null) {
+                    this.updateTable(lastPage);
+                }
+            }
+            else if (event.getSource() == this.btnStats) {
                 this.alternateScreen();
             }
 
@@ -418,10 +484,56 @@ public class DataFrame extends JDialog implements ActionListener {
         this.revalidate();
         this.repaint();
     }
-
+    
     private void closeWindow() {
+        if (tupleLoaderWorker != null && !tupleLoaderWorker.isDone()) {
+            tupleLoaderWorker.cancel(true);
+        }
+        
         this.cell.closeOperator();
         this.cell.freeOperatorResources();
         this.dispose();
+    }
+
+    private static class MovingSquareBar extends JPanel {
+        private int x = 0;
+        private final int squareSize = 18;
+        private final int barWidth = 300;
+        private final int barHeight = 15;
+        private final int step = 6;
+        private final Color squareColor = new Color(0, 180, 0);
+        private Timer timer;
+
+        public MovingSquareBar() {
+            setPreferredSize(new Dimension(barWidth, barHeight));
+            setMinimumSize(new Dimension(barWidth, barHeight));
+            setMaximumSize(new Dimension(barWidth, barHeight));
+            setBorder(BorderFactory.createLoweredBevelBorder());
+            setOpaque(true);
+            setBackground(Color.LIGHT_GRAY);
+            startAnimation();
+        }
+
+        private void startAnimation() {
+            timer = new Timer(30, e -> {
+                x += step;
+                if (x > barWidth - squareSize) {
+                    x = 0;
+                }
+                repaint();
+            });
+            timer.start();
+        }
+
+        public void stopAnimation() {
+            if (timer != null) timer.stop();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            g.setColor(squareColor);
+            g.fillRoundRect(x, (barHeight - squareSize) / 2, squareSize, squareSize, 6, 6);
+        }
     }
 }
