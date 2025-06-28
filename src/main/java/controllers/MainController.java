@@ -104,6 +104,8 @@ public class MainController extends MainFrame {
     private final Map<Object, Object> lastTargets = new HashMap<>();
     private final Map<Object, Object> lastSources = new HashMap<>();
 
+    public static boolean isImporting = false;
+
     /**
      * Checks if an OperationCell represents a join operation by checking its form
      */
@@ -161,6 +163,9 @@ public class MainController extends MainFrame {
         });
 
         graph.addListener(mxEvent.CELL_CONNECTED, (sender, evt) -> {
+            if (MainController.isImporting) {
+                return;
+            }
             if (PasteCellsCommand.getIsPasting()) {
                 return;
             }

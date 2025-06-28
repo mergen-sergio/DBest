@@ -67,10 +67,11 @@ public class FileTransferHandler extends mxGraphTransferHandler {
             try {
                 Transferable transferable = support.getTransferable();
                 List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                MainController.isImporting = true;
 
                 for (File file : files) {
                     String extension = FileUtils.getFileExtension(file);
-                    if (extension.equals("txt")) {
+                    if (extension.equals("txt") && MainController.isImporting) {
                         ImportFile.importQuery(file);  // Call your custom function to open the file
                     } else if (extension.equals("csv")) {
                         openCSVFile(file);
