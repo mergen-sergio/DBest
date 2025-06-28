@@ -81,6 +81,8 @@ public class TablesPanel extends JPanel {
                             selectedTable,
                             ConnectionListPanel.getCurrentConnection(),
                             true);
+                    String newName = MainController.resolveTableNameConflict(tableCell.getName());
+                    tableCell.setName(newName);
                     MainController.saveTable(tableCell);
                 }
                 JOptionPane.showMessageDialog(this,

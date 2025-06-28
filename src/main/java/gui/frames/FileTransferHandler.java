@@ -9,6 +9,7 @@ import com.mxgraph.swing.util.mxGraphTransferable;
 import controllers.MainController;
 import database.TableCreator;
 import entities.cells.TableCell;
+import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
 import enums.CellType;
 import files.FileUtils;
@@ -66,10 +67,11 @@ public class FileTransferHandler extends mxGraphTransferHandler {
             try {
                 Transferable transferable = support.getTransferable();
                 List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                MainController.isImporting = true;
 
                 for (File file : files) {
                     String extension = FileUtils.getFileExtension(file);
-                    if (extension.equals("txt")) {
+                    if (extension.equals("txt") && MainController.isImporting) {
                         ImportFile.importQuery(file);  // Call your custom function to open the file
                     } else if (extension.equals("csv")) {
                         openCSVFile(file);
@@ -101,6 +103,12 @@ public class FileTransferHandler extends mxGraphTransferHandler {
             TableCell tableCell = TableCreator.createCSVTable(
                     info.tableName(), info.columns(), info, false
             );
+            String newName = MainController.resolveTableNameConflict(tableCell.getName());
+            if (newName == null) {
+                TreeUtils.deleteTree(tableCell.getTree());
+                return;
+            }
+            tableCell.setName(newName);
             MainController.executeImportTableCommand(tableCell);
             CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
         }
@@ -112,6 +120,13 @@ public class FileTransferHandler extends mxGraphTransferHandler {
         CellType cellType = ImportFile.getCellType(file);
 
         TableCell tableCell = ImportFile.importHeaderFile(table, cellType, file);
+        String newName = MainController.resolveTableNameConflict(tableCell.getName());
+        if (newName == null) {
+            TreeUtils.deleteTree(tableCell.getTree());
+            return;
+        }
+        tableCell.setName(newName);
+
         MainController.executeImportTableCommand(tableCell);
         CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
     }
@@ -122,6 +137,13 @@ public class FileTransferHandler extends mxGraphTransferHandler {
         CellType cellType = CellType.FYI_TABLE;
 
         TableCell tableCell = ImportFile.importHeaderFile(table, cellType, file);
+        String newName = MainController.resolveTableNameConflict(tableCell.getName());
+        if (newName == null) {
+            TreeUtils.deleteTree(tableCell.getTree());
+            return;
+        }
+        tableCell.setName(newName);
+
         MainController.executeImportTableCommand(tableCell);
         CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
     }

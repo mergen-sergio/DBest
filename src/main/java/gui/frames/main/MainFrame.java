@@ -31,7 +31,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected static CustomGraphComponent graphComponent;
 
     protected JPanel  operationsPanel;
-    
+
     protected JPanel  indexOperatorsPanel;
     protected JPanel  aggregationOperatorsPanel;
     protected JPanel  innerJoinOperatorsPanel;
@@ -54,6 +54,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JToolBar toolBar;
 
     protected Set<Button<?>> buttons;
+
+    protected JPopupMenu tablesPopupMenu;
+
+    protected JMenuItem removeTableMenuItem;
+
+    protected JMenuItem renameTableMenuItem;
 
     protected JPopupMenu popupMenuJCell;
 
@@ -85,6 +91,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem pasteMenuItem;
 
+    protected JMenuItem redistributeNodesMenuItem;
+
     protected JMenuItem selectionMenuItem;
 
     protected JMenuItem projectionMenuItem;
@@ -102,7 +110,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 //    protected JMenuItem indexerMenuItem;
 
     protected JMenuItem joinMenuItem;
-    
+
     protected JMenuItem semiJoinMenuItem;
 
     protected JMenuItem leftJoinMenuItem;
@@ -114,15 +122,15 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JMenuItem unionMenuItem;
 
     protected JMenuItem intersectionMenuItem;
-    
+
     protected JMenuItem differenceMenuItem;
-    
+
     //protected JMenuItem importTableMenuItem;
-    
+
     //protected JMenuItem openCSVTableMenuItem;
-    
+
     //protected JMenuItem openHeadFileMenuItem;
-    
+
     //protected JMenuItem openBTreeTableMenuItem;
 
     // protected JMenuItem importTreeMenuItem;
@@ -134,11 +142,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     protected JMenuItem openDatabaseConnectionTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openDatabaseConnection"));
 
     protected JMenuItem openCSVTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openCSVTable"));
-    
+
     protected JMenuItem openBTreeTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openBTreeTable"));
-    
+
     protected JMenuItem openHeadFileTableTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openHeadFileTable"));
-    
+
     protected JMenuItem openQueryTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openQuery"));
 
     protected JMenuItem nimbusThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.nimbus"));
@@ -185,6 +193,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.toolBar = new JToolBar();
         this.buttons = buttons;
         this.popupMenuJCell = new JPopupMenu();
+        this.tablesPopupMenu = new JPopupMenu();
+
         this.topMenuBar = new JMenuBar();
         this.runQueryMenuItem = new JMenuItem(ConstantController.getString("cell.runQuery"));
         this.informationsMenuItem = new JMenuItem(ConstantController.getString("cell.informations"));
@@ -199,6 +209,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.unmarkCellMenuItem = new JMenuItem(ConstantController.getString("cell.unmark"));
         this.copyMenuItem = new JMenuItem("Copy");
         this.pasteMenuItem = new JMenuItem("Paste");
+        this.redistributeNodesMenuItem = new JMenuItem("Redistribute Nodes");
+        this.removeTableMenuItem = new JMenuItem("Remove Table");
+        this.renameTableMenuItem = new JMenuItem("Rename Table");
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
         this.selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
@@ -233,8 +246,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         this.operationsPanel.setLayout(new BoxLayout(this.operationsPanel, BoxLayout.Y_AXIS));
 
-        
-        
+
+
         tablesPanel.add(this.tablesComponent, BorderLayout.CENTER);
 
         this.getContentPane().add(this.topMenuBar, BorderLayout.NORTH);
@@ -245,8 +258,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.getContentPane().add(scrollPane, BorderLayout.EAST);
         this.getContentPane().add(this.toolBar, BorderLayout.SOUTH);
 
-        
-        
+
+
         this.addOperationButtons();
         this.addBottomButtons();
         this.addTopMenuBarFileItems();
@@ -263,6 +276,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         this.setMenuItemsListener();
 
+        this.tablesPopupMenu.add(this.removeTableMenuItem);
+        this.tablesPopupMenu.add(this.renameTableMenuItem);
+
         this.addMenuItemOperations();
 
         mainContainer = this.getContentPane();
@@ -276,7 +292,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         // Add an empty border to the panel to shift all buttons to the right
         int leftPadding = 20; // Amount of pixels to shift to the right
         panel.setBorder(BorderFactory.createEmptyBorder(0, leftPadding, 0, 0));
-        
+
         JButton groupedButton = new JButton("+" + buttonName);
         groupedButton.setBackground(new Color(173, 216, 230)); // Light blue color (RGB)
         groupedButton.setBounds(600, 50, 200, 50);
@@ -288,7 +304,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         // Add action listener to toggle visibility of the first panel
         groupedButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (panel.isVisible()){
+                if (panel.isVisible()) {
                     panel.setVisible(false);
                     groupedButton.setText("+" +buttonName);
                 }
@@ -298,9 +314,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
                 }
             }
         });
-        
+
     }
-    
+
     private void addTopMenuBarFileItems() {
         JMenu fileMenu = new JMenu(ConstantController.getString("menu.file"));
         this.topMenuBar.add(fileMenu);
@@ -310,7 +326,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         fileMenu.add(this.openCSVTableTopMenuBarItem);
         fileMenu.add(this.openBTreeTableTopMenuBarItem);
         fileMenu.add(this.openHeadFileTableTopMenuBarItem);
-        
+
         fileMenu.add(this.openQueryTopMenuBarItem);
 
         //this.importTableTopMenuBarItem.addActionListener(this);
@@ -412,15 +428,15 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         tablesGraph.getStylesheet().putCellStyle(customStyle, style);
 
     }
-    
+
     private void addOperationButtons() {
         mxStylesheet stylesheet = graph.getStylesheet();
 
-        
-        
-        
+
+
+
         this.buttons.add(new OperationButton(stylesheet, OperationType.SORT, this, this.operationsPanel));
-        
+
         addGroupButton(this.algebraOperatorsPanel, "Rel. Algebra Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.algebraOperatorsPanel));
@@ -434,15 +450,13 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.algebraOperatorsPanel));
-        
-        
+
+
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_UNION, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_INTERSECTION, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.algebraOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.algebraOperatorsPanel));
-        
-                
         addGroupButton(this.removeOperatorsPanel, "Remove Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.removeOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.removeOperatorsPanel));
@@ -450,57 +464,57 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.removeOperatorsPanel));
-        
-        
+
+
         addGroupButton(this.ETLOperatorsPanel, "ETL Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.EXPLODE, this, this.ETLOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.AUTO_INCREMENT, this, this.ETLOperatorsPanel));
 //        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
-        
+
         addGroupButton(this.indexOperatorsPanel, "Index Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.indexOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MEMOIZE, this, this.indexOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MATERIALIZATION, this, this.indexOperatorsPanel));
-        
-        
+
+
         addGroupButton(this.aggregationOperatorsPanel, "Aggregation Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.aggregationOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.aggregationOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.aggregationOperatorsPanel));
-        
-        
+
+
         addGroupButton(this.innerJoinOperatorsPanel, "Inner Join Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.innerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_JOIN, this, this.innerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_JOIN, this, this.innerJoinOperatorsPanel));
-        
+
         addGroupButton(this.outerJoinOperatorsPanel, "Outer Join Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        
+
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        
+
         addGroupButton(this.semiJoinOperatorsPanel, "Semi Join Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-        
-        
+
+
         addGroupButton(this.antiJoinOperatorsPanel, "Anti Join Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-        
-        
+
+
         addGroupButton(this.setOperatorsPanel, "Set Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.APPEND, this, this.setOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.setOperatorsPanel));
@@ -514,21 +528,21 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.buttons.add(new OperationButton(stylesheet, OperationType.AND, this, this.logicalOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.OR, this, this.logicalOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.XOR, this, this.logicalOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CONDITION, this, this.logicalOperatorsPanel));        
-        this.buttons.add(new OperationButton(stylesheet, OperationType.IF, this, this.logicalOperatorsPanel));        
-        
+        this.buttons.add(new OperationButton(stylesheet, OperationType.CONDITION, this, this.logicalOperatorsPanel));
+        this.buttons.add(new OperationButton(stylesheet, OperationType.IF, this, this.logicalOperatorsPanel));
+
         addGroupButton(this.otherOperatorsPanel, "Other Operators");
         this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.otherOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.otherOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.otherOperatorsPanel));
         this.buttons.add(new OperationButton(stylesheet, OperationType.REFERENCE, this, this.otherOperatorsPanel));
-        
+
         //this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
         //this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
-        
+
     }
-    
-    
+
+
 
     private void addBottomButtons() {
         this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (i)", ConstantController.getString("toolBarButtons.importTable")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.IMPORT_FILE)));
@@ -593,8 +607,11 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.removeMenuItem.addActionListener(this);
         this.markCellMenuItem.addActionListener(this);
         this.unmarkCellMenuItem.addActionListener(this);
+        this.removeTableMenuItem.addActionListener(this);
+        this.renameTableMenuItem.addActionListener(this);
         this.copyMenuItem.addActionListener(this);
         this.pasteMenuItem.addActionListener(this);
+        this.redistributeNodesMenuItem.addActionListener(this);
         this.selectionMenuItem.addActionListener(this);
         this.projectionMenuItem.addActionListener(this);
         this.sortMenuItem.addActionListener(this);
