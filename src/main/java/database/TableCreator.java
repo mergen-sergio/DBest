@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import controllers.ConstantController;
+import controllers.MainController;
 import database.jdbc.UniversalConnectionConfig;
 import entities.Column;
 import entities.cells.CSVTableCell;
@@ -76,6 +77,7 @@ public class TableCreator {
         table.open();
 
         String tableName = headerFile.getAsJsonObject("information").get("tablename").getAsString();
+        tableName = MainController.resolveTableNameConflict(tableName);
 
         return switch (cellType) {
 
