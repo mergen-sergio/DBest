@@ -55,6 +55,12 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected Set<Button<?>> buttons;
 
+    protected JPopupMenu tablesPopupMenu;
+
+    protected JMenuItem removeTableMenuItem;
+
+    protected JMenuItem renameTableMenuItem;
+
     protected JPopupMenu popupMenuJCell;
 
     protected JMenu operationsMenuItem;
@@ -185,6 +191,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.toolBar = new JToolBar();
         this.buttons = buttons;
         this.popupMenuJCell = new JPopupMenu();
+        this.tablesPopupMenu = new JPopupMenu();
+
         this.topMenuBar = new JMenuBar();
         this.runQueryMenuItem = new JMenuItem(ConstantController.getString("cell.runQuery"));
         this.informationsMenuItem = new JMenuItem(ConstantController.getString("cell.informations"));
@@ -199,6 +207,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.unmarkCellMenuItem = new JMenuItem(ConstantController.getString("cell.unmark"));
         this.copyMenuItem = new JMenuItem("Copy");
         this.pasteMenuItem = new JMenuItem("Paste");
+        this.removeTableMenuItem = new JMenuItem("Remove Table");
+        this.renameTableMenuItem = new JMenuItem("Rename Table");
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
         this.selectionMenuItem = new JMenuItem(OperationType.FILTER.displayName);
         this.projectionMenuItem = new JMenuItem(OperationType.PROJECTION.displayName);
@@ -262,6 +272,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.setGraphConfig();
 
         this.setMenuItemsListener();
+
+        this.tablesPopupMenu.add(this.removeTableMenuItem);
+        this.tablesPopupMenu.add(this.renameTableMenuItem);
 
         this.addMenuItemOperations();
 
@@ -593,6 +606,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.removeMenuItem.addActionListener(this);
         this.markCellMenuItem.addActionListener(this);
         this.unmarkCellMenuItem.addActionListener(this);
+        this.removeTableMenuItem.addActionListener(this);
+        this.renameTableMenuItem.addActionListener(this);
         this.copyMenuItem.addActionListener(this);
         this.pasteMenuItem.addActionListener(this);
         this.selectionMenuItem.addActionListener(this);

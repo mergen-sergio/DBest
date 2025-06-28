@@ -136,8 +136,19 @@ public class MainController extends MainFrame {
                 Object cell = MainController.this.tablesComponent.getCellAt(event.getX(), event.getY());
 
                 if (cell != null) {
-                    graph.setSelectionCell(new mxCell(((mxCell) cell).getValue()));
-                    MainController.this.isTableCellSelected = true;
+                    // Handle right-click for context menu
+                    if (SwingUtilities.isRightMouseButton(event)) {
+                        String tableName = (String) ((mxCell) cell).getValue();
+                        TableCell tableCell = tables.get(tableName);
+                        if (tableCell != null) {
+                            showTableContextMenu(event, tableCell);
+
+                        }
+                    } else {
+                        // Handle left-click for selection
+                        graph.setSelectionCell(new mxCell(((mxCell) cell).getValue()));
+                        MainController.this.isTableCellSelected = true;
+                    }
                 }
             }
         });
@@ -926,6 +937,18 @@ public class MainController extends MainFrame {
                 : new ImportAsForm(cancelServiceReference).getResult();
 
         if (!cancelServiceReference.get()) {
+            String originalName = tableCell.getName();
+            String newName = resolveTableNameConflict(originalName);
+
+            if (newName == null) {
+                TreeUtils.deleteTree(tableCell.getTree());
+                return;
+            }
+
+            if (!originalName.equals(newName)) {
+                tableCell.setName(newName);
+            }
+
             this.executeImportTableCommand(tableCell);
             CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
         } else {
@@ -1395,4 +1418,831 @@ public class MainController extends MainFrame {
         return isPopupBeingActivatedByCommand;
     }
 
+    /**
+     * Shows a context menu for table operations when right-clicking on a table in the sidebar
+     */
+    private void showTableContextMenu(MouseEvent event, TableCell tableCell) {
+        JPopupMenu contextMenu = new JPopupMenu();
+        // Add Rename Table menu item
+        JMenuItem renameTableMenuItem = new JMenuItem("Rename Table");
+        renameTableMenuItem.addActionListener(e -> {
+            String currentName = tableCell.getName();
+            while (true) {
+                String newName = JOptionPane.showInputDialog(
+                    this,
+                    "Enter new name for the table:",
+                    "Rename Table",
+                    JOptionPane.QUESTION_MESSAGE
+                );
+
+                if (newName == null) {
+                    break;
+                }
+
+                if (newName.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Table name cannot be empty!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    continue;
+                }
+
+                if (!MainController.isValidNewTableName(newName)) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "A table with this name already exists!",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                    continue;
+                }
+
+                // Get the mxCell associated with this table
+                mxCell cell = null;
+                Object[] cells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+                for (Object c : cells) {
+                    if (c instanceof mxCell) {
+                        mxCell currentCell = (mxCell) c;
+                        if (currentCell.getValue().equals(currentName)) {
+                            cell = currentCell;
+                            break;
+                        }
+                    }
+                }
+
+                if (cell != null) {
+                    MainController.renameTable(currentName, newName, cell);}
+                break;
+            }
+        });
+        contextMenu.add(renameTableMenuItem);
+
+        // Add Remove Table menu item
+        JMenuItem removeTableMenuItem = new JMenuItem("Remove Table");
+        removeTableMenuItem.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to remove table '" + tableCell.getName() + "'?",
+                "Confirm Removal",
+                JOptionPane.YES_NO_OPTION
+            );
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Get the mxCell associated with this table
+                mxCell cell = null;
+                Object[] cells = tablesGraph.getChildVertices(tablesGraph.getDefaultParent());
+                for (Object c : cells) {
+                    if (c instanceof mxCell) {
+                        mxCell currentCell = (mxCell) c;
+                        if (currentCell.getValue().equals(tableCell.getName())) {
+                            cell = currentCell;
+                            break;
+                        }
+                    }
+                }
+
+                if (cell != null) {
+                    MainController.removeTable(tableCell.getName(), cell);
+                    tablesGraph.getModel().remove(cell);
+                    tablesPanel.revalidate();
+                    tablesPanel.repaint();
+                }
+            }
+        });
+        contextMenu.add(removeTableMenuItem);
+
+        // Add a separator before cache options if any
+        if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+            contextMenu.addSeparator();
+        }
+
+        // Only show cache management options for B-Tree tables
+        if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+            // Menu item for cache information
+            JMenuItem cacheInfoMenuItem = new JMenuItem("Cache Info");
+            cacheInfoMenuItem.addActionListener(e -> showCacheInfo(tableCell));
+
+            // Menu item for setting cache size
+            JMenuItem setCacheSizeMenuItem = new JMenuItem("Set Cache Size");
+            setCacheSizeMenuItem.addActionListener(e -> showSetCacheSizeDialog(tableCell));
+
+            // Menu item for resetting cache
+            JMenuItem resetCacheMenuItem = new JMenuItem("Reset Cache");
+            resetCacheMenuItem.addActionListener(e -> resetTableCache(tableCell));
+
+            contextMenu.add(cacheInfoMenuItem);
+            contextMenu.addSeparator();
+            contextMenu.add(setCacheSizeMenuItem);
+            contextMenu.add(resetCacheMenuItem);
+
+            // Show the context menu at the mouse position
+            contextMenu.show(tablesComponent.getGraphControl(), event.getX(), event.getY());
+        }
+        else {
+            //For other table types (CSV, relational database tables)
+            contextMenu.show(event.getComponent(), event.getX(), event.getY());
+        }
+    }
+
+    /**
+     * Shows a dialog to set the cache size for a specific table
+     */
+    private void showSetCacheSizeDialog(TableCell tableCell) {
+        try {
+            // Get current cache size if available
+            String currentCacheSize = "Unknown";
+            int newCacheSizeInPages = -1; // <-- Add this variable to store the number of pages
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                try {
+                    // Access the cache field to get actual cache size
+                    java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                    cacheField.setAccessible(true);
+                    Object cache = cacheField.get(btreeTable);
+                    if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                        ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                        // Get cacheSizeBytes field
+                        java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                        cacheSizeBytesField.setAccessible(true);
+                        int cacheSizeBytes = cacheSizeBytesField.getInt(tableCache);
+                        currentCacheSize = String.valueOf(cacheSizeBytes);
+                        // Get cacheSize (pages)
+                        java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                        cacheSizeField.setAccessible(true);
+                        newCacheSizeInPages = cacheSizeField.getInt(tableCache);
+                    } else {
+                        currentCacheSize = "No cache";
+                    }
+                } catch (Exception ex) {
+                    // Fallback to default cache size
+                    currentCacheSize = String.valueOf(TableCreator.cacheSize);
+                }
+            }
+            // Create custom dialog with Reset Default button
+            JTextField inputField = new JTextField(15);
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(new JLabel(String.format("<html>Current cache size: %s bytes<br>Enter new cache size (in bytes):</html>", currentCacheSize)), BorderLayout.NORTH);
+            panel.add(inputField, BorderLayout.CENTER);
+
+            String[] options = {"Reset Default", "OK", "Cancel"};
+            int result = JOptionPane.showOptionDialog(
+                this,
+                panel,
+                "Set Cache Size for " + tableCell.getName(),
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[1] // Default to "OK"
+            );
+
+            String input = null;
+            if (result == 0) { // Reset Default button clicked
+                input = "5000000";
+            } else if (result == 1) { // OK button clicked
+                input = inputField.getText();
+            }
+            if (input != null && !input.trim().isEmpty()) {
+                try {
+                    int newCacheSize = Integer.parseInt(input.trim());
+                    if (newCacheSize <= 0) {
+                        JOptionPane.showMessageDialog(
+                            this,
+                            "Cache size must be a positive number.",
+                            "Invalid Cache Size",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                        return;
+                    }
+
+                    // Check if cache size is smaller than page size
+                    if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                        ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                        try {
+                            java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                            cacheField.setAccessible(true);
+                            Object cache = cacheField.get(btreeTable);
+                            if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                                ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                                int pageSize = tableCache.getPageSize();
+                                if (newCacheSize < pageSize) {
+                                    JOptionPane.showMessageDialog(
+                                        this,
+                                        String.format("Cache size (%d bytes) cannot be smaller than page size (%d bytes).", newCacheSize, pageSize),
+                                        "Invalid Cache Size",
+                                        JOptionPane.ERROR_MESSAGE
+                                    );
+                                    return;
+                                }
+                            }
+                        } catch (Exception ex) {
+                            // If we can't get page size, continue with validation
+                            System.err.println("Warning: Could not validate against page size: " + ex.getMessage());
+                        }
+                    }
+                    setTableCacheSize(tableCell, newCacheSize);
+                    // After setting, try to get the new number of pages again
+                    if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                        ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+                        try {
+                            java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                            cacheField.setAccessible(true);
+                            Object cache = cacheField.get(btreeTable);
+                            if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                                ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                                java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                                cacheSizeField.setAccessible(true);
+                                newCacheSizeInPages = cacheSizeField.getInt(tableCache);
+                            }
+                        } catch (Exception ex) {
+                            // ignore, keep previous value
+                        }
+                    }
+                    String message = String.format("Cache size for table '%s' has been set to %d bytes.\nThe number of pages has been set to %d pages.",
+                        tableCell.getName(), newCacheSize, newCacheSizeInPages);
+                    if (result == 0) { // If Reset Default was used
+                        message += "\n(Set to default size)";
+                    }
+                    JOptionPane.showMessageDialog(
+                        this,
+                        message,
+                        "Cache Size Updated",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter a valid number.",
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error setting cache size: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+    /**
+     * Sets the cache size for a specific table
+     */
+    private void setTableCacheSize(TableCell tableCell, int newCacheSize) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+
+                if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+
+                    // Update cacheSizeBytes field
+                    java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                    cacheSizeBytesField.setAccessible(true);
+                    cacheSizeBytesField.setInt(tableCache, newCacheSize);
+
+                    // Update cacheSize field (calculated from cacheSizeBytes / pageSize)
+                    java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                    cacheSizeField.setAccessible(true);
+                    int pageSize = tableCache.getPageSize();
+                    int newCacheSizeInPages = newCacheSize / pageSize;
+                    if (newCacheSizeInPages <= 0) {
+                        newCacheSizeInPages = 1; // Minimum cache size of 1 page
+                    }
+                    cacheSizeField.setInt(tableCache, newCacheSizeInPages);
+                    // Clear the cache to apply the new size settings
+                    java.lang.reflect.Method clearCacheMethod = tableCache.getClass().getDeclaredMethod("clearCache");
+                    clearCacheMethod.setAccessible(true);
+                    clearCacheMethod.invoke(tableCache);
+
+                    // Re-initialize the cache with new settings if it's an LRU cache
+                    if (cache instanceof ibd.persistent.cache.LRUCache) {
+                        java.lang.reflect.Method initCacheMethod = tableCache.getClass().getDeclaredMethod("initCache");
+                        initCacheMethod.setAccessible(true);
+                        initCacheMethod.invoke(tableCache);
+                    }
+
+                    /*System.out.println(String.format("Updated cache size for table '%s' to %d bytes (%d pages)",
+                                     tableCell.getName(), newCacheSize, newCacheSizeInPages));*/
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache to modify.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Error updating table cache size: " + ex.getMessage());
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                this,
+                "Error updating cache size: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    /**
+     * Resets the cache for a specific table
+     */
+    private void resetTableCache(TableCell tableCell) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+                if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+                    // Use reflection to access the protected clearCache method
+                    java.lang.reflect.Method clearCacheMethod = tableCache.getClass().getDeclaredMethod("clearCache");
+                    clearCacheMethod.setAccessible(true);
+                    clearCacheMethod.invoke(tableCache);
+
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Cache for table '%s' has been reset successfully.", tableCell.getName()),
+                        "Cache Reset",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                    //System.out.println(String.format("Reset cache for table '%s'", tableCell.getName()));
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache to reset.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error resetting cache: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.err.println("Error resetting table cache: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+    /**
+     * Shows information about cache functionality for a specific table
+     */
+    private void showCacheInfo(TableCell tableCell) {
+        try {
+            if (tableCell.getTable() instanceof ibd.table.btree.BTreeTable) {
+                ibd.table.btree.BTreeTable btreeTable = (ibd.table.btree.BTreeTable) tableCell.getTable();
+
+                // Access the cache field using reflection
+                java.lang.reflect.Field cacheField = btreeTable.getClass().getDeclaredField("cache");
+                cacheField.setAccessible(true);
+                Object cache = cacheField.get(btreeTable);
+
+                if (cache != null && cache instanceof ibd.persistent.cache.Cache) {
+                    ibd.persistent.cache.Cache<?> tableCache = (ibd.persistent.cache.Cache<?>) cache;
+
+                    // Get cache information
+                    int pageSize = tableCache.getPageSize();
+
+                    // Get current cache size in bytes and pages
+                    java.lang.reflect.Field cacheSizeBytesField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSizeBytes");
+                    cacheSizeBytesField.setAccessible(true);
+                    int cacheSizeBytes = cacheSizeBytesField.getInt(tableCache);
+
+                    java.lang.reflect.Field cacheSizeField = tableCache.getClass().getSuperclass().getDeclaredField("cacheSize");
+                    cacheSizeField.setAccessible(true);
+                    int cacheSizePages = cacheSizeField.getInt(tableCache);
+
+                    // Calculate how many complete pages fit in the current cache size
+                    int calculatedPages = cacheSizeBytes / pageSize;
+
+                    StringBuilder infoMessage = new StringBuilder();
+                    infoMessage.append("<html><body style='width: 400px;'>");
+                    infoMessage.append("<h3>Cache Information for Table: ").append(tableCell.getName()).append("</h3>");
+                    infoMessage.append("<hr>");
+
+                    infoMessage.append("<b>Page Size:</b> ").append(pageSize).append(" bytes<br><br>");
+
+                    infoMessage.append("<b>Current Cache Configuration:</b><br>");
+                    infoMessage.append("• Cache Size (bytes): ").append(cacheSizeBytes).append(" bytes<br>");
+                    infoMessage.append("• Cache Size (pages): ").append(cacheSizePages).append(" pages<br><br>");
+
+                    infoMessage.append("<b>How Cache Size Calculation Works:</b><br>");
+                    infoMessage.append("When you set a cache size in bytes, the system calculates how many complete pages can fit:<br>");
+                    infoMessage.append("• Number of pages = Cache size ÷ Page size<br>");
+                    infoMessage.append("• Example: ").append(cacheSizeBytes).append(" ÷ ").append(pageSize).append(" = ").append(calculatedPages).append(" pages<br>");
+                    infoMessage.append("• The result is rounded down to the nearest whole number<br>");
+                    infoMessage.append("• Minimum cache size is 1 page (").append(pageSize).append(" bytes)<br><br>");
+
+                    infoMessage.append("<b>Cache Functions:</b><br>");
+                    infoMessage.append("• <i>Set Cache Size:</i> Change the cache size in bytes<br>");
+                    infoMessage.append("• <i>Reset Cache:</i> Clear all cached pages from memory<br>");
+                    infoMessage.append("• Default cache size: 5,000,000 bytes<br>");
+
+                    infoMessage.append("</body></html>");
+
+                    JOptionPane.showMessageDialog(
+                        this,
+                        infoMessage.toString(),
+                        "Cache Information",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        String.format("Table '%s' does not have an active cache.", tableCell.getName()),
+                        "No Cache Found",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error retrieving cache information: " + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+            System.err.println("Error showing cache info: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Removes a table from the tables panel and updates the graph
+     */
+    public static void removeTable(String tableName, mxCell cell) {
+        double yPosOfRemovedCell = cell.getGeometry().getY();
+        tables.remove(tableName);
+
+        updateTablesPanel(cell, yPosOfRemovedCell);
+        removeTableReferences(tableName);
+    }
+
+    /**
+     * Updates the tables panel by removing the specified cell and adjusting positions of remaining cells
+     */
+    private static void updateTablesPanel(mxCell cell, double yPosOfRemovedCell) {
+        tablesGraph.getModel().beginUpdate();
+        try {
+            tablesGraph.removeCells(new Object[]{cell});
+            adjustRemainingCellsPosition(yPosOfRemovedCell);
+            decrementCurrentTableYPosition(40);
+            refreshTablesPanelUI();
+        } finally {
+            tablesGraph.getModel().endUpdate();
+        }
+    }
+
+    /**
+     * Adjusts the position of remaining cells after a table is removed
+     * Moves all cells below the removed cell up by 40 pixels
+     */
+    private static void adjustRemainingCellsPosition(double yPosOfRemovedCell) {
+        for (Object c : tablesGraph.getChildVertices(tablesGraph.getDefaultParent())) {
+            if (c instanceof mxCell currentCell &&
+                currentCell.getGeometry().getY() > yPosOfRemovedCell) {
+                tablesGraph.moveCells(new Object[]{currentCell}, 0, -40);
+            }
+        }
+    }
+
+    /**
+     * Refreshes the tables panel UI after a table is removed or modified
+     */
+    private static void refreshTablesPanelUI() {
+        tablesGraph.refresh();
+        tablesPanel.revalidate();
+        tablesPanel.repaint();
+    }
+
+    /**
+     * Removes all references to a table in the main graph
+     * This method is called when a table is removed from the tables panel
+     */
+    private static void removeTableReferences(String tableName) {
+        graph.getModel().beginUpdate();
+        try {
+            List<Object> cellsToRemove = findTableCellsToRemove(tableName);
+            for (Object cell : cellsToRemove) {
+                if (cell instanceof mxCell) {
+                    commandController.execute(new RemoveCellCommand(new AtomicReference<>((mxCell)cell)));
+                }
+            }
+
+            graph.removeCells(cellsToRemove.toArray(new Object[0]));
+            graph.refresh();
+        } finally {
+            graph.getModel().endUpdate();
+        }
+    }
+
+    /**
+     * Finds all cells in the main graph that reference the specified table name
+     * and returns them as a list of objects to be removed
+     */
+    private static List<Object> findTableCellsToRemove(String tableName) {
+        List<Object> cellsToRemove = new ArrayList<>();
+        for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+            if (vertex instanceof mxCell) {
+                mxCell mainGraphCell = (mxCell) vertex;
+                Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+                if (optionalCell.isPresent() && optionalCell.get() instanceof TableCell) {
+                    TableCell tableCell = (TableCell) optionalCell.get();
+                    if (tableName.equals(tableCell.getName())) {
+                        cellsToRemove.add(mainGraphCell);
+                    }
+                }
+            }
+        }
+        return cellsToRemove;
+    }
+
+    /**
+     * Renames a table in the tables map and updates all references in the graph
+     * This method is called when a table is renamed in the tables panel
+     */
+    public static void renameTable(String currentName, String newName, mxCell cell) {
+        updateTableName(currentName, newName);
+        updateTableCell(newName, cell);
+        updateAllReferences(currentName, newName);
+    }
+
+    /**
+     * Updates the name of a table in the tables map
+     * This method is called when a table is renamed
+     */
+    private static void updateTableName(String currentName, String newName) {
+        TableCell tableCell = tables.remove(currentName);
+        if (tableCell != null) {
+            tableCell.setName(newName);
+            tables.put(newName, tableCell);
+        }
+    }
+
+    /**
+     * Updates the name of a table in the tables graph and adjusts its geometry
+     * This method is called when a table is renamed
+     */
+    private static void updateTableCell(String newName, mxCell cell) {
+        tablesGraph.getModel().beginUpdate();
+        try {
+            tablesGraph.getModel().setValue(cell, newName);
+            updateCellGeometry(cell, newName);
+            refreshUI(cell);
+        } finally {
+            tablesGraph.getModel().endUpdate();
+        }
+    }
+
+    /**
+     * Updates the geometry of a cell after it has been renamed
+     * This method adjusts the width of the cell based on the new name
+     */
+    private static void updateCellGeometry(mxCell cell, String newName) {
+        mxGeometry geometry = cell.getGeometry();
+        if (geometry != null) {
+            geometry.setWidth(Math.max(ConstantController.TABLE_CELL_WIDTH, newName.length() * 8));
+        }
+    }
+
+    /**
+     * Refreshes the UI after a table has been renamed
+     * This method updates the tables graph and revalidates the tables panel
+     */
+    private static void refreshUI(mxCell cell) {
+        tablesGraph.refresh();
+        tablesGraph.repaint();
+        if (cell.getGeometry().getWidth() == ConstantController.TABLE_CELL_WIDTH) {
+            tablesPanel.revalidate();
+        }
+    }
+
+    /**
+     * Updates all references to a table after it has been renamed
+     * This method updates both visual and structural references in the graph
+     */
+    private static void updateAllReferences(String oldName, String newName) {
+        refreshVisualTableReferences(oldName, newName);
+        updateStructuralTableReferences(oldName, newName);
+    }
+
+    /**
+     * Checks if a new table name is valid
+     * A valid name is non-null, non-empty, and not already in use
+     */
+    public static boolean isValidNewTableName(String newName) {
+        return newName != null && !newName.trim().isEmpty() && !tables.containsKey(newName);
+    }
+
+    /**
+     * Refreshes all visual references to a table after it has been renamed
+     * This method updates the display names of TableCells and OperationCells in the graph
+     */
+    public static void refreshVisualTableReferences(String oldName, String newName) {
+        for (Cell cell : CellUtils.getActiveCells().values()) {
+            if (cell instanceof TableCell tableCell && tableCell.getName().equals(oldName)) {
+                tableCell.asOperator(newName);
+                adjustCellWidth(tableCell.getJCell(), newName);
+            }
+            if (cell instanceof OperationCell opCell) {
+                opCell.getColumns().replaceAll(col -> {
+                    if (col.SOURCE.equals(oldName)) {
+                        return Column.changeSourceColumn(col, newName);
+                    }
+                    return col;
+                });
+                String displayName = opCell.getType().symbol;
+                if (opCell.getArguments() != null && !opCell.getArguments().isEmpty()) {
+                    displayName += "[" + String.join(", ", opCell.getArguments()) + "]";
+                }
+                if (opCell.getAlias() != null && !opCell.getAlias().isEmpty()) {
+                    displayName += " AS " + opCell.getAlias();
+                }
+                opCell.getJCell().setValue(displayName);
+                adjustCellWidth(opCell.getJCell(), displayName);
+            }
+        }
+        MainFrame.getGraph().refresh();
+        graph.clearSelection();
+    }
+
+    /**
+     * Adjusts the width of a cell based on the text it contains
+     * This is used to ensure that table names fit within their cells in the graph
+     */
+    private static void adjustCellWidth(mxCell cell, String text) {
+        if (cell != null && cell.getGeometry() != null) {
+            int textWidth = text.length() * 8;
+            int finalWidth = Math.max(ConstantController.TABLE_CELL_WIDTH, textWidth);
+            cell.getGeometry().setWidth(finalWidth);
+        }
+    }
+
+    /**
+     * Updates all structural references to a table after it has been renamed
+     * This method updates TableCells and OperationCells in the main graph
+     */
+    private static void updateStructuralTableReferences(String oldName, String newName) {
+        graph.getModel().beginUpdate();
+        try {
+            for (Object vertex : graph.getChildVertices(graph.getDefaultParent())) {
+                if (vertex instanceof mxCell) {
+                    mxCell mainGraphCell = (mxCell) vertex;
+                    Optional<Cell> optionalCell = CellUtils.getActiveCell(mainGraphCell);
+
+                    if (optionalCell.isPresent()) {
+                        Cell cellToUpdate = optionalCell.get();
+
+                        if (cellToUpdate instanceof TableCell tableCellToRename) {
+                            if (oldName.equals(tableCellToRename.getName())) {
+                                tableCellToRename.setName(newName);
+                                mainGraphCell.setValue(newName);
+                            }
+                        }
+                        else if (cellToUpdate instanceof OperationCell operationCell) {
+                            if (operationCell.getArguments() != null) {
+                                List<String> updatedArguments = new ArrayList<>();
+                                for (String arg : operationCell.getArguments()) {
+                                    if (arg != null) {
+                                        String updatedArg = arg.replaceAll("\\b" + oldName + "\\.", newName + ".");
+                                        updatedArg = updatedArg.replaceAll("\\b" + oldName + "\\b", newName);
+                                        updatedArguments.add(updatedArg);
+                                    } else {
+                                        updatedArguments.add(arg);
+                                    }
+                                }
+                                operationCell.setArguments(updatedArguments);
+
+                                String displayName = operationCell.getType().getFormattedDisplayName();
+                                if (!updatedArguments.isEmpty()) {
+                                    displayName += "[" + String.join(", ", updatedArguments) + "]";
+                                }
+                                if (operationCell.getAlias() != null && !operationCell.getAlias().isEmpty()) {
+                                    displayName += " AS " + operationCell.getAlias();
+                                }
+                                mainGraphCell.setValue(displayName);
+                            }
+
+                            if (operationCell.getAlias() != null && operationCell.getAlias().equals(oldName)) {
+                                operationCell.setAlias(newName);
+                            }
+
+                            try {
+                                TreeUtils.recalculateContent(operationCell);
+                            } catch (Exception e) {
+                                System.err.println("Erro ao recalcular conteúdo: " + e.getMessage());
+                            }
+                        }
+
+                        List<Column> updatedColumns = new ArrayList<>();
+                        for (Column column : cellToUpdate.getColumns()) {
+                            if (column.SOURCE.equals(oldName)) {
+                                updatedColumns.add(new Column(newName, column.NAME));
+                            } else {
+                                updatedColumns.add(column);
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            graph.getModel().endUpdate();
+            graph.refresh();
+        }
+    }
+
+    /*
+     * Suggests a new table name based on the original name
+     * If the original name already exists, appends a counter to create a unique name
+     */
+    public static String suggestNewTableName(String originalName) {
+        if (!tables.containsKey(originalName)) {
+            return originalName;
+        }
+
+        int counter = 1;
+        String newName;
+        do {
+            newName = originalName + "_" + counter;
+            counter++;
+        } while (tables.containsKey(newName));
+
+        return newName;
+    }
+
+    /**
+     * Shows a dialog to resolve a table name conflict
+     * If the original name already exists, suggests a new name or allows the user to choose another name
+     */
+    public static String showTableNameConflictDialog(String originalName) {
+        String suggestedName = suggestNewTableName(originalName);
+        Object[] options = {"Use suggested name", "Choose another name", "Cancel"};
+
+        int choice = JOptionPane.showOptionDialog(
+            null,
+            String.format("A table with the name already exists '%s'.\nSuggested name: %s",
+                originalName, suggestedName),
+            "Duplicate Table Name",
+            JOptionPane.YES_NO_CANCEL_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            return suggestedName;
+        } else if (choice == JOptionPane.NO_OPTION) {
+            String newName = JOptionPane.showInputDialog(
+                null,
+                "Enter a new name for the table:",
+                "Rename Table",
+                JOptionPane.PLAIN_MESSAGE
+            );
+
+            if (newName != null && !newName.trim().isEmpty()) {
+                while (tables.containsKey(newName)) {
+                    newName = JOptionPane.showInputDialog(
+                        null,
+                        "This name already exists. Enter another name:",
+                        "Duplicate Name",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                    if (newName == null) {
+                        return null;
+                    }
+                }
+                return newName;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolves a table name conflict by checking if the name already exists
+     * If it does, shows a dialog to suggest a new name or allow the user to choose another name
+     */
+    public static String resolveTableNameConflict(String tableName) {
+        if (!tables.containsKey(tableName)) {
+            return tableName;
+        }
+        return showTableNameConflictDialog(tableName);
+    }
 }
