@@ -229,3 +229,4 @@ META-INF/
 
 *.dat
 *.head
+.idea/

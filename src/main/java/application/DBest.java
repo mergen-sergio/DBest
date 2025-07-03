@@ -1,5 +1,5 @@
 package application;
-f
+
 import controllers.MainController;
 
 import javax.swing.SwingUtilities;
@@ -12,7 +12,7 @@ public class DBest {
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException | InstantiationException
-                | IllegalAccessException | UnsupportedLookAndFeelException exception) {
+                 | IllegalAccessException | UnsupportedLookAndFeelException exception) {
             exception.printStackTrace();
         }
 
