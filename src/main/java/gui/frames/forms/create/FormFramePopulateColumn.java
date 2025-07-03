@@ -47,50 +47,42 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
     private final DefaultTableModel dataTableModel;
     private final JTable dataTable;
 
-    // Componentes da interface
     private JComboBox<Object> columnComboBox;
     private JLabel lblColumnType;
     private JTextField valueField;
     private JSpinner quantitySpinner;
+    private JCheckBox preserveExistingCheckbox;
     private JButton btnAddValue;
     private JButton btnRemoveValue;
     private JTable valuesTable;
     private DefaultTableModel valuesTableModel;
-    private JCheckBox preserveExistingCheckbox;
 
-    // Dados dos valores e quantidades
     private final List<ValueQuantityPair> valueQuantityPairs;
 
     public FormFramePopulateColumn(List<Column> columns, DefaultTableModel dataTableModel, JTable dataTable) {
         super((Window) null);
-
         this.setModal(true);
         this.setTitle("Populate Column");
         this.columns = new ArrayList<>(columns);
         this.dataTableModel = dataTableModel;
         this.dataTable = dataTable;
         this.valueQuantityPairs = new ArrayList<>();
-
         this.initGUI();
     }
 
     private void initGUI() {
         this.setSize(500, 450);
 
-        // Painel principal
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Painel superior - Seleção da coluna
+        // Monta os painéis principais
         JPanel topPanel = createColumnSelectionPanel();
-        mainPanel.add(topPanel, BorderLayout.NORTH);
-
-        // Painel central - Configuração de valores
         JPanel centerPanel = createValuesConfigurationPanel();
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // Painel inferior - Botões
         JPanel bottomPanel = createButtonPanel();
+
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         this.setContentPane(mainPanel);
@@ -100,49 +92,48 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         this.setVisible(true);
     }
 
+    /**
+     * Cria o painel de seleção de coluna
+     */
     private JPanel createColumnSelectionPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Seleção de coluna
+        // Label da coluna
         gbc.gridx = 0; gbc.gridy = 0;
         panel.add(new JLabel("Column:"), gbc);
 
+        // ComboBox de seleção de coluna
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         this.columnComboBox = new JComboBox<>();
         this.columns.forEach(column -> this.columnComboBox.addItem(column.NAME));
         this.columnComboBox.addActionListener(this);
         panel.add(this.columnComboBox, gbc);
 
-        gbc.gridx = 2;
+        // Label do tipo da coluna
+        gbc.gridx = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         this.lblColumnType = new JLabel();
         panel.add(this.lblColumnType, gbc);
-
-        // Checkbox para preservar valores existentes
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3;
-        this.preserveExistingCheckbox = new JCheckBox("Preserve existing values");
-        this.preserveExistingCheckbox.setToolTipText("If checked, will add new rows instead of overwriting existing values");
-        panel.add(this.preserveExistingCheckbox, gbc);
 
         return panel;
     }
 
+    // Cria o painel de configuração de valores
     private JPanel createValuesConfigurationPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Painel de entrada de valores
         JPanel inputPanel = createValueInputPanel();
-        panel.add(inputPanel, BorderLayout.NORTH);
-
-        // Tabela de valores e quantidades
         JPanel tablePanel = createValuesTablePanel();
+
+        panel.add(inputPanel, BorderLayout.NORTH);
         panel.add(tablePanel, BorderLayout.CENTER);
 
         return panel;
     }
 
+    // Cria o painel de entrada de valores
     private JPanel createValueInputPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -166,7 +157,7 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         this.quantitySpinner.setPreferredSize(new Dimension(80, 25));
         panel.add(this.quantitySpinner, gbc);
 
-        // Botões
+        // Botões de adicionar/remover
         gbc.gridx = 4;
         this.btnAddValue = new JButton("Add");
         this.btnAddValue.setIcon(FontIcon.of(MaterialDesignP.PLUS));
@@ -182,14 +173,15 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         return panel;
     }
 
+    // Cria o painel da tabela de valores
     private JPanel createValuesTablePanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Modelo da tabela
+        // Modelo da tabela com colunas: Value, Quantity, Percentage
         this.valuesTableModel = new DefaultTableModel(new String[]{"Value", "Quantity", "Percentage"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column != 2; // Percentual não é editável
+                return column != 2; // Percentage não é editável
             }
 
             @Override
@@ -206,11 +198,6 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         this.valuesTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         this.valuesTable.getSelectionModel().addListSelectionListener(e -> updateButtons());
 
-        // Configurar larguras das colunas
-        this.valuesTable.getColumnModel().getColumn(0).setPreferredWidth(200);
-        this.valuesTable.getColumnModel().getColumn(1).setPreferredWidth(80);
-        this.valuesTable.getColumnModel().getColumn(2).setPreferredWidth(80);
-
         JScrollPane scrollPane = new JScrollPane(this.valuesTable);
         scrollPane.setPreferredSize(new Dimension(400, 200));
         panel.add(scrollPane, BorderLayout.CENTER);
@@ -218,18 +205,30 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         return panel;
     }
 
+    // Cria o painel de botões e opções
     private JPanel createButtonPanel() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel panel = new JPanel(new BorderLayout());
 
+        // Painel de opções (checkbox)
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        this.preserveExistingCheckbox = new JCheckBox("Preserve existing values", true);
+        this.preserveExistingCheckbox.setToolTipText("When checked, new values will be added without overwriting existing ones");
+        optionsPanel.add(preserveExistingCheckbox);
+
+        // Painel de botões de ação
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         this.btnCancel.addActionListener(this);
         this.btnReady.addActionListener(this);
+        actionPanel.add(this.btnCancel);
+        actionPanel.add(this.btnReady);
 
-        panel.add(this.btnCancel);
-        panel.add(this.btnReady);
+        panel.add(optionsPanel, BorderLayout.WEST);
+        panel.add(actionPanel, BorderLayout.EAST);
 
         return panel;
     }
 
+    // Atualiza o tipo da coluna selecionada
     private void updateColumnType() {
         if (this.columnComboBox.getSelectedItem() != null) {
             int columnIndex = this.dataTable.getColumnModel()
@@ -239,6 +238,7 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         }
     }
 
+    // Adiciona um novo valor à lista
     private void addValue() {
         String value = this.valueField.getText().trim();
         int quantity = (Integer) this.quantitySpinner.getValue();
@@ -265,16 +265,14 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         ValueQuantityPair newPair = new ValueQuantityPair(value, quantity);
         this.valueQuantityPairs.add(newPair);
 
-        // Atualizar a tabela
+        // Atualizar interface
         updateValuesTable();
-
-        // Limpar campos
         this.valueField.setText("");
         this.quantitySpinner.setValue(1);
-
         updateButtons();
     }
 
+    // Remove o valor selecionado da lista
     private void removeValue() {
         int selectedRow = this.valuesTable.getSelectedRow();
         if (selectedRow >= 0) {
@@ -284,6 +282,7 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         }
     }
 
+    // Valida se o valor é compatível com o tipo da coluna
     private boolean isValidValue(String value) {
         int columnIndex = this.dataTable.getColumnModel()
             .getColumnIndex(Objects.requireNonNull(this.columnComboBox.getSelectedItem()).toString());
@@ -328,14 +327,12 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         }
     }
 
+    // Atualiza a tabela de valores com percentuais
     private void updateValuesTable() {
-        // Limpar tabela
         this.valuesTableModel.setRowCount(0);
 
-        // Calcular total de quantidades
         int totalQuantity = this.valueQuantityPairs.stream().mapToInt(ValueQuantityPair::getQuantity).sum();
 
-        // Adicionar linhas
         for (ValueQuantityPair pair : this.valueQuantityPairs) {
             double percentage = totalQuantity > 0 ? (double) pair.getQuantity() / totalQuantity * 100.0 : 0.0;
             this.valuesTableModel.addRow(new Object[]{
@@ -346,6 +343,7 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         }
     }
 
+    // MÉTODO PRINCIPAL - Popular a coluna com os valores configurados
     private void populateColumn() {
         if (this.valueQuantityPairs.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please add at least one value.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -355,20 +353,111 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         int columnIndex = this.dataTable.getColumnModel()
             .getColumnIndex(Objects.requireNonNull(this.columnComboBox.getSelectedItem()).toString());
 
-        // Calcular o total de linhas necessárias
-        int totalNewRows = this.valueQuantityPairs.stream().mapToInt(ValueQuantityPair::getQuantity).sum();
-        int currentRowCount = dataTableModel.getRowCount();
-        int finalRowCount = preserveExistingCheckbox.isSelected() ?
-            currentRowCount + totalNewRows :
-            Math.max(totalNewRows, currentRowCount);
+        // Criar lista distribuída de valores
+        List<Object> distributedValues = createDistributedValues();
 
-        // Ajustar número de linhas conforme necessário
-        while (dataTableModel.getRowCount() < finalRowCount) {
-            dataTableModel.addRow(new Object[dataTableModel.getColumnCount()]);
+        // Embaralhar para distribuição aleatória
+        Collections.shuffle(distributedValues, new Random());
+
+        if (preserveExistingCheckbox.isSelected()) {
+            // Modo preservar valores existentes
+            preserveExistingValues(columnIndex, distributedValues);
+        } else {
+            // Modo sobrepor - substituir valores existentes
+            overwriteValues(columnIndex, distributedValues);
         }
 
-        // Criar lista distribuída de valores
+        this.dispose();
+    }
+
+    // MODO PRESERVAR - Adiciona valores apenas em células vazias
+    private void preserveExistingValues(int columnIndex, List<Object> distributedValues) {
+        // Identifica linhas com valores nulos/vazios na coluna
+        List<Integer> emptyRows = new ArrayList<>();
+
+        for (int row = 0; row < dataTableModel.getRowCount(); row++) {
+            Object currentValue = dataTableModel.getValueAt(row, columnIndex);
+            if (isValueEmpty(currentValue)) {
+                emptyRows.add(row);
+            }
+        }
+
+        // Adiciona novas linhas se necessário
+        int valuesToAdd = distributedValues.size();
+        int availableEmptyRows = emptyRows.size();
+
+        if (availableEmptyRows < valuesToAdd) {
+            int rowsToAdd = valuesToAdd - availableEmptyRows;
+            for (int i = 0; i < rowsToAdd; i++) {
+                dataTableModel.addRow(new Object[dataTableModel.getColumnCount()]);
+                emptyRows.add(dataTableModel.getRowCount() - 1);
+            }
+        }
+
+        // Preenche apenas as linhas vazias
+        for (int i = 0; i < Math.min(valuesToAdd, emptyRows.size()); i++) {
+            int rowIndex = emptyRows.get(i);
+            dataTableModel.setValueAt(distributedValues.get(i), rowIndex, columnIndex);
+        }
+    }
+
+    // MODO SOBREPOR - Substitui valores existentes
+    private void overwriteValues(int columnIndex, List<Object> distributedValues) {
+        int totalRows = distributedValues.size();
+
+        // Ajusta o número de linhas
+        adjustRowCount(totalRows);
+
+        // Preenche todas as linhas com os novos valores
+        for (int i = 0; i < totalRows; i++) {
+            dataTableModel.setValueAt(distributedValues.get(i), i, columnIndex);
+        }
+
+        // Limpa valores da coluna nas linhas extras
+        for (int i = totalRows; i < dataTableModel.getRowCount(); i++) {
+            dataTableModel.setValueAt(null, i, columnIndex);
+        }
+
+        // Remove linhas completamente vazias
+        removeEmptyRows();
+    }
+
+    // Verifica se um valor é considerado vazio
+    private boolean isValueEmpty(Object value) {
+        return value == null || value.toString().trim().isEmpty();
+    }
+
+    // Remove linhas completamente vazias
+    private void removeEmptyRows() {
+        for (int row = dataTableModel.getRowCount() - 1; row >= 0; row--) {
+            if (isRowEmpty(row)) {
+                dataTableModel.removeRow(row);
+            }
+        }
+    }
+
+    // Verifica se uma linha está completamente vazia
+    private boolean isRowEmpty(int rowIndex) {
+        for (int col = 0; col < dataTableModel.getColumnCount(); col++) {
+            Object value = dataTableModel.getValueAt(rowIndex, col);
+            if (!isValueEmpty(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Ajusta o número de linhas da tabela
+    private void adjustRowCount(int desiredRowCount) {
+        while (dataTableModel.getRowCount() < desiredRowCount) {
+            dataTableModel.addRow(new Object[dataTableModel.getColumnCount()]);
+        }
+    }
+
+    // Cria a lista distribuída de valores baseada nas quantidades
+    private List<Object> createDistributedValues() {
         List<Object> distributedValues = new ArrayList<>();
+
         for (ValueQuantityPair pair : this.valueQuantityPairs) {
             Object convertedValue = convertValueToColumnType(pair.getValue());
             for (int i = 0; i < pair.getQuantity(); i++) {
@@ -376,27 +465,10 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
             }
         }
 
-        // Embaralhar para distribuição aleatória
-        Collections.shuffle(distributedValues, new Random());
-
-        // Preencher a coluna
-        if (preserveExistingCheckbox.isSelected()) {
-            // Modo preservar: adicionar novos valores após os existentes
-            int startRow = currentRowCount;
-            for (int i = 0; i < distributedValues.size(); i++) {
-                this.dataTableModel.setValueAt(distributedValues.get(i), startRow + i, columnIndex);
-            }
-        } else {
-            // Modo sobrepor: substituir todos os valores existentes
-            for (int i = 0; i < finalRowCount; i++) {
-                int valueIndex = i % distributedValues.size(); // Para cobrir todas as linhas
-                this.dataTableModel.setValueAt(distributedValues.get(valueIndex), i, columnIndex);
-            }
-        }
-
-        this.dispose();
+        return distributedValues;
     }
 
+    // Converte string para o tipo apropriado da coluna
     private Object convertValueToColumnType(String value) {
         int columnIndex = this.dataTable.getColumnModel()
             .getColumnIndex(Objects.requireNonNull(this.columnComboBox.getSelectedItem()).toString());
@@ -425,7 +497,6 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
             this.populateColumn();
         } else if (event.getSource() == this.columnComboBox) {
             this.updateColumnType();
-            // Limpar valores quando trocar de coluna
             this.valueQuantityPairs.clear();
             this.updateValuesTable();
             this.updateButtons();
@@ -481,7 +552,7 @@ public class FormFramePopulateColumn extends FormBase implements ActionListener,
         this.btnReady.setToolTipText(tooltip.isEmpty() ? null : tooltip);
     }
 
-    // Classe auxiliar para armazenar valor e quantidade
+    // Classe auxiliar para armazenar par valor-quantidade
     private static class ValueQuantityPair {
         private final String value;
         private final int quantity;
