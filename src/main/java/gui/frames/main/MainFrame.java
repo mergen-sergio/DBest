@@ -76,7 +76,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
     //protected JMenuItem generateFyiTableMenuItem;
 
     protected JMenuItem saveQueryMenuItem;
-    
+
     protected JMenuItem saveQueryAsImageMenuItem;
 
     protected JMenuItem editMenuItem;
@@ -369,6 +369,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         setCSVCellStyle();
         setFYICellStyle();
+        setXMLCellStyle();
         setOperationCellStyle();
         setMemoryCellStyle();
 
@@ -395,6 +396,20 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         style.put(mxConstants.STYLE_SHADOW, String.valueOf(true));
 
         String customStyle = CellType.FYI_TABLE.id;
+
+        graph.getStylesheet().putCellStyle(customStyle, style);
+        tablesGraph.getStylesheet().putCellStyle(customStyle, style);
+
+    }
+
+    private void setXMLCellStyle(){
+
+        Map<String, Object> style = new HashMap<>();
+
+        style.put(mxConstants.STYLE_FILLCOLOR, "#FFB6C1");
+        style.put(mxConstants.STYLE_SHADOW, String.valueOf(true));
+
+        String customStyle = CellType.XML_TABLE.id;
 
         graph.getStylesheet().putCellStyle(customStyle, style);
         tablesGraph.getStylesheet().putCellStyle(customStyle, style);

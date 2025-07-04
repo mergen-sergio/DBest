@@ -1368,6 +1368,8 @@ public class MainController extends MainFrame {
                         new CSVTableCell((CSVTableCell) tableCell, jTableCell);
                     case MEMORY_TABLE ->
                         new MemoryTableCell((MemoryTableCell) tableCell, jTableCell);
+                    case XML_TABLE ->
+                        new XMLTableCell((XMLTableCell) tableCell, jTableCell);
                     default ->
                         throw new RuntimeException();
                 });

@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import ibd.table.prototype.Prototype;
 
-public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITableCell, JDBCTableCell, MemoryTableCell {
+public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITableCell, JDBCTableCell, MemoryTableCell, XMLTableCell {
 
     private final String firstName;
 
@@ -105,7 +105,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
         changeCellName(jCell, formattedName, ConstantController.TABLE_CELL_WIDTH);
 
     }
-    
+
     public void adjustWidthSize_(){
         this.width = Math.max(CellUtils.getCellWidth(jCell), ConstantController.TABLE_CELL_WIDTH);
         changeCellName(jCell, firstName+":"+name, ConstantController.TABLE_CELL_WIDTH);
@@ -134,7 +134,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
         List<Column> columns = new ArrayList<>();
 
         for (ibd.table.prototype.column.Column prototypeColumn : prototypeColumns) {
-            
+
             ColumnDataType dataType = switch (prototypeColumn.getType()) {
                         case ibd.table.prototype.column.Column.INTEGER_TYPE ->
                             ColumnDataType.INTEGER;
@@ -150,7 +150,7 @@ public abstract sealed class TableCell extends Cell permits CSVTableCell, FYITab
                             ColumnDataType.STRING;
                         default -> ColumnDataType.NONE;
                     };
-            
+
             columns.add(new Column(prototypeColumn.getName(), this.getName(), dataType, prototypeColumn.isPrimaryKey()));
         }
 

@@ -115,9 +115,9 @@ public class ImportFile {
                                 this.exitReference.set(true);
                             } else {
 
-                                
+
                                 FileTransferHandler.openHeadFile(this.fileUpload.getSelectedFile());
-                                
+
                                 //String file = this.fileUpload.getSelectedFile().getAbsolutePath();
                                 //Table table = TableCreator.loadFromHeader(file);
                                 //CellType cellType = getCellType(fileUpload.getSelectedFile());
@@ -141,6 +141,11 @@ public class ImportFile {
                         boolean status = importQuery(fileName);
                         if (status) {
                             this.exitReference.set(true);
+                        }
+                    }
+                    case XML -> {
+                        if (!this.exitReference.get()) {
+                            FileTransferHandler.openXMLFile(this.fileUpload.getSelectedFile());
                         }
                     }
                     case SQL ->
@@ -249,7 +254,7 @@ public class ImportFile {
 
         return getFileNameExtensionFilter (this.fileType);
     }
-    
+
     public static FileNameExtensionFilter getFileNameExtensionFilter(FileType fileType) {
 
         return switch (fileType) {
@@ -261,6 +266,8 @@ public class ImportFile {
                 new FileNameExtensionFilter("Headers files", "head");
             case DAT ->
                 new FileNameExtensionFilter("Dat files", "dat");
+            case XML ->
+                new FileNameExtensionFilter("XML files", "xml");
             case SQL -> null;
                 //throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
             case TXT ->
