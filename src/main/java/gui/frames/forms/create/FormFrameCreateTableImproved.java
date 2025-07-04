@@ -55,6 +55,7 @@ public class FormFrameCreateTableImproved extends FormBase implements ActionList
     private JButton btnAddRow;
     private JButton btnRemoveRow;
     private JButton btnGenerateData;
+    private JButton btnPopulateColumn;
 
     // Componentes gerais
     private JTextField txtFieldTableName;
@@ -248,7 +249,13 @@ public class FormFrameCreateTableImproved extends FormBase implements ActionList
         this.btnGenerateData.setIcon(FontIcon.of(MaterialDesignD.DICE_6));
         this.btnGenerateData.addActionListener(this);
         dataButtonPanel.add(btnGenerateData);
-        
+
+        this.btnPopulateColumn = new JButton(ConstantController.getString("populateColumn.enhanced.populate.data"));
+        this.btnPopulateColumn.setIcon(FontIcon.of(MaterialDesignP.PERCENT));
+        this.btnPopulateColumn.setIcon(FontIcon.of(MaterialDesignD.DICE_6));
+        this.btnPopulateColumn.addActionListener(this);
+        dataButtonPanel.add(btnPopulateColumn);
+
         panel.add(dataButtonPanel, BorderLayout.SOUTH);
         
         return panel;
@@ -419,6 +426,10 @@ public class FormFrameCreateTableImproved extends FormBase implements ActionList
             if (!columns.isEmpty() && dataTableModel.getRowCount() > 0) {
                 new FormFrameGenerateData(columns, dataTableModel, dataTable);
             }
+        } else if (event.getSource() == this.btnPopulateColumn) {
+            if (dataTableModel.getColumnCount() > 0) {
+                new FormFramePopulateColumn(columns, dataTableModel, dataTable);
+            }
         }
         
         updateButtons();
@@ -455,6 +466,7 @@ public class FormFrameCreateTableImproved extends FormBase implements ActionList
         btnAddRow.setEnabled(hasColumns);
         btnRemoveRow.setEnabled(hasData && dataTable.getSelectedRow() >= 0);
         btnGenerateData.setEnabled(hasColumns && hasData);
+        btnPopulateColumn.setEnabled(hasColumns);
         
         // Botão final
         btnReady.setEnabled(hasColumns && hasTableName && hasData);
