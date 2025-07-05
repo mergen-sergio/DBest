@@ -599,7 +599,11 @@ public class ExportFile extends JPanel {
             Cell currentCell = cellsToProcess.poll();
             if (subtreeCells.add(currentCell)) {
                 // Add all parent cells to the queue for processing
-                cellsToProcess.addAll(currentCell.getParents());
+                // Ensure LEFT parent is processed before RIGHT if order matters
+                List<Cell> parents = currentCell.getParents();
+                if (parents != null) {
+                    cellsToProcess.addAll(parents);
+                }
             }
         }
         
@@ -611,166 +615,188 @@ public class ExportFile extends JPanel {
      */
     private Map<Cell, Point> calculateTreeLayout(Set<Cell> cells, Cell rootCell) {
         Map<Cell, Point> positions = new HashMap<>();
-        Map<Cell, Integer> levels = new HashMap<>();
-        
-        // Calcula a profundidade de cada célula
-        calculateCellLevels(rootCell, 0, levels, new HashSet<>());
-        
-        // Agrupa  por profundidade
-        Map<Integer, List<Cell>> cellsByLevel = new HashMap<>();
-        for (Cell cell : cells) {
-            int level = levels.getOrDefault(cell, 0);
-            cellsByLevel.computeIfAbsent(level, k -> new ArrayList<>()).add(cell);
+        int nodeWidth = 220;
+        int nodeHeight = 100;
+        int horizontalSpacing = 60;
+        int verticalSpacing = 120;
+
+        // Start the recursive layout from the root cell (top-most node in the visual tree)
+        positionNodesRecursively(rootCell, positions, 0, 0, nodeWidth, nodeHeight, horizontalSpacing, verticalSpacing);
+
+        // Adjust spacing for leaf nodes that are partners with large subtrees
+        adjustLeafNodeSpacing(positions, cells, nodeWidth, horizontalSpacing);
+
+        // After initial positioning, check for and resolve any overlaps as a final pass.
+        // This can correct minor misalignments from complex sub-tree centering.
+        resolveOverlaps(positions, cells, nodeWidth, horizontalSpacing, verticalSpacing);
+
+        return positions;
+    }
+
+    /**
+     * Helper class to store the bounds of a laid-out subtree.
+     */
+    private static class LayoutBounds {
+        final int width;
+
+        LayoutBounds(int width) {
+            this.width = width;
         }
-        
-        // Layout cells with increased spacing for detailed information
-        int nodeWidth = 220; // Significantly increased width to accommodate join conditions
-        int nodeHeight = 100; // Increased height for join conditions
-        int horizontalSpacing = 60; // More horizontal spacing
-        int verticalSpacing = 120; // More vertical spacing
-        
-        // Start with the root cell
-        positions.put(rootCell, new Point(0, 0));
-        
-        // Process each level, positioning cells relative to their children
-        for (int level = 1; level <= levels.values().stream().mapToInt(Integer::intValue).max().orElse(0); level++) {
-            List<Cell> levelCells = cellsByLevel.get(level);
-            if (levelCells == null) continue;
-            
-            // Group cells by their children to position LEFT/RIGHT correctly
-            Map<Cell, List<Cell>> childToParents = new HashMap<>();
-            for (Cell cell : levelCells) {
-                for (Cell child : cells) {
-                    if (child.getParents().contains(cell)) {
-                        childToParents.computeIfAbsent(child, k -> new ArrayList<>()).add(cell);
+    }
+
+    /**
+     * Recursively positions nodes using a post-order traversal (DFS-like approach).
+     * This method calculates an initial layout, which is then adjusted to resolve overlaps.
+     *
+     * @return The bounds (width) of the laid-out subtree.
+     */
+    private LayoutBounds positionNodesRecursively(Cell cell, Map<Cell, Point> positions, int x, int y,
+                                                  int nodeWidth, int nodeHeight, int horizontalSpacing, int verticalSpacing) {
+
+        if (positions.containsKey(cell)) {
+            // Already positioned, should not happen in a tree traversal
+            return new LayoutBounds(nodeWidth);
+        }
+
+        List<Cell> parents = cell.getParents();
+
+        if (parents.isEmpty()) {
+            // This is a leaf node. Position it at the given (x, y).
+            positions.put(cell, new Point(x, y));
+            return new LayoutBounds(nodeWidth);
+        }
+
+        int nextY = y + nodeHeight + verticalSpacing;
+        int currentX = x;
+        List<LayoutBounds> parentBounds = new ArrayList<>();
+
+        // Recursively position all parent nodes first.
+        // This builds the tree layout from the top down.
+        for (Cell parent : parents) {
+            LayoutBounds bounds = positionNodesRecursively(parent, positions, currentX, nextY, nodeWidth, nodeHeight, horizontalSpacing, verticalSpacing);
+            parentBounds.add(bounds);
+            // The next parent starts after the previous one, including its full width and spacing.
+            currentX += bounds.width + horizontalSpacing;
+        }
+
+        // Calculate the total width of all children subtrees
+        int totalChildrenWidth = 0;
+        for (int i = 0; i < parentBounds.size(); i++) {
+            totalChildrenWidth += parentBounds.get(i).width;
+            if (i < parentBounds.size() - 1) {
+                totalChildrenWidth += horizontalSpacing;
+            }
+        }
+
+        // Center the current node above its children.
+        int selfWidth = Math.max(nodeWidth, totalChildrenWidth);
+        int selfX = x + (totalChildrenWidth - nodeWidth) / 2;
+        positions.put(cell, new Point(selfX, y));
+
+        return new LayoutBounds(selfWidth);
+    }
+
+    /**
+     * Adjusts the horizontal position of leaf nodes to reduce unnecessary space
+     * when they are partnered with a wide subtree.
+     */
+    private void adjustLeafNodeSpacing(Map<Cell, Point> positions, Set<Cell> allCells, int nodeWidth, int horizontalSpacing) {
+        // Create a map to quickly find the child of any given cell (parent -> child)
+        Map<Cell, Cell> parentToChildMap = new HashMap<>();
+        for (Cell child : allCells) {
+            for (Cell parent : child.getParents()) {
+                parentToChildMap.put(parent, child);
+            }
+        }
+
+        for (Cell cell : allCells) {
+            // Condition 1: Is the cell a leaf node (no parents visually below it)?
+            if (cell.getParents().isEmpty()) {
+                Cell child = parentToChildMap.get(cell);
+
+                // Condition 2: Does this leaf have a child and is it part of a binary operation?
+                if (child != null && child.getParents().size() == 2) {
+                    List<Cell> partners = child.getParents();
+                    int cellIndex = partners.indexOf(cell);
+
+                    if (cellIndex == -1) continue; // Should not happen
+
+                    // It's the LEFT partner, its sibling is the RIGHT one.
+                    if (cellIndex == 0) {
+                        Cell rightPartner = partners.get(1);
+                        Point cellPos = positions.get(cell);
+                        Point partnerPos = positions.get(rightPartner);
+
+                        // Calculate the ideal position for the leaf to be next to its partner
+                        int idealX = partnerPos.x - nodeWidth - horizontalSpacing;
+
+                        // Shift the leaf node to the right, closer to its partner
+                        if (cellPos.x < idealX) {
+                            cellPos.x = idealX;
+                        }
+                    }
+                    // It's the RIGHT partner, its sibling is the LEFT one.
+                    else if (cellIndex == 1) {
+                        Cell leftPartner = partners.get(0);
+                        Point cellPos = positions.get(cell);
+                        Point partnerPos = positions.get(leftPartner);
+
+                        // Calculate the ideal position for the leaf to be next to its partner
+                        int idealX = partnerPos.x + nodeWidth + horizontalSpacing;
+
+                        // Shift the leaf node to the left, closer to its partner
+                        if (cellPos.x > idealX) {
+                            cellPos.x = idealX;
+                        }
                     }
                 }
             }
-            
-            // Track positions to avoid overlaps
-            Set<Point> usedPositions = new HashSet<>();
-            Map<Cell, Point> tempPositions = new HashMap<>();
-            
-            // Position cells based on their children's positions
-            for (Map.Entry<Cell, List<Cell>> entry : childToParents.entrySet()) {
-                Cell child = entry.getKey();
-                List<Cell> parents = entry.getValue();
-                Point childPos = positions.get(child);
-                
-                if (childPos != null && parents.size() == 2) {
-                    // For binary operations, position LEFT parent to the left, RIGHT parent to the right
-                    Cell leftParent = parents.get(0);  // First parent is LEFT
-                    Cell rightParent = parents.get(1); // Second parent is RIGHT
-                    
-                    int childX = childPos.x;
-                    int parentY = level * (nodeHeight + verticalSpacing);
-                    
-                    // Position LEFT parent to the left of the child
-                    int leftX = childX - nodeWidth - horizontalSpacing/2;
-                    Point leftPos = new Point(leftX, parentY);
-                    
-                    // Position RIGHT parent to the right of the child
-                    int rightX = childX + nodeWidth + horizontalSpacing/2;
-                    Point rightPos = new Point(rightX, parentY);
-                    
-                    // Check for conflicts and resolve them
-                    leftPos = resolvePositionConflict(leftParent, leftPos, tempPositions, usedPositions, nodeWidth, horizontalSpacing);
-                    rightPos = resolvePositionConflict(rightParent, rightPos, tempPositions, usedPositions, nodeWidth, horizontalSpacing);
-                    
-                    tempPositions.put(leftParent, leftPos);
-                    tempPositions.put(rightParent, rightPos);
-                    usedPositions.add(leftPos);
-                    usedPositions.add(rightPos);
-                    
-                } else if (childPos != null && parents.size() == 1) {
-                    // For unary operations, center the parent above the child
-                    Cell parent = parents.get(0);
-                    int parentX = childPos.x;
-                    int parentY = level * (nodeHeight + verticalSpacing);
-                    Point parentPos = new Point(parentX, parentY);
-                    
-                    // Check for conflicts and resolve them
-                    parentPos = resolvePositionConflict(parent, parentPos, tempPositions, usedPositions, nodeWidth, horizontalSpacing);
-                    
-                    tempPositions.put(parent, parentPos);
-                    usedPositions.add(parentPos);
-                }
-            }
-            
-            // Add temporary positions to main positions map
-            positions.putAll(tempPositions);
-            
-            // Handle cells that don't have children (shouldn't happen in a proper tree, but just in case)
-            for (Cell cell : levelCells) {
-                if (!positions.containsKey(cell)) {
-                    // Position orphaned cells in sequence
-                    int orphanX = levelCells.indexOf(cell) * (nodeWidth + horizontalSpacing);
-                    int orphanY = level * (nodeHeight + verticalSpacing);
-                    positions.put(cell, new Point(orphanX, orphanY));
-                }
-            }
         }
-        
-        return positions;
     }
-    
+
     /**
-     * Resolves position conflicts for shared nodes by finding a non-overlapping position
+     * Resolves overlaps by shifting nodes to the right.
+     * This is a second pass after the initial DFS-based layout.
      */
-    private Point resolvePositionConflict(Cell cell, Point proposedPos, Map<Cell, Point> tempPositions, 
-                                        Set<Point> usedPositions, int nodeWidth, int horizontalSpacing) {
-        // If the cell already has a position assigned, return it to maintain consistency
-        if (tempPositions.containsKey(cell)) {
-            return tempPositions.get(cell);
+    private void resolveOverlaps(Map<Cell, Point> positions, Set<Cell> allCells, int nodeWidth, int horizontalSpacing, int verticalSpacing) {
+        // Group cells by their Y coordinate (level)
+        Map<Integer, List<Cell>> levels = new TreeMap<>();
+        for (Cell cell : allCells) {
+            Point pos = positions.get(cell);
+            if (pos != null) {
+                levels.computeIfAbsent(pos.y, k -> new ArrayList<>()).add(cell);
+            }
         }
-        
-        // Check if the proposed position overlaps with any existing position
-        Point finalPos = new Point(proposedPos);
-        
-        boolean hasOverlap = true;
-        int attempts = 0;
-        int maxAttempts = 20; // Prevent infinite loops
-        
-        while (hasOverlap && attempts < maxAttempts) {
-            hasOverlap = false;
-            
-            // Check for overlaps with all used positions
-            for (Point usedPos : usedPositions) {
-                if (positionsOverlap(finalPos, usedPos, nodeWidth, horizontalSpacing)) {
-                    hasOverlap = true;
-                    break;
+
+        // For each level, sort cells by X and resolve overlaps
+        for (List<Cell> levelCells : levels.values()) {
+            // Sort cells from left to right
+            levelCells.sort(Comparator.comparingInt(c -> positions.get(c).x));
+
+            for (int i = 0; i < levelCells.size() - 1; i++) {
+                Cell leftCell = levelCells.get(i);
+                Cell rightCell = levelCells.get(i + 1);
+
+                Point leftPos = positions.get(leftCell);
+                Point rightPos = positions.get(rightCell);
+
+                int requiredSpace = nodeWidth + horizontalSpacing;
+                int currentSpace = rightPos.x - leftPos.x;
+
+                if (currentSpace < requiredSpace) {
+                    int shift = requiredSpace - currentSpace;
+                    // Shift the right cell and all subsequent cells on the same level
+                    for (int j = i + 1; j < levelCells.size(); j++) {
+                        Point posToShift = positions.get(levelCells.get(j));
+                        posToShift.x += shift;
+                    }
                 }
             }
-            
-            if (hasOverlap) {
-                // Try moving the position to the right to avoid overlap
-                finalPos.x += (nodeWidth + horizontalSpacing);
-                attempts++;
-            }
         }
-        
-        return finalPos;
     }
     
     /**
-     * Checks if two positions would result in overlapping nodes
-     */
-    private boolean positionsOverlap(Point pos1, Point pos2, int nodeWidth, int horizontalSpacing) {
-        // Calculate the minimum distance needed between nodes to avoid overlap
-        int minDistance = nodeWidth + horizontalSpacing / 2;
-        
-        // Check if positions are on the same level (same Y coordinate)
-        if (pos1.y == pos2.y) {
-            // Check if horizontal distance is less than minimum required
-            int horizontalDistance = Math.abs(pos1.x - pos2.x);
-            return horizontalDistance < minDistance;
-        }
-        
-        return false; // No overlap if not on the same level
-    }
-    
-    /**
-     * Calculates the level (depth) of each cell in the tree
+     * Calcula a profundidade de cada célula - ABANDONADO
      */
     private void calculateCellLevels(Cell cell, int level, Map<Cell, Integer> levels, Set<Cell> visited) {
         if (visited.contains(cell)) {
@@ -786,7 +812,7 @@ public class ExportFile extends JPanel {
     }
     
     /**
-     * Calculates the bounding rectangle for the tree layout
+     * Calcula a posição de cada célula na árvore para o layout
      */
     private Rectangle calculateImageBounds(Map<Cell, Point> positions) {
         if (positions.isEmpty()) {
@@ -818,7 +844,7 @@ public class ExportFile extends JPanel {
     }
     
     /**
-     * Draws the edges between cells
+     * Desenha as bordas da árvore
      */
     private void drawTreeEdges(Graphics2D g2d, Set<Cell> cells, Map<Cell, Point> positions, int offsetX, int offsetY) {
         g2d.setColor(Color.BLACK);
@@ -854,7 +880,7 @@ public class ExportFile extends JPanel {
                         
                         // Add LEFT/RIGHT labels for binary operations
                         if (parents.size() == 2 && cell instanceof entities.cells.OperationCell) {
-                            g2d.setFont(new Font("Arial", Font.BOLD, 11));
+                            g2d.setFont(new Font("Arial", Font.BOLD, 12));
                             String label = (i == 0) ? "LEFT" : "RIGHT";
                             
                             // Calculate the exact middle point of the arrow
@@ -880,8 +906,8 @@ public class ExportFile extends JPanel {
                             
                             g2d.setColor(Color.WHITE);
                             g2d.fillRect(bgX, bgY, bgWidth, bgHeight);
-                            g2d.setColor(Color.BLACK);
-                            g2d.drawRect(bgX, bgY, bgWidth, bgHeight);
+                            //g2d.setColor(Color.BLACK);
+                            ///g2d.drawRect(bgX, bgY, bgWidth, bgHeight);
                             
                             // Draw the label in blue
                             g2d.setColor(Color.BLUE);
@@ -896,7 +922,7 @@ public class ExportFile extends JPanel {
     }
     
     /**
-     * Calculates the actual node height based on content
+     * Calcula a altura real do nó com base no conteúdo
      */
     private int calculateActualNodeHeight(Cell cell, int baseHeight) {
         if (cell instanceof entities.cells.OperationCell) {
@@ -918,7 +944,7 @@ public class ExportFile extends JPanel {
     }
     
     /**
-     * Draws the tree nodes
+     * Desenha os nós da árvore
      */
     private void drawTreeNodes(Graphics2D g2d, Set<Cell> cells, Map<Cell, Point> positions, int offsetX, int offsetY) {
         int nodeWidth = 220; // Updated to match layout
@@ -976,8 +1002,8 @@ public class ExportFile extends JPanel {
      * Draws content for operation cells with detailed information
      */
     private void drawOperationCellContent(Graphics2D g2d, entities.cells.OperationCell opCell, int x, int y, int width, int height) {
-        // Draw operation name
-        g2d.setFont(new Font("Arial", Font.BOLD, 12));
+        // Draw operation name - use best font for Unicode support since operation names may contain symbols
+        g2d.setFont(getBestSymbolFont(Font.BOLD, 12));
         String cellName = opCell.getName();
         if (cellName.length() > 25) {
             cellName = cellName.substring(0, 22) + "...";
@@ -988,7 +1014,8 @@ public class ExportFile extends JPanel {
         g2d.drawString(cellName, textX, y + 18);
         
         // Draw operation symbol
-        g2d.setFont(new Font("Arial", Font.BOLD, 14));
+        // Use the best available font for Unicode symbol support
+        g2d.setFont(getBestSymbolFont(Font.BOLD, 14));
         String opSymbol = opCell.getType().symbol;
         fm = g2d.getFontMetrics();
         textX = x + (width - fm.stringWidth(opSymbol)) / 2;
@@ -1005,7 +1032,7 @@ public class ExportFile extends JPanel {
         
         // Draw join conditions or other arguments with better visibility
         if (opCell.getArguments() != null && !opCell.getArguments().isEmpty()) {
-            g2d.setFont(new Font("Arial", Font.BOLD, 10)); // Made bold and larger
+            g2d.setFont(getBestSymbolFont(Font.BOLD, 10)); // Use best font for potential symbols in conditions
             fm = g2d.getFontMetrics();
             
             List<String> args = opCell.getArguments();
@@ -1180,5 +1207,24 @@ public class ExportFile extends JPanel {
         
         g2d.drawLine(x2, y2, arrowX1, arrowY1);
         g2d.drawLine(x2, y2, arrowX2, arrowY2);
+    }
+    
+    /**
+     * Gets the best available font for rendering Unicode symbols
+     * 
+     * Based on analysis of the working font in the operations panel menu,
+     * we use Dialog font which correctly renders Unicode mathematical symbols
+     * like σ, π, Δ, ρ, ∑, ⟕, ⟖, ⟗, ∪, ∩, ✕, etc.
+     * 
+     * Dialog is a Java logical font that maps to the best system font
+     * for Unicode symbol rendering.
+     * 
+     * @param style Font style (Font.BOLD, Font.PLAIN, etc.)
+     * @param size Font size
+     * @return Dialog font which works correctly for Unicode symbols
+     */
+    private Font getBestSymbolFont(int style, int size) {
+        // Use Dialog font - same as the working operations panel menu
+        return new Font("Dialog", style, size);
     }
 }
