@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.awt.event.KeyAdapter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -24,6 +25,8 @@ import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import java.awt.event.KeyEvent;
 
 import dsl.antlr4.RelAlgebraLexer;
 
@@ -46,6 +49,7 @@ import enums.OperationType;
 
 import exceptions.dsl.InputException;
 
+import gui.utils.AutoCompletionManager;
 import gui.utils.CustomDocumentFilter;
 import gui.utils.JTextLineNumber;
 
@@ -158,6 +162,21 @@ public class TextEditor extends JFrame implements ActionListener {
         this.importButton.addActionListener(this);
         this.runButton.addActionListener(this);
         this.runSelection.addActionListener(this);
+
+        // Ctrl + Espaço para autocomplete
+        textPane.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent event) {
+                if (event.isControlDown() && event.getKeyCode() == KeyEvent.VK_SPACE) {
+                    try {
+                        performAutoCompletion();
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                    }
+                    event.consume(); // Descarta a entrada para não aparecer como texto
+                }
+            }
+        });
 
         this.setIcons();
     }
@@ -280,5 +299,38 @@ public class TextEditor extends JFrame implements ActionListener {
 
     public static String getLastPath() {
         return lastPath;
+    }
+
+    /**
+     * Performs autocompletion at the current cursor position.
+     * Replaces the current word with the operation template if a match is found.
+     * 
+     * @throws BadLocationException if document position is invalid.
+     */
+    private void performAutoCompletion() throws BadLocationException {
+        Document doc = textPane.getDocument();
+        String text = doc.getText(0, doc.getLength());
+        int caretPos = textPane.getCaretPosition();
+
+        // Encontra os limites da palavra atual sob o cursor
+        int wordStart = caretPos;
+        while (wordStart > 0 && Character.isLetterOrDigit(text.charAt(wordStart - 1))) {
+            wordStart--;
+        }
+
+        int wordEnd = caretPos;
+        while (wordEnd < text.length() && Character.isLetterOrDigit(text.charAt(wordEnd))) {
+            wordEnd++;
+        }
+
+        // Busca correspondência
+        String currentWord = text.substring(wordStart, wordEnd);
+        String template = AutoCompletionManager.findClosestMatch(currentWord);
+
+        // Substitui palavra pelo template
+        if (template != null) {
+            doc.remove(wordStart, wordEnd - wordStart);
+            doc.insertString(wordStart, template, null);
+        }
     }
 }
