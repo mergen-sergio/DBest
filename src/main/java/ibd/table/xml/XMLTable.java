@@ -88,10 +88,35 @@ public class XMLTable extends Table {
     public void open() throws Exception {
         try {
             String xmlPath = header.getTablePath();
-            this.recognizer = new XMLRecognizer(xmlPath, rootElement, recordElement, strategy);
-            this.xmlData = recognizer.extractData();
+            System.out.println("XMLTable->open: Opening XML file at path: " + xmlPath);
+
+            // Check if this is a separate table
+            if (recordElement != null && recordElement.startsWith("SEPARATE_TABLE:")) {
+                // Parse the special format: "SEPARATE_TABLE:parentElement:childElement"
+                String[] parts = recordElement.split(":");
+                if (parts.length == 3) {
+                    String parentRecordElement = parts[1];
+                    String childElementName = parts[2];
+
+                    this.recognizer = new XMLRecognizer(xmlPath, rootElement, parentRecordElement, strategy);
+                    this.xmlData = recognizer.extractSeparateTableData(parentRecordElement, childElementName);
+                    System.out.println("XMLTable->open: Successfully loaded " + xmlData.getRecordCount() + " records for separate table");
+                } else {
+                    throw new InvalidXMLException("Invalid separate table format: " + recordElement);
+                }
+            } else {
+                // Normal table extraction
+                this.recognizer = new XMLRecognizer(xmlPath, rootElement, recordElement, strategy);
+                this.xmlData = recognizer.extractData();
+                System.out.println("XMLTable->open: Successfully loaded " + xmlData.getRecordCount() + " records");
+            }
         } catch (InvalidXMLException e) {
+            System.err.println("XMLTable->open: Error loading XML: " + e.getMessage());
             throw new DataBaseException("XMLTable->open", e.getMessage());
+        } catch (Exception e) {
+            System.err.println("XMLTable->open: Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
     }
 

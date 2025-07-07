@@ -117,6 +117,11 @@ public final class XMLTableCell extends TableCell {
     }
 
     @Override
+    public void setOperator(ibd.query.Operation operator) {
+        this.operator = operator;
+    }
+
+    @Override
     public Cell copy() {
         mxCell newCell;
         try {

@@ -15,6 +15,7 @@ import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.FYITableCell;
 import entities.cells.TableCell;
+import entities.cells.XMLTableCell;
 import enums.CellType;
 import enums.FileType;
 import static enums.FileType.CSV;
@@ -244,6 +245,8 @@ public class ImportFile {
                 new CSVTableCell(jCell, tableName, table, file);
             case FYI_TABLE ->
                 new FYITableCell(jCell, tableName, table, file);
+            case XML_TABLE ->
+                new XMLTableCell(jCell, tableName, table, file);
             default ->
                 throw new IllegalStateException("Unexpected value: " + cellType);
         };

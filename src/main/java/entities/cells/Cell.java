@@ -31,7 +31,7 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     protected final String style;
 
     protected String name;
-    
+
     protected String alias="";
 
     protected final mxCell jCell;
@@ -59,7 +59,8 @@ public abstract sealed class Cell permits TableCell, OperationCell {
 
         this.style =  this.isCSVTableCell()
             ? "csv" : this.isFYITableCell()
-            ? "fyi" : this.isOperationCell()
+            ? "fyi" : this.isXMLTableCell()
+            ? "xml" : this.isOperationCell()
             ? "operation" : jCell.getStyle();
 
         CellUtils.addCell(jCell, this);
@@ -147,7 +148,7 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     public List<String> getColumnNames() {
         return this.getColumns().stream().map(x -> x.NAME).toList();
     }
-    
+
     public String getAlias() {
         return this.alias;
     }
@@ -240,6 +241,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
         return this instanceof CSVTableCell;
     }
 
+    public boolean isXMLTableCell(){
+        return this instanceof XMLTableCell;
+    }
+
     public boolean isTableCell(){
         return this instanceof TableCell;
     }
@@ -247,15 +252,15 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     public boolean isOperationCell(){
         return this instanceof OperationCell;
     }
-    
+
     public boolean alwaysAllowConnections(){
         return false;
     }
-    
+
     public boolean hasSingleSource(){
         if (operator==null) return false;
         if (operator instanceof SingleSource) return true;
-        
+
         return false;
     }
 

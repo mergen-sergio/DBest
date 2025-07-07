@@ -526,6 +526,15 @@ public class TableCreator {
     public static XMLTableCell createXMLTable(
             String tableName, List<entities.Column> columns, XMLInfo xmlInfo, boolean mustExport
     ) {
+        return createXMLTable(tableName, columns, xmlInfo, mustExport, false);
+    }
+
+    /**
+     * Creates an XML table from XML file analysis with option to skip adding to main graph
+     */
+    public static XMLTableCell createXMLTable(
+            String tableName, List<entities.Column> columns, XMLInfo xmlInfo, boolean mustExport, boolean skipMainGraph
+    ) {
         Prototype prototype = createPrototype(columns);
 
         Header header = new Header(prototype, tableName);
@@ -542,7 +551,7 @@ public class TableCreator {
             table.open();
             headerFileName = table.saveHeader(headerPath);
 
-            if (mustExport) {
+            if (mustExport || skipMainGraph) {
                 return new XMLTableCell(new mxCell(tableName, new mxGeometry(), ConstantController.J_CELL_FYI_TABLE_STYLE), tableName, table, headerFile);
             }
 
