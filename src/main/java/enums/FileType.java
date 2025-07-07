@@ -7,7 +7,8 @@ public enum FileType {
     SQL    ("sql", ".sql"),
     DAT    ("dat", ".dat"),
     HEADER ("head", ".head"),
-    TXT("txt", ".txt");
+    TXT    ("txt", ".txt"),
+    XML    ("xml", ".xml");
 
     public final String id;
 

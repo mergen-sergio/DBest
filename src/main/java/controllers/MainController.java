@@ -1368,6 +1368,8 @@ public class MainController extends MainFrame {
                         new CSVTableCell((CSVTableCell) tableCell, jTableCell);
                     case MEMORY_TABLE ->
                         new MemoryTableCell((MemoryTableCell) tableCell, jTableCell);
+                    case XML_TABLE ->
+                        new XMLTableCell((XMLTableCell) tableCell, jTableCell);
                     default ->
                         throw new RuntimeException();
                 });
@@ -2046,7 +2048,8 @@ public class MainController extends MainFrame {
     private static void updateCellGeometry(mxCell cell, String newName) {
         mxGeometry geometry = cell.getGeometry();
         if (geometry != null) {
-            geometry.setWidth(Math.max(ConstantController.TABLE_CELL_WIDTH, newName.length() * 8));
+            int textWidth = CellUtils.getCellWidth(newName);
+            geometry.setWidth(Math.max(ConstantController.TABLE_CELL_WIDTH, textWidth));
         }
     }
 
@@ -2117,7 +2120,7 @@ public class MainController extends MainFrame {
      */
     private static void adjustCellWidth(mxCell cell, String text) {
         if (cell != null && cell.getGeometry() != null) {
-            int textWidth = text.length() * 8;
+            int textWidth = CellUtils.getCellWidth(text);
             int finalWidth = Math.max(ConstantController.TABLE_CELL_WIDTH, textWidth);
             cell.getGeometry().setWidth(finalWidth);
         }

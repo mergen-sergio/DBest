@@ -15,6 +15,7 @@ import entities.Column;
 import entities.cells.CSVTableCell;
 import entities.cells.FYITableCell;
 import entities.cells.TableCell;
+import entities.cells.XMLTableCell;
 import enums.CellType;
 import enums.FileType;
 import static enums.FileType.CSV;
@@ -115,9 +116,9 @@ public class ImportFile {
                                 this.exitReference.set(true);
                             } else {
 
-                                
+
                                 FileTransferHandler.openHeadFile(this.fileUpload.getSelectedFile());
-                                
+
                                 //String file = this.fileUpload.getSelectedFile().getAbsolutePath();
                                 //Table table = TableCreator.loadFromHeader(file);
                                 //CellType cellType = getCellType(fileUpload.getSelectedFile());
@@ -141,6 +142,11 @@ public class ImportFile {
                         boolean status = importQuery(fileName);
                         if (status) {
                             this.exitReference.set(true);
+                        }
+                    }
+                    case XML -> {
+                        if (!this.exitReference.get()) {
+                            FileTransferHandler.openXMLFile(this.fileUpload.getSelectedFile());
                         }
                     }
                     case SQL ->
@@ -239,6 +245,8 @@ public class ImportFile {
                 new CSVTableCell(jCell, tableName, table, file);
             case FYI_TABLE ->
                 new FYITableCell(jCell, tableName, table, file);
+            case XML_TABLE ->
+                new XMLTableCell(jCell, tableName, table, file);
             default ->
                 throw new IllegalStateException("Unexpected value: " + cellType);
         };
@@ -249,7 +257,7 @@ public class ImportFile {
 
         return getFileNameExtensionFilter (this.fileType);
     }
-    
+
     public static FileNameExtensionFilter getFileNameExtensionFilter(FileType fileType) {
 
         return switch (fileType) {
@@ -261,6 +269,8 @@ public class ImportFile {
                 new FileNameExtensionFilter("Headers files", "head");
             case DAT ->
                 new FileNameExtensionFilter("Dat files", "dat");
+            case XML ->
+                new FileNameExtensionFilter("XML files", "xml");
             case SQL -> null;
                 //throw new UnsupportedOperationException(String.format("Unimplemented case: %s", this.fileType));
             case TXT ->
