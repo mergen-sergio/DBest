@@ -15,7 +15,9 @@ import enums.CellType;
 import files.FileUtils;
 import files.ImportFile;
 import files.csv.CSVInfo;
+import files.xml.XMLInfo;
 import gui.frames.forms.importexport.CSVRecognizerForm;
+import gui.frames.forms.importexport.XMLRecognizerForm;
 import gui.frames.main.MainFrame;
 import ibd.table.Table;
 import java.awt.datatransfer.DataFlavor;
@@ -75,6 +77,8 @@ public class FileTransferHandler extends mxGraphTransferHandler {
                         ImportFile.importQuery(file);  // Call your custom function to open the file
                     } else if (extension.equals("csv")) {
                         openCSVFile(file);
+                    } else if (extension.equals("xml")) {
+                        openXMLFile(file);
                     } else if (extension.equals("head")) {
                         openHeadFile(file);
                     } else if (extension.equals("dat")) {
@@ -146,6 +150,26 @@ public class FileTransferHandler extends mxGraphTransferHandler {
 
         MainController.executeImportTableCommand(tableCell);
         CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
+    }
+
+    public static void openXMLFile(File file) {
+        AtomicReference<Boolean> exitReference = new AtomicReference<>(false);
+        XMLInfo info = new XMLRecognizerForm(
+                Path.of(file.getAbsolutePath()), exitReference
+        ).getXMLInfo();
+        if (!exitReference.get()) {
+            TableCell tableCell = TableCreator.createXMLTable(
+                    info.tableName(), info.columns(), info, false
+            );
+            String newName = MainController.resolveTableNameConflict(tableCell.getName());
+            if (newName == null) {
+                TreeUtils.deleteTree(tableCell.getTree());
+                return;
+            }
+            tableCell.setName(newName);
+            MainController.executeImportTableCommand(tableCell);
+            CellUtils.deactivateActiveJCell(MainFrame.getGraph(), tableCell.getJCell());
+        }
     }
 
 }
