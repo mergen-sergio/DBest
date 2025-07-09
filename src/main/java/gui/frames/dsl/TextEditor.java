@@ -188,21 +188,20 @@ public class TextEditor extends JFrame implements ActionListener {
 
         walker.walk(listener, parser.command());
 
-        this.execute();
+        this.execute(text);
     }
 
-    private void execute() {
-        if (DslErrorListener.getErrors().isEmpty()) {
+    private void execute(String text) {
             try {
-                DslController.parser();
+                MainController.isImporting = true;
+                DslController.parser(text);
+                MainController.isImporting = false;
             } catch (InputException exception) {
+                MainController.isImporting = false;
                 DslController.reset();
                 DslErrorListener.throwError(this.console);
             }
             return;
-        }
-
-        DslErrorListener.throwError(this.console);
     }
 
     private void setIcons() {
