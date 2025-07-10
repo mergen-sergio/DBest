@@ -13,7 +13,6 @@ import java.util.Stack;
 public class AutoCompletionEngine {
     // Configurações de tolerância: distância máxima permitida e tamanho mínimo do prefixo
     private static final int MAX_EDIT_DISTANCE = 2;
-    private static final int MIN_PREFIX_LENGTH = 2;
 
     // Contextos possíveis para completar: operações, argumentos (colunas), fontes (tabelas)
     private enum CompletionContext {
@@ -39,19 +38,14 @@ public class AutoCompletionEngine {
             return completions;
         }
 
-        // Extrai a palavra sob o cursor e valida tamanho mínimo
+        // Extrai a palavra sob o cursor
         WordBounds bounds = getWordBoundsAt(text, caretPosition);
         String prefix = text.substring(bounds.start(), bounds.end());
-        if (prefix.length() < MIN_PREFIX_LENGTH) {
-            return completions;
-        }
+
         String normalizedPrefix = prefix.trim().toLowerCase();
 
         // Determina contexto baseado na posição dos delimitadores
         CompletionContext completionContext = determineCompletionContext(text, caretPosition);
-
-        // Operações estão sempre disponíveis
-        addOperationCompletions(completions, normalizedPrefix);
 
         // Adiciona específicos do contexto atual
         if (completionContext == CompletionContext.ARGUMENTS) {
@@ -59,6 +53,9 @@ public class AutoCompletionEngine {
         } else if (completionContext == CompletionContext.SOURCES) {
             addTableCompletions(completions, normalizedPrefix);
         }
+
+        // Operações estão sempre disponíveis
+        addOperationCompletions(completions, normalizedPrefix);
 
         return completions;
     }
@@ -155,25 +152,24 @@ public class AutoCompletionEngine {
     // Adiciona nomes de colunas das tabelas ativas (simples e qualificados)
     private static void addColumnCompletions(ArrayList<CompletionResult> completions, String normalizedPrefix) {
         for (TableCell tableCell : MainController.getTables().values()) {
-            // Nomes simples de colunas (ex: "id", "name")
-            for (String columnName : tableCell.getColumnNames()) {
-                String normalizedColumnName = columnName.trim().toLowerCase();
-                int distance = calculatePrefixLevenshteinDistance(normalizedPrefix, normalizedColumnName);
-
-                if (distance <= MAX_EDIT_DISTANCE) {
-                    completions.add(new CompletionResult(columnName, distance));
-                }
-            }
-            
-            // Nomes qualificados (ex: "tabela.coluna")
-            for (String qualifiedColumnName : tableCell.getColumnSourcesAndNames()) {
+            for (int i = 0; i < tableCell.getColumns().size(); i++) {
+                // Nome simples da coluna (ex: "id", "name")
+                String normalizedColumnName = tableCell.getColumnNames().get(i).trim().toLowerCase();
+                // Nome qualificado (ex: "tabela.coluna")
+                String qualifiedColumnName = tableCell.getColumnSourcesAndNames().get(i);
                 String normalizedQualifiedName = qualifiedColumnName.trim().toLowerCase();
-                int distance = calculatePrefixLevenshteinDistance(normalizedPrefix, normalizedQualifiedName);
+
+                // Para considerar "col" ou "tab" como prefixo de "tabela.coluna"
+                int distance = Math.min(
+                    calculatePrefixLevenshteinDistance(normalizedPrefix, normalizedColumnName),
+                    calculatePrefixLevenshteinDistance(normalizedQualifiedName, normalizedColumnName)
+                );
 
                 if (distance <= MAX_EDIT_DISTANCE) {
                     completions.add(new CompletionResult(qualifiedColumnName, distance));
                 }
             }
+
         }
     }
 
