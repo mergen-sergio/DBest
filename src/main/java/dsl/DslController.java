@@ -7,6 +7,8 @@ import enums.FileType;
 import exceptions.dsl.InputException;
 import gui.frames.FileTransferHandler;
 import gui.frames.dsl.TextEditor;
+import com.mxgraph.model.mxCell;
+import com.mxgraph.view.mxGraph;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class DslController {
 
@@ -58,6 +61,9 @@ public class DslController {
             commands.add(command.trim());  // Use trim() to remove leading/trailing spaces
         }
         execute();
+        
+        autoRedistributeNodes();
+        
         reset();
 
     }
@@ -71,6 +77,10 @@ public class DslController {
     private static void execute() throws InputException {
 
         for (String command : commands) {
+            
+            if (command == null || command.trim().isEmpty()) {
+                continue;
+            }
 
             switch (DslUtils.commandRecognizer(command)) {
 
@@ -233,6 +243,65 @@ public class DslController {
         MainController.putTableCell(relation);
         System.out.println("query parser: relation: "+relation.getFirstName());
 
+    }
+
+    private static void autoRedistributeNodes() {
+        try {
+            mxCell rootCell = findTopLeftRootNode();
+            
+            System.out.println("Text Editor: Nó raiz encontrado: " + (rootCell != null ? rootCell.getValue() + " (ID: " + rootCell.getId() + ")" : "null"));
+            
+            if (rootCell != null) {
+                controllers.commands.RedistributeNodesCommand command = 
+                    new controllers.commands.RedistributeNodesCommand(rootCell);
+                MainController.commandController.execute(command);
+                
+                System.out.println("Text Editor: Árvore redistribuída automaticamente no canto superior esquerdo");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao redistribuir nós automaticamente: " + e.getMessage());
+        }
+    }
+
+    private static mxCell findTopLeftRootNode() {
+        mxGraph graph = gui.frames.main.MainFrame.getGraph();
+        Object[] cells = graph.getChildVertices(graph.getDefaultParent());
+        
+        mxCell topLeftRoot = null;
+        double minDistance = Double.MAX_VALUE;
+        
+        for (Object obj : cells) {
+            if (obj instanceof mxCell cell) {
+                if (isRootNode(cell)) {
+                    com.mxgraph.model.mxGeometry geo = cell.getGeometry();
+                    if (geo != null) {
+                        double distance = Math.sqrt(geo.getX() * geo.getX() + geo.getY() * geo.getY());
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            topLeftRoot = cell;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return topLeftRoot;
+    }
+
+    private static boolean isRootNode(mxCell cell) {
+        Optional<entities.cells.Cell> optionalCell = entities.utils.cells.CellUtils.getActiveCell(cell);
+        if (optionalCell.isPresent()) {
+            entities.cells.Cell systemCell = optionalCell.get();
+            return !systemCell.hasChild();
+        }
+        
+        for (int i = 0; i < cell.getEdgeCount(); i++) {
+            mxCell edge = (mxCell) cell.getEdgeAt(i);
+            if (edge.getTerminal(false) == cell) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

@@ -1394,8 +1394,8 @@ public class MainController extends MainFrame {
             x = operationExpression.getCoordinates().get().x();
             y = operationExpression.getCoordinates().get().y();
         } else {
-            x = RandomUtils.nextInt(0, 1) * 600;
-            y = RandomUtils.nextInt(0, 1) * 600;
+            x = 500; 
+            y = 30;  
         }
 
         OperationType type = operationExpression.getType();
