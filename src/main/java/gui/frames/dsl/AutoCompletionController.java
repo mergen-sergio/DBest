@@ -46,6 +46,7 @@ public class AutoCompletionController {
         };
         
         completionPopup = new JPopupMenu();
+        completionPopup.setFocusable(true); // Para receber eventos
         completionPopup.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -83,6 +84,10 @@ public class AutoCompletionController {
                 cycleSelection(event.isShiftDown()); // Tab: próximo, Shift+Tab: anterior
                 event.consume();
                 break;
+            case KeyEvent.VK_SHIFT:
+                // Ignora a tecla Shift sozinha
+                event.consume();
+                break;
             case KeyEvent.VK_DOWN:
                 cycleSelection(false); // Seta para baixo: próximo
                 event.consume();
@@ -101,7 +106,25 @@ public class AutoCompletionController {
                 event.consume();
                 break;
             default:
-                closePopup(); // Qualquer outra tecla fecha o popup
+                closePopup();
+
+                // Atualiza as completions conforme o usuário escreve
+                char keyChar = event.getKeyChar();
+                if (Character.isLetterOrDigit(keyChar) || "_.-".indexOf(keyChar) >= 0) {
+                    try {
+                        textPane.getDocument().insertString(textPane.getCaretPosition(), String.valueOf(keyChar), null);
+
+                        prepareCompletionData();
+                        if (currentCompletions.isEmpty()) {
+                            textPane.requestFocus(); // Retorna foco para o editor quando não há completions
+                        } else {
+                            showCompletionPopup();
+                        }
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                    }
+                }
+                
                 break;
         }
     }
@@ -185,6 +208,7 @@ public class AutoCompletionController {
             // Posiciona popup logo abaixo do cursor
             Rectangle caretBounds = textPane.modelToView(textPane.getCaretPosition());
             completionPopup.show(textPane, caretBounds.x, caretBounds.y + caretBounds.height);
+            completionPopup.requestFocus(); // Solicita foco para receber eventos de teclado
         } catch (BadLocationException e) {
             e.printStackTrace();
         }
