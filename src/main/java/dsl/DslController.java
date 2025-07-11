@@ -7,6 +7,8 @@ import enums.FileType;
 import exceptions.dsl.InputException;
 import gui.frames.FileTransferHandler;
 import gui.frames.dsl.TextEditor;
+import com.mxgraph.model.mxCell;
+import com.mxgraph.view.mxGraph;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -15,6 +17,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import javax.swing.JOptionPane;
 
 public class DslController {
 
@@ -58,6 +62,9 @@ public class DslController {
             commands.add(command.trim());  // Use trim() to remove leading/trailing spaces
         }
         execute();
+        
+        autoRedistributeNodes();
+        
         reset();
 
     }
@@ -71,6 +78,10 @@ public class DslController {
     private static void execute() throws InputException {
 
         for (String command : commands) {
+            
+            if (command == null || command.trim().isEmpty()) {
+                continue;
+            }
 
             switch (DslUtils.commandRecognizer(command)) {
 
@@ -233,6 +244,166 @@ public class DslController {
         MainController.putTableCell(relation);
         System.out.println("query parser: relation: "+relation.getFirstName());
 
+    }
+
+    private static void autoRedistributeNodes() {
+        try {
+
+            if (hasExplicitCoordinates()) {
+
+                int choice = showCoordinatesDialog();
+                
+                switch (choice) {
+                    case 0:
+                        System.out.println("Text Editor: Coordenadas mantidas conforme especificado na query.");
+                        return;
+                        
+                    case 1:
+                        System.out.println("Text Editor: Mantendo posição do nó raiz e redistribuindo o resto da árvore.");
+                        redistributeFromRoot();
+                        return;
+                        
+                    default: 
+                        System.out.println("Text Editor: Operação cancelada pelo usuário.");
+                        return;
+                }
+            }
+            
+            mxCell rootCell = findTopLeftRootNode();
+            
+            System.out.println("Text Editor: Nó raiz encontrado: " + (rootCell != null ? rootCell.getValue() + " (ID: " + rootCell.getId() + ")" : "null"));
+            
+            if (rootCell != null) {
+                controllers.commands.RedistributeNodesCommand command = 
+                    new controllers.commands.RedistributeNodesCommand(rootCell);
+                MainController.commandController.execute(command);
+                
+                System.out.println("Text Editor: Árvore redistribuída automaticamente no canto superior esquerdo");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao redistribuir nós automaticamente: " + e.getMessage());
+        }
+    }
+
+    private static mxCell findTopLeftRootNode() {
+        mxGraph graph = gui.frames.main.MainFrame.getGraph();
+        Object[] cells = graph.getChildVertices(graph.getDefaultParent());
+        
+        mxCell topLeftRoot = null;
+        double minDistance = Double.MAX_VALUE;
+        
+        for (Object obj : cells) {
+            if (obj instanceof mxCell cell) {
+                if (isRootNode(cell)) {
+                    com.mxgraph.model.mxGeometry geo = cell.getGeometry();
+                    if (geo != null) {
+                        double distance = Math.sqrt(geo.getX() * geo.getX() + geo.getY() * geo.getY());
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            topLeftRoot = cell;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return topLeftRoot;
+    }
+
+    private static boolean isRootNode(mxCell cell) {
+        Optional<entities.cells.Cell> optionalCell = entities.utils.cells.CellUtils.getActiveCell(cell);
+        if (optionalCell.isPresent()) {
+            entities.cells.Cell systemCell = optionalCell.get();
+            return !systemCell.hasChild();
+        }
+        
+        for (int i = 0; i < cell.getEdgeCount(); i++) {
+            mxCell edge = (mxCell) cell.getEdgeAt(i);
+            if (edge.getTerminal(false) == cell) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean hasExplicitCoordinates() {
+        mxGraph graph = gui.frames.main.MainFrame.getGraph();
+        Object[] cells = graph.getChildVertices(graph.getDefaultParent());
+        
+        for (Object obj : cells) {
+            if (obj instanceof mxCell cell) {
+                com.mxgraph.model.mxGeometry geo = cell.getGeometry();
+                if (geo != null) {
+                    double x = geo.getX();
+                    double y = geo.getY();
+
+                    boolean isDefaultOperationPosition = (x == 500 && y == 30);
+                    boolean isDefaultTablePosition = (x >= 0 && x <= 600 && y >= 0 && y <= 600) && !(x == 500 && y == 30);
+                    
+                    if (!isDefaultOperationPosition && !isDefaultTablePosition) {
+                        return true;
+                    }
+                    
+                    if ((x % 10 != 0 || y % 10 != 0) && (x != 500 || y != 30)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    private static int showCoordinatesDialog() {
+        String[] options = {
+            "Manter todas as coordenadas como especificado",
+            "Manter posição do nó raiz e redistribuir o resto",
+            "Cancelar"
+        };
+        
+        String message = """
+                         Detectei que sua query contém coordenadas específicas.
+                         O que você gostaria de fazer?
+                         
+                         • Opção 1: Mantém todas as posições exatamente como você escreveu
+                         • Opção 2: Mantém apenas a posição do nó raiz e redistribui o resto da árvore
+                         """;
+        
+        return javax.swing.JOptionPane.showOptionDialog(
+            null,
+            message,
+            "Coordenadas Detectadas na Query",
+            javax.swing.JOptionPane.YES_NO_CANCEL_OPTION,
+            javax.swing.JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0] 
+        );
+    }
+
+    private static void redistributeFromRoot() {
+        try {
+            mxCell rootCell = findTopLeftRootNode();
+            
+            if (rootCell != null) {
+                com.mxgraph.model.mxGeometry rootGeo = rootCell.getGeometry();
+                double originalX = rootGeo.getX();
+                double originalY = rootGeo.getY();
+                
+                System.out.println("Text Editor: Redistribuindo árvore mantendo raiz em (" + originalX + ", " + originalY + ")");
+                
+                controllers.commands.RedistributeNodesCommand command = 
+                    new controllers.commands.RedistributeNodesCommand(rootCell);
+                MainController.commandController.execute(command);
+                
+                rootGeo.setX(originalX);
+                rootGeo.setY(originalY);
+                
+                System.out.println("Text Editor: Redistribuição concluída com nó raiz mantido na posição original.");
+            }
+        } catch (Exception e) {
+            System.err.println("Erro ao redistribuir mantendo posição do raiz: " + e.getMessage());
+        }
     }
 
 }
