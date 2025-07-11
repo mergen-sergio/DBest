@@ -162,7 +162,7 @@ public class AutoCompletionEngine {
                 // Para considerar "col" ou "tab" como prefixo de "tabela.coluna"
                 int distance = Math.min(
                     calculatePrefixLevenshteinDistance(normalizedPrefix, normalizedColumnName),
-                    calculatePrefixLevenshteinDistance(normalizedQualifiedName, normalizedColumnName)
+                    calculatePrefixLevenshteinDistance(normalizedPrefix, normalizedQualifiedName)
                 );
 
                 if (distance <= MAX_EDIT_DISTANCE) {
