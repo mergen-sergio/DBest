@@ -14,6 +14,7 @@ import entities.cells.FYITableCell;
 import entities.cells.JDBCTableCell;
 import entities.cells.MemoryTableCell;
 import entities.cells.TableCell;
+import entities.cells.XMLTableCell;
 import enums.CellType;
 import enums.ColumnDataType;
 import static enums.ColumnDataType.CHARACTER;
@@ -25,12 +26,14 @@ import static enums.ColumnDataType.STRING;
 import enums.DatabaseType;
 import enums.FileType;
 import files.csv.CSVInfo;
+import files.xml.XMLInfo;
 import gui.frames.main.MainFrame;
 import ibd.table.btree.BTreeTable;
 import ibd.table.csv.CSVTable;
 import ibd.table.Table;
 import ibd.table.jdbc.JDBCTable;
 import ibd.table.memory.MemoryTable;
+import ibd.table.xml.XMLTable;
 import ibd.table.prototype.BasicDataRow;
 import ibd.table.prototype.Header;
 import ibd.table.prototype.Prototype;
@@ -55,7 +58,7 @@ import java.util.logging.Logger;
 public class TableCreator {
 
     public static int cacheSize = 5000000;
-    
+
     public static TableCell createTable(File file) throws Exception {
 
         if (!file.isFile()) {
@@ -89,6 +92,9 @@ public class TableCreator {
             case FYI_TABLE ->
                 new FYITableCell(tableName,
                 table, new File(path));
+            case XML_TABLE ->
+                new XMLTableCell(tableName,
+                table, new File(path));
             // TODO: Review unreachable statement
             case JDBC_TABLE ->
                 new JDBCTableCell(tableName,
@@ -108,7 +114,7 @@ public class TableCreator {
         if (header.get(Header.TABLE_TYPE) == null) {
             return new BTreeTable(header, null, null, cacheSize);
         }
-        
+
         return switch (header.get(Header.TABLE_TYPE)) {
             case "CSVTable" ->
                 new CSVTable(header);
@@ -116,11 +122,13 @@ public class TableCreator {
                 new MemoryTable(header);
             case "JDBCTable" ->
                 new JDBCTable(header);
+            case "XMLTable" ->
+                new XMLTable(header);
             default ->
                 new BTreeTable(header, null, null, cacheSize);
         };
     }
-    
+
     public static Table openBTreeTable(String fileName) throws IOException, Exception {
         return new BTreeTable(fileName, cacheSize);
     }
@@ -265,7 +273,7 @@ public class TableCreator {
             String tableName, List<entities.Column> columns, Map<Integer, Map<String, String>> data
     ) {
 
-// there is no need to create a pk column for a memory table        
+// there is no need to create a pk column for a memory table
 //        if (columns.stream().noneMatch(column -> column.IS_PRIMARY_KEY)) {
 //            createIgnoredPKColumn(columns, data, tableName);
 //        }
@@ -351,12 +359,12 @@ public class TableCreator {
 
         return prototype;
     }
-    
+
     public static JDBCTableCell createJDBCTable(
         String tableName, UniversalConnectionConfig connectionConfig, Boolean mustExport
     ) {
         Header header = new Header(null, tableName);
-        
+
         header.set(Header.TABLE_TYPE, "JDBCTable");
         header.set("connection-url", connectionConfig.constructConnectionURL());
         header.set("connection-user", connectionConfig.getUsername());
@@ -510,6 +518,54 @@ public class TableCreator {
             return s.substring(0, s.length() - suffix.length());
         }
         return s;
+    }
+
+    /**
+     * Creates an XML table from XML file analysis
+     */
+    public static XMLTableCell createXMLTable(
+            String tableName, List<entities.Column> columns, XMLInfo xmlInfo, boolean mustExport
+    ) {
+        return createXMLTable(tableName, columns, xmlInfo, mustExport, false);
+    }
+
+    /**
+     * Creates an XML table from XML file analysis with option to skip adding to main graph
+     */
+    public static XMLTableCell createXMLTable(
+            String tableName, List<entities.Column> columns, XMLInfo xmlInfo, boolean mustExport, boolean skipMainGraph
+    ) {
+        Prototype prototype = createPrototype(columns);
+
+        Header header = new Header(prototype, tableName);
+        header.set(Header.FILE_PATH, xmlInfo.path().toString());
+
+        String headerFileName = String.format("%s%s", tableName, FileType.HEADER.extension);
+        String headerPath = Header.replaceFileName(xmlInfo.path().toString(), headerFileName);
+
+        XMLTable table = new XMLTable(header, xmlInfo.rootElement(), xmlInfo.recordElement(), xmlInfo.strategy());
+        mxCell jCell = null;
+        File headerFile = new File(headerPath);
+
+        try {
+            table.open();
+            headerFileName = table.saveHeader(headerPath);
+
+            if (mustExport || skipMainGraph) {
+                return new XMLTableCell(new mxCell(tableName, new mxGeometry(), ConstantController.J_CELL_FYI_TABLE_STYLE), tableName, table, headerFile);
+            }
+
+            jCell = (mxCell) MainFrame
+                    .getGraph()
+                    .insertVertex(
+                            MainFrame.getGraph().getDefaultParent(), null, tableName, 0, 0,
+                            ConstantController.TABLE_CELL_WIDTH, ConstantController.TABLE_CELL_HEIGHT, CellType.XML_TABLE.id
+                    );
+        } catch (Exception e) {
+            Logger.getLogger(TableCreator.class.getName()).log(Level.SEVERE, null, e);
+        }
+
+        return new XMLTableCell(jCell, tableName, table, headerFile);
     }
 
 }

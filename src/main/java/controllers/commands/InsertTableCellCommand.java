@@ -12,6 +12,7 @@ import entities.cells.FYITableCell;
 import entities.cells.JDBCTableCell;
 import entities.cells.MemoryTableCell;
 import entities.cells.TableCell;
+import entities.cells.XMLTableCell;
 import entities.utils.cells.CellUtils;
 
 import enums.FileType;
@@ -51,6 +52,9 @@ public class InsertTableCellCommand extends BaseUndoableRedoableCommand {
 
         else if(tableCell instanceof CSVTableCell csvTableCell)
             new CSVTableCell(csvTableCell, this.jCellReference.get());
+
+        else if(tableCell instanceof XMLTableCell xmlTableCell)
+            new XMLTableCell(xmlTableCell, this.jCellReference.get());
 
         else if (tableCell instanceof MemoryTableCell memoryTableCell)
             new MemoryTableCell(memoryTableCell, this.jCellReference.get());
