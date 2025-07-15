@@ -229,4 +229,5 @@ META-INF/
 
 *.dat
 *.head
+*.jar
 .idea/
