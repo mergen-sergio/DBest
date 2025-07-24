@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -218,6 +219,12 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
             mxCell pastedTarget = pastedCells.get(originalTarget);
 
             if (pastedSource != null && pastedTarget != null) {
+                Optional<Cell> targetCell = CellUtils.getActiveCell(pastedTarget);
+                if (targetCell.isPresent() && !targetCell.get().canBeChild()) {
+                    System.err.println("Cannot paste edge: target cell cannot be a child (tables cannot be edge targets)");
+                    return;
+                }
+                
                 graph.insertEdge(
                         graph.getDefaultParent(),
                         null, // Let graph generate ID

@@ -180,6 +180,30 @@ public class MainController extends MainFrame {
                 mxCell edgeCell = (mxCell) edge;
                 mxCell terminalCell = (mxCell) terminal;
 
+                // Verify if the terminal cell can be a child
+                if (!source) {
+                    Optional<Cell> optionalTerminalCell = CellUtils.getActiveCell(terminalCell);
+                    if (optionalTerminalCell.isPresent() && !optionalTerminalCell.get().canBeChild()) {
+                        // Prevent connection to table as destination - revert to previous connection
+                        graph.getModel().beginUpdate();
+                        try {
+                            Object previousTarget = lastTargets.get(edgeCell);
+                            if (previousTarget != null) {
+                                // Revert to previous target
+                                graph.getModel().setTerminal(edgeCell, previousTarget, false);
+                            } else {
+                                // If there is no previous target, remove the edge completely
+                                graph.getModel().setTerminal(edgeCell, null, false);
+                            }
+                        } finally {
+                            graph.getModel().endUpdate();
+                        }
+                        return;
+                    } else {
+                        // Successful connection
+                    }
+                }
+
                 if (!source) {
                     Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
@@ -1212,10 +1236,6 @@ public class MainController extends MainFrame {
     @Override
     public void mouseMoved(MouseEvent event) {
         ActionType currentActionType = this.currentActionReference.get().getType();
-
-        if (currentActionType == ActionType.NONE) {
-            return;
-        }
 
         if (currentActionType == ActionType.CREATE_OPERATOR_CELL && this.ghostCell != null) {
             this.moveCell(event, this.ghostCell);
