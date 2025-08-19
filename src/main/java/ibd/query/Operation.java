@@ -56,7 +56,17 @@ import java.util.logging.Logger;
  *
  * @author Sergio
  */
-public abstract class Operation {
+public abstract class Operation implements CancellableOperation {
+
+    /**
+     * Cancellation state for this operation
+     */
+    protected volatile boolean cancellationRequested = false;
+    
+    /**
+     * Memory used by this operation (for cleanup tracking)
+     */
+    protected volatile long operationMemoryUsed = 0;
 
     /**
      * the data sources accessed directly or indirectly by this operation. This
@@ -785,5 +795,45 @@ public abstract class Operation {
      * @throws Exception
      */
     public abstract void close() throws Exception;
+    
+    // CancellableOperation implementation
+    
+    @Override
+    public boolean isCancellationRequested() {
+        return cancellationRequested || Thread.currentThread().isInterrupted();
+    }
+    
+    @Override
+    public void requestCancellation() {
+        this.cancellationRequested = true;
+    }
+    
+    @Override
+    public void cleanupOnCancellation() {
+        // Default implementation - subclasses override for specific cleanup
+        if (operationMemoryUsed > 0) {
+            QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - operationMemoryUsed);
+            operationMemoryUsed = 0;
+        }
+        // Propagate cancellation to child operations if any
+        for (Operation child : childOperations) {
+            if (child instanceof CancellableOperation) {
+                ((CancellableOperation) child).requestCancellation();
+                ((CancellableOperation) child).cleanupOnCancellation();
+            }
+        }
+    }
+    
+    /**
+     * Convenience method for operations to check cancellation during processing.
+     * Should be called periodically in loops or long-running operations.
+     * 
+     * @throws InterruptedException if the operation has been cancelled
+     */
+    protected void checkCancellation() throws InterruptedException {
+        if (isCancellationRequested()) {
+            throw new InterruptedException("Operation cancelled");
+        }
+    }
 
 }

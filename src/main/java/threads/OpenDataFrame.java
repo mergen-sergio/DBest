@@ -31,21 +31,23 @@ public class OpenDataFrame implements Runnable{
     }
     
     /**
-     * Cleans up hash table memory when hash operations are cancelled
+     * Cleans up operation memory when operations are cancelled
+     * Uses the generic CancellableOperation interface for reusability
      */
-    private static void cleanupHashMemoryIfNeeded(Cell cell) {
+    private static void cleanupOperationMemoryIfNeeded(Cell cell) {
         try {
-            if (cell instanceof OperationCell operationCell) {
-                if (operationCell.getType().name.equalsIgnoreCase("hash")) {
-                    ibd.query.Operation op = operationCell.getOperator();
-                    if (op instanceof ibd.query.unaryop.HashIndex hashIndex) {
-                        hashIndex.cleanMemory();
-                    }
+            if (cell instanceof OperationCell) {
+                OperationCell operationCell = (OperationCell) cell;
+                ibd.query.Operation op = operationCell.getOperator();
+                if (op instanceof ibd.query.CancellableOperation) {
+                    ibd.query.CancellableOperation cancellableOp = (ibd.query.CancellableOperation) op;
+                    cancellableOp.requestCancellation();
+                    cancellableOp.cleanupOnCancellation();
                 }
             }
         } catch (Exception e) {
             // Log error but don't prevent cancellation
-            System.err.println("Error cleaning hash memory: " + e.getMessage());
+            System.err.println("Error cleaning operation memory: " + e.getMessage());
         }
     }
 
@@ -62,10 +64,19 @@ public class OpenDataFrame implements Runnable{
             if (!(cell instanceof TableCell || ((OperationCell) cell).hasBeenInitialized())) return;
 
             if (!cell.hasError()) {
-                // Check if this is a hash operation
-                if (cell instanceof OperationCell operationCell && 
-                    operationCell.getType().name.equalsIgnoreCase("hash")) {
-                    showHashLoadingDialog(cell);
+                // Check if this is a cancellable set-based operation (hash, etc.)
+                if (cell instanceof OperationCell) {
+                    OperationCell operationCell = (OperationCell) cell;
+                    if (operationCell.getType().isSetBasedProcessing &&
+                        operationCell.getOperator() instanceof ibd.query.CancellableOperation) {
+                        showCancellableOperationLoadingDialog(cell, operationCell.getType().displayName);
+                    } else {
+                        try {
+                            new DataFrame(cell);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(null, ex.getMessage(), ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
                 } else {
                     try {
                         new DataFrame(cell);
@@ -79,9 +90,9 @@ public class OpenDataFrame implements Runnable{
         }
     }
 
-    private void showHashLoadingDialog(Cell cell) {
+    private void showCancellableOperationLoadingDialog(Cell cell, String operationDisplayName) {
         SwingUtilities.invokeLater(() -> {
-            loadingDialog = new JDialog((Frame) null, "Generating Hash Table", true);
+            loadingDialog = new JDialog((Frame) null, operationDisplayName + " Operation", true);
             JButton cancelButton = new JButton("Cancel");
             MovingSquareBar movingBar = new MovingSquareBar();
 
@@ -89,7 +100,8 @@ public class OpenDataFrame implements Runnable{
             dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
             dialogPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-            JLabel messageLabel = new JLabel("Generating hash table. You can cancel the operation.");
+            String message = "Generating " + operationDisplayName.toLowerCase() + ". You can cancel the operation.";
+            JLabel messageLabel = new JLabel(message);
             messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             movingBar.setAlignmentX(Component.CENTER_ALIGNMENT);
             cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -131,7 +143,7 @@ public class OpenDataFrame implements Runnable{
                     
                     // If cancelled, dispose of any created DataFrame and clean up memory
                     if (isCancelled()) {
-                        cleanupHashMemoryIfNeeded(cell);
+                        cleanupOperationMemoryIfNeeded(cell);
                         if (dataFrame != null) {
                             dataFrame.dispose();
                         }

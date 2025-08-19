@@ -11,6 +11,7 @@ import files.FileUtils;
 import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
+import ibd.query.CancellableOperation;
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
@@ -102,21 +103,23 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     }
     
     /**
-     * Cleans up hash table memory when hash operations are cancelled
+     * Cleans up operation memory when operations are cancelled
+     * Uses the generic CancellableOperation interface for reusability
      */
-    private void cleanupHashMemoryIfNeeded() {
+    private void cleanupOperationMemoryIfNeeded() {
         try {
-            if (cell instanceof OperationCell operationCell) {
-                if (operationCell.getType() == OperationType.HASH) {
-                    Operation op = operationCell.getOperator();
-                    if (op instanceof ibd.query.unaryop.HashIndex hashIndex) {
-                        hashIndex.cleanMemory();
-                    }
+            if (cell instanceof OperationCell) {
+                OperationCell operationCell = (OperationCell) cell;
+                Operation op = operationCell.getOperator();
+                if (op instanceof CancellableOperation) {
+                    CancellableOperation cancellableOp = (CancellableOperation) op;
+                    cancellableOp.requestCancellation();
+                    cancellableOp.cleanupOnCancellation();
                 }
             }
         } catch (Exception e) {
             // Log error but don't prevent cancellation
-            System.err.println("Error cleaning hash memory: " + e.getMessage());
+            System.err.println("Error cleaning operation memory: " + e.getMessage());
         }
     }
 
@@ -133,7 +136,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         } catch (Exception ignored) {
         }
 
-        if (cell instanceof OperationCell operationCell) {
+        if (cell instanceof OperationCell) {
+            OperationCell operationCell = (OperationCell) cell;
             this.lblText.setText(operationCell.getType().displayName + ":");
         } else {
             this.lblText.setText(cell.getName() + ":");
@@ -167,47 +171,58 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private void firstExecution() throws Exception {
 
-        if (cell instanceof OperationCell operationCell && operationCell.getType().isSetBasedProcessing) {
-            // Skip getAllTuples for hash operations since OpenDataFrame handles the loading dialog
-            if (!operationCell.getType().name.equalsIgnoreCase("hash")) {
-                this.getAllTuples();
-                this.updateTable(lastPage);
-            } else {
-                // For hash operations, directly process all tuples without showing dialog
-                // since OpenDataFrame already showed the loading dialog
-                currentIndex = 0;
-                while (cell.getOperator().hasNext() && !externalCancellationRequested) {
-                    ibd.query.Tuple tuple = cell.getOperator().next();
-                    rows.add(tuple);
-                    largestElement++;
-                    
-                    // Allow cancellation and UI updates
-                    if (Thread.currentThread().isInterrupted() || externalCancellationRequested) {
-                        break;
+        if (cell instanceof OperationCell) {
+            OperationCell operationCell = (OperationCell) cell;
+            if (operationCell.getType().isSetBasedProcessing) {
+                // Check if this operation is cancellable and handled by OpenDataFrame
+                if (operationCell.getOperator() instanceof CancellableOperation) {
+                    // For cancellable operations, directly process all tuples without showing dialog
+                    // since OpenDataFrame already showed the loading dialog
+                    currentIndex = 0;
+                    while (cell.getOperator().hasNext() && !externalCancellationRequested) {
+                        ibd.query.Tuple tuple = cell.getOperator().next();
+                        rows.add(tuple);
+                        largestElement++;
+                        
+                        // Allow cancellation and UI updates
+                        if (Thread.currentThread().isInterrupted() || externalCancellationRequested) {
+                            break;
+                        }
                     }
-                }
-                
-                if (externalCancellationRequested) {
-                    // Clean up memory for hash operations
-                    cleanupHashMemoryIfNeeded();
-                    // If cancelled, close this dialog
-                    this.dispose();
-                    return;
-                }
-                
-                if (largestElement >= 0) {
-                    lastPage = largestElement / 15;
-                    currentIndex = 0; // Start at the beginning, not the end
-                    this.updateTable(currentIndex);
+                    
+                    if (externalCancellationRequested) {
+                        // Clean up memory for cancelled operations
+                        cleanupOperationMemoryIfNeeded();
+                        // If cancelled, close this dialog
+                        this.dispose();
+                        return;
+                    }
+                    
+                    if (largestElement >= 0) {
+                        lastPage = largestElement / 15;
+                        currentIndex = 0; // Start at the beginning, not the end
+                        this.updateTable(currentIndex);
+                    } else {
+                        this.updateTable(0);
+                    }
                 } else {
-                    this.updateTable(0);
+                    // For non-cancellable set-based operations, use the regular loading process
+                    this.getAllTuples();
+                    this.updateTable(lastPage);
                 }
             }
         }
 
-        if (!(cell instanceof OperationCell operationCell && 
-              operationCell.getType().isSetBasedProcessing && 
-              operationCell.getType().name.equalsIgnoreCase("hash"))) {
+        boolean skipTupleLoading = false;
+        if (cell instanceof OperationCell) {
+            OperationCell operationCell = (OperationCell) cell;
+            if (operationCell.getType().isSetBasedProcessing && 
+                operationCell.getOperator() instanceof CancellableOperation) {
+                skipTupleLoading = true;
+            }
+        }
+        
+        if (!skipTupleLoading) {
             currentIndex = 0;
             this.getTuples(currentIndex);
             this.updateTable(currentIndex);
@@ -320,10 +335,12 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         String dialogTitle = "Loading All Tuples";
         String messageText = "Loading all tuples. You can cancel the operation.";
         
-        if (cell instanceof OperationCell operationCell && 
-            operationCell.getType().name.equalsIgnoreCase("hash")) {
-            dialogTitle = "Generating Hash Table";
-            messageText = "Generating hash table. You can cancel the operation.";
+        if (cell instanceof OperationCell) {
+            OperationCell operationCell = (OperationCell) cell;
+            if (operationCell.getOperator() instanceof CancellableOperation) {
+                dialogTitle = "Generating " + operationCell.getType().displayName;
+                messageText = "Generating " + operationCell.getType().displayName.toLowerCase() + ". You can cancel the operation.";
+            }
         }
         
         cancelDialog = new JDialog(this, dialogTitle, true);

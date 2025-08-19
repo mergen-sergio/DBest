@@ -83,35 +83,51 @@ public class HashIndex extends UnaryOperation {
     
     /**
      * Cleans up the hash memory and reduces memory usage statistics
+     * Implementation of CancellableOperation interface
      */
-    public void cleanMemory() {
+    @Override
+    public void cleanupOnCancellation() {
+        // Hash-specific cleanup
         if (tuples != null) {
-            // Calculate memory to reduce from stats
-            long memoryToReduce = 0;
+            // Calculate and track memory to be freed
             try {
                 int tupleSize = getTupleSize();
+                long memoryToReduce = 0;
+                
                 for (List<Tuple> tupleList : tuples.values()) {
                     memoryToReduce += tupleList.size() * tupleSize;
                 }
                 if (constantTuples != null) {
                     memoryToReduce += constantTuples.size() * tupleSize;
                 }
+                
+                // Clear the collections
+                tuples.clear();
+                tuples = null;
+                
+                if (constantTuples != null) {
+                    constantTuples.clear();
+                    constantTuples = null;
+                }
+                
+                // Update operation-specific memory tracking
+                operationMemoryUsed = memoryToReduce;
+                
             } catch (Exception e) {
                 // If we can't calculate exact size, still clear the collections
+                if (tuples != null) {
+                    tuples.clear();
+                    tuples = null;
+                }
+                if (constantTuples != null) {
+                    constantTuples.clear();
+                    constantTuples = null;
+                }
             }
-            
-            // Clear the hash collections
-            tuples.clear();
-            tuples = null;
-            
-            if (constantTuples != null) {
-                constantTuples.clear();
-                constantTuples = null;
-            }
-            
-            // Reduce memory usage statistics
-            QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - memoryToReduce);
         }
+        
+        // Call parent cleanup to handle memory statistics and child operations
+        super.cleanupOnCancellation();
     }
 
     //sets the list of columns that will be part of the hash keys
@@ -310,6 +326,14 @@ public class HashIndex extends UnaryOperation {
         private void queryHash() {
             //here is where we build an iterator to traverse the query results
             //the hash is queried using as key the values of the hashed filter columns
+            
+            // Check if the hash was cancelled/cleaned up
+            if (tuples == null) {
+                // Return empty iterator if hash was cancelled
+                it = new ArrayList<Tuple>().iterator();
+                return;
+            }
+            
             String key = "";
             for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
                 Element elem2 = lookupFilter.getSecondElement();
@@ -319,16 +343,30 @@ public class HashIndex extends UnaryOperation {
             List<Tuple> result = tuples.get(key);
             if (result != null) {
                 //it = result.iterator();
-                it = new TwoListsIterator(constantTuples.iterator(), result.iterator());
+                // Also check constantTuples for null safety
+                if (constantTuples != null) {
+                    it = new TwoListsIterator(constantTuples.iterator(), result.iterator());
+                } else {
+                    it = result.iterator();
+                }
             } else {
-                it = constantTuples.iterator();
-                //it = new ArrayList<Tuple>().iterator();
+                // Safe check for constantTuples as well
+                if (constantTuples != null) {
+                    it = constantTuples.iterator();
+                } else {
+                    it = new ArrayList<Tuple>().iterator();
+                }
             }
         }
 
         private void buildHash() {
             //build hash, if one does not exist yet
             if (tuples == null) {
+                // Reset cancellation flag to allow retry after previous cancellation
+                cancellationRequested = false;
+                // Clear thread interrupted status as well
+                Thread.currentThread().interrupted();
+                
                 tuples = new HashMap();
                 constantTuples = new ArrayList();
                 long memoryUsed = 0;
@@ -339,8 +377,8 @@ public class HashIndex extends UnaryOperation {
                     it = childOperation.lookUp(processedTuples, false);
                     int tupleSize = childOperation.getTupleSize();
                     while (it.hasNext()) {
-                        // Check for thread interruption (cancellation)
-                        if (Thread.currentThread().isInterrupted()) {
+                        // Use generic cancellation check
+                        if (isCancellationRequested()) {
                             wasInterrupted = true;
                             break;
                         }
@@ -382,11 +420,13 @@ public class HashIndex extends UnaryOperation {
                     }
 
                 } catch (Exception ex) {
+                    wasInterrupted = true; // Treat exceptions as interruption
                 }
                 
                 // Only add memory usage if not interrupted
                 if (!wasInterrupted) {
                     QueryStats.MEMORY_USED += memoryUsed;
+                    operationMemoryUsed += memoryUsed; // Track for cleanup
                 } else {
                     // Clean up immediately if interrupted
                     if (tuples != null) {
