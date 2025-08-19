@@ -47,7 +47,6 @@ public class Hash implements IOperator {
 
         Cell parentCell = cell.getParents().get(0);
 
-
         ibd.query.Operation operator = parentCell.getOperator();
 
         ibd.query.Operation filterColumns = null;
@@ -56,8 +55,6 @@ public class Hash implements IOperator {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
-        //Operator readyOperator = new DistinctOperator(filterColumns);
 
         String operationName = String.format("   %s   ", cell.getType().symbol);
 

@@ -6,10 +6,12 @@ import engine.info.Parameters;
 import entities.Column;
 import entities.cells.Cell;
 import entities.cells.OperationCell;
+import enums.OperationType;
 import files.FileUtils;
 import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
+import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
@@ -87,11 +89,44 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
+    
+    // Static flag to allow external cancellation (e.g., from OpenDataFrame)
+    private static volatile boolean externalCancellationRequested = false;
+    
+    public static void requestCancellation() {
+        externalCancellationRequested = true;
+    }
+    
+    public static void clearCancellationRequest() {
+        externalCancellationRequested = false;
+    }
+    
+    /**
+     * Cleans up hash table memory when hash operations are cancelled
+     */
+    private void cleanupHashMemoryIfNeeded() {
+        try {
+            if (cell instanceof OperationCell operationCell) {
+                if (operationCell.getType() == OperationType.HASH) {
+                    Operation op = operationCell.getOperator();
+                    if (op instanceof ibd.query.unaryop.HashIndex hashIndex) {
+                        hashIndex.cleanMemory();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't prevent cancellation
+            System.err.println("Error cleaning hash memory: " + e.getMessage());
+        }
+    }
 
     public DataFrame(Cell cell) throws Exception {
 
         super((Window) null, ConstantController.getString("dataframe"));
         this.setModal(true);
+        
+        // Clear any previous cancellation request
+        clearCancellationRequest();
 
         try {
             this.setIconImage(new ImageIcon(String.valueOf(FileUtils.getDBestLogo())).getImage());
@@ -123,18 +158,61 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         });
 
         this.initializeGUI();
+        
+        // Don't show the dialog if cancellation was requested during processing
+        if (externalCancellationRequested) {
+            this.dispose();
+        }
     }
 
     private void firstExecution() throws Exception {
 
         if (cell instanceof OperationCell operationCell && operationCell.getType().isSetBasedProcessing) {
-            this.getAllTuples();
-            this.updateTable(lastPage);
+            // Skip getAllTuples for hash operations since OpenDataFrame handles the loading dialog
+            if (!operationCell.getType().name.equalsIgnoreCase("hash")) {
+                this.getAllTuples();
+                this.updateTable(lastPage);
+            } else {
+                // For hash operations, directly process all tuples without showing dialog
+                // since OpenDataFrame already showed the loading dialog
+                currentIndex = 0;
+                while (cell.getOperator().hasNext() && !externalCancellationRequested) {
+                    ibd.query.Tuple tuple = cell.getOperator().next();
+                    rows.add(tuple);
+                    largestElement++;
+                    
+                    // Allow cancellation and UI updates
+                    if (Thread.currentThread().isInterrupted() || externalCancellationRequested) {
+                        break;
+                    }
+                }
+                
+                if (externalCancellationRequested) {
+                    // Clean up memory for hash operations
+                    cleanupHashMemoryIfNeeded();
+                    // If cancelled, close this dialog
+                    this.dispose();
+                    return;
+                }
+                
+                if (largestElement >= 0) {
+                    lastPage = largestElement / 15;
+                    currentIndex = 0; // Start at the beginning, not the end
+                    this.updateTable(currentIndex);
+                } else {
+                    this.updateTable(0);
+                }
+            }
         }
 
-        currentIndex = 0;
-        this.getTuples(currentIndex);
-        this.updateTable(currentIndex);
+        if (!(cell instanceof OperationCell operationCell && 
+              operationCell.getType().isSetBasedProcessing && 
+              operationCell.getType().name.equalsIgnoreCase("hash"))) {
+            currentIndex = 0;
+            this.getTuples(currentIndex);
+            this.updateTable(currentIndex);
+        }
+        
         this.updateStats();
         this.verifyButtons();
     }
@@ -238,7 +316,17 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     }
 
     private void getAllTuples() throws Exception {
-        cancelDialog = new JDialog(this, "Loading All Tuples", true);
+        // Determine dialog title and message based on operation type
+        String dialogTitle = "Loading All Tuples";
+        String messageText = "Loading all tuples. You can cancel the operation.";
+        
+        if (cell instanceof OperationCell operationCell && 
+            operationCell.getType().name.equalsIgnoreCase("hash")) {
+            dialogTitle = "Generating Hash Table";
+            messageText = "Generating hash table. You can cancel the operation.";
+        }
+        
+        cancelDialog = new JDialog(this, dialogTitle, true);
         JButton cancelButton = new JButton("Cancel");
         MovingSquareBar movingBar = new MovingSquareBar();
 
@@ -246,7 +334,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         dialogPanel.setLayout(new BoxLayout(dialogPanel, BoxLayout.Y_AXIS));
         dialogPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel messageLabel = new JLabel("Loading all tuples. You can cancel the operation.");
+        JLabel messageLabel = new JLabel(messageText);
         messageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         movingBar.setAlignmentX(Component.CENTER_ALIGNMENT);
         cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -356,7 +444,11 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
         this.resize();
         this.setLocationRelativeTo(null);
-        this.setVisible(true);
+        
+        // Only show the dialog if cancellation was not requested
+        if (!externalCancellationRequested) {
+            this.setVisible(true);
+        }
     }
 
     private void updateTuplesLoaded() {
