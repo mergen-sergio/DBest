@@ -104,18 +104,16 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     
     /**
      * Cleans up operation memory when operations are cancelled
-     * Uses the generic CancellableOperation interface for reusability
+     * Uses the new generic hook-based cleanup system
      */
     private void cleanupOperationMemoryIfNeeded() {
         try {
             if (cell instanceof OperationCell) {
                 OperationCell operationCell = (OperationCell) cell;
                 Operation op = operationCell.getOperator();
-                if (op instanceof CancellableOperation) {
-                    CancellableOperation cancellableOp = (CancellableOperation) op;
-                    cancellableOp.requestCancellation();
-                    cancellableOp.cleanupOnCancellation();
-                }
+                // Simple generic cleanup - base class handles everything automatically!
+                op.requestCancellation();
+                op.cleanupOnCancellation();
             }
         } catch (Exception e) {
             // Log error but don't prevent cancellation

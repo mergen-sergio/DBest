@@ -82,23 +82,23 @@ public class HashIndex extends UnaryOperation {
     }
     
     /**
-     * Cleans up the hash memory and reduces memory usage statistics
-     * Implementation of CancellableOperation interface
+     * Release hash-specific resources.
+     * Overrides the hook method from Operation base class.
      */
     @Override
-    public void cleanupOnCancellation() {
+    protected void releaseOperationResources() {
         // Hash-specific cleanup
         if (tuples != null) {
-            // Calculate and track memory to be freed
             try {
+                // Calculate memory for tracking
                 int tupleSize = getTupleSize();
-                long memoryToReduce = 0;
+                long memoryToTrack = 0;
                 
                 for (List<Tuple> tupleList : tuples.values()) {
-                    memoryToReduce += tupleList.size() * tupleSize;
+                    memoryToTrack += tupleList.size() * tupleSize;
                 }
                 if (constantTuples != null) {
-                    memoryToReduce += constantTuples.size() * tupleSize;
+                    memoryToTrack += constantTuples.size() * tupleSize;
                 }
                 
                 // Clear the collections
@@ -110,8 +110,8 @@ public class HashIndex extends UnaryOperation {
                     constantTuples = null;
                 }
                 
-                // Update operation-specific memory tracking
-                operationMemoryUsed = memoryToReduce;
+                // Track memory for generic cleanup
+                operationMemoryUsed = memoryToTrack;
                 
             } catch (Exception e) {
                 // If we can't calculate exact size, still clear the collections
@@ -126,8 +126,8 @@ public class HashIndex extends UnaryOperation {
             }
         }
         
-        // Call parent cleanup to handle memory statistics and child operations
-        super.cleanupOnCancellation();
+        // Reset cancellation state for retry capability
+        cancellationRequested = false;
     }
 
     //sets the list of columns that will be part of the hash keys

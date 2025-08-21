@@ -810,18 +810,32 @@ public abstract class Operation implements CancellableOperation {
     
     @Override
     public void cleanupOnCancellation() {
-        // Default implementation - subclasses override for specific cleanup
+        // 1. Call operation-specific cleanup first (hook method)
+        releaseOperationResources();
+        
+        // 2. Generic memory cleanup (same for all operations)
         if (operationMemoryUsed > 0) {
             QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - operationMemoryUsed);
             operationMemoryUsed = 0;
         }
-        // Propagate cancellation to child operations if any
+        
+        // 3. Propagate cancellation to child operations
         for (Operation child : childOperations) {
             if (child instanceof CancellableOperation) {
                 ((CancellableOperation) child).requestCancellation();
                 ((CancellableOperation) child).cleanupOnCancellation();
             }
         }
+    }
+    
+    /**
+     * Override this method in subclasses to release operation-specific resources.
+     * Default implementation does nothing - operations only override if they need specific cleanup.
+     * This eliminates code duplication by providing a simple hook for resource cleanup.
+     */
+    protected void releaseOperationResources() {
+        // Default: no resources to release
+        // Subclasses override this method to clear their specific data structures
     }
     
     /**
