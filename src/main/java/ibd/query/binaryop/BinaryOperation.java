@@ -161,5 +161,19 @@ public abstract class BinaryOperation extends Operation {
 
     }
     
+    @Override
+    public void cleanupOperationResources() throws Exception {
+        // Default implementation for binary operations - no specific cleanup needed
+        // Subclasses can override this method for specific cleanup logic
+        
+        // Propagate cleanup to both child operations
+        if (leftOperation != null) {
+            leftOperation.cleanupOperationResources();
+        }
+        if (rightOperation != null) {
+            rightOperation.cleanupOperationResources();
+        }
+    }
+    
 
 }

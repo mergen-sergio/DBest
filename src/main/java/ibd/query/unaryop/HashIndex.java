@@ -82,11 +82,11 @@ public class HashIndex extends UnaryOperation {
     }
     
     /**
-     * Release hash-specific resources.
-     * Overrides the hook method from Operation base class.
+     * Operation-specific cleanup for hash index.
+     * Implements the abstract method from Operation base class.
      */
     @Override
-    protected void releaseOperationResources() {
+    public void cleanupOperationResources() throws Exception {
         // Hash-specific cleanup
         if (tuples != null) {
             try {
@@ -128,6 +128,9 @@ public class HashIndex extends UnaryOperation {
         
         // Reset cancellation state for retry capability
         cancellationRequested = false;
+        
+        // Call parent cleanup to propagate to child operations
+        super.cleanupOperationResources();
     }
 
     //sets the list of columns that will be part of the hash keys

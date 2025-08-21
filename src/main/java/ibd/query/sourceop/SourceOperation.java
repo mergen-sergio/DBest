@@ -64,6 +64,13 @@ public abstract class SourceOperation extends Operation implements SingleSource{
         connectedDataSources[0].alias = alias;
     }
     
+    @Override
+    public void cleanupOperationResources() throws Exception {
+        // Default implementation for source operations - no specific cleanup needed
+        // Subclasses can override this method for specific cleanup logic
+        // Source operations are leaf nodes, so no child operations to propagate to
+    }
+    
     
     
     /**

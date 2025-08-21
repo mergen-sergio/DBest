@@ -810,8 +810,13 @@ public abstract class Operation implements CancellableOperation {
     
     @Override
     public void cleanupOnCancellation() {
-        // 1. Call operation-specific cleanup first (hook method)
-        releaseOperationResources();
+        try {
+            // 1. Call operation-specific cleanup first (abstract method)
+            cleanupOperationResources();
+        } catch (Exception e) {
+            // Log the exception but continue with cleanup
+            Logger.getLogger(Operation.class.getName()).log(Level.WARNING, "Error during operation cleanup", e);
+        }
         
         // 2. Generic memory cleanup (same for all operations)
         if (operationMemoryUsed > 0) {
@@ -829,14 +834,13 @@ public abstract class Operation implements CancellableOperation {
     }
     
     /**
-     * Override this method in subclasses to release operation-specific resources.
-     * Default implementation does nothing - operations only override if they need specific cleanup.
-     * This eliminates code duplication by providing a simple hook for resource cleanup.
+     * Abstract method for operation-specific resource cleanup.
+     * Each operation type must implement its own cleanup logic.
+     * This method is called during cancellation cleanup.
+     * 
+     * @throws Exception if cleanup fails
      */
-    protected void releaseOperationResources() {
-        // Default: no resources to release
-        // Subclasses override this method to clear their specific data structures
-    }
+    public abstract void cleanupOperationResources() throws Exception;
     
     /**
      * Convenience method for operations to check cancellation during processing.

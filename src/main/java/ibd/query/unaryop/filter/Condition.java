@@ -196,7 +196,14 @@ public class Condition extends Operation {
             else return fixedFalseTuple;
         }
 
-
+    }
+    
+    @Override
+    public void cleanupOperationResources() throws Exception {
+        // Default implementation for condition operation - no specific cleanup needed
+        // Subclasses can override this method for specific cleanup logic
+        // Condition operation has no child operations to propagate to
+        // fixedTrueTuple and fixedFalseTuple are simple objects that don't need special cleanup
     }
     
 }

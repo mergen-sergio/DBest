@@ -199,4 +199,14 @@ public class Reference extends Operation {
         }
 
     }
+    
+    @Override
+    public void cleanupOperationResources() throws Exception {
+        // Cleanup reference operation resources
+        if (projectionColumns != null) {
+            projectionColumns.clear();
+            projectionColumns = null;
+        }
+        // Reference operation has no child operations to propagate to
+    }
 }

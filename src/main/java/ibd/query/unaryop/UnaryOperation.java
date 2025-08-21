@@ -74,6 +74,17 @@ public abstract class UnaryOperation extends Operation {
     }
     
     @Override
+    public void cleanupOperationResources() throws Exception {
+        // Default implementation for unary operations - no specific cleanup needed
+        // Subclasses can override this method for specific cleanup logic
+        
+        // Propagate cleanup to child operation
+        if (childOperation != null) {
+            childOperation.cleanupOperationResources();
+        }
+    }
+    
+    @Override
     public void setExposedDataSources() throws Exception {
         ReferedDataSource s[] = childOperation.getExposedDataSources();
         dataSources = new ReferedDataSource[s.length];
