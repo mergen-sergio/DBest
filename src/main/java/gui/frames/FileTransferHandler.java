@@ -84,12 +84,15 @@ public class FileTransferHandler extends mxGraphTransferHandler {
                     } else if (extension.equals("dat")) {
                         openDataFile(file);
                     } else {
+                        MainController.isImporting = false;
                         return false;
                     }
                 }
+                MainController.isImporting = false;
                 return true;
 
             } catch (Exception e) {
+                MainController.isImporting = false;
                 e.printStackTrace();
             }
         }

@@ -167,6 +167,10 @@ public abstract sealed class Cell permits TableCell, OperationCell {
 
     }
 
+    public boolean canBeChild(){
+        return this instanceof OperationCell;
+    }
+
     public List<String> getColumnSourcesAndNames() {
         return this
             .getColumns()

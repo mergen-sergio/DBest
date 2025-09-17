@@ -81,7 +81,11 @@ public final class OperationCell extends Cell {
 
             parents.forEach(parent -> {
                 parent.setChild(this);
-                MainFrame.getGraph().insertEdge(parent.getJCell(), null, "", parent.getJCell(), jCell);
+                if (this.canBeChild()) {
+                    MainFrame.getGraph().insertEdge(parent.getJCell(), null, "", parent.getJCell(), jCell);
+                } else {
+                    System.err.println("Warning: Attempted to create edge to cell that cannot be a child");
+                }
             });
 
             this.updateOperation();
