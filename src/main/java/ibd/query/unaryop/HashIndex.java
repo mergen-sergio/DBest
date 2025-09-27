@@ -81,7 +81,6 @@ public class HashIndex extends UnaryOperation {
         tuples = null;
     }
     
-<<<<<<< HEAD
     @Override
     public void close() throws Exception {
         // Clean up hash tables to free memory (handles both complete and partial hashes)
@@ -106,29 +105,6 @@ public class HashIndex extends UnaryOperation {
                         tupleList.clear();
                     }
                 }
-=======
-    /**
-     * Operation-specific cleanup for hash index.
-     * Implements the abstract method from Operation base class.
-     */
-    @Override
-    public void cleanupOperationResources() throws Exception {
-        // Hash-specific cleanup
-        if (tuples != null) {
-            try {
-                // Calculate memory for tracking
-                int tupleSize = getTupleSize();
-                long memoryToTrack = 0;
-                
-                for (List<Tuple> tupleList : tuples.values()) {
-                    memoryToTrack += tupleList.size() * tupleSize;
-                }
-                if (constantTuples != null) {
-                    memoryToTrack += constantTuples.size() * tupleSize;
-                }
-                
-                // Clear the collections
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                 tuples.clear();
                 tuples = null;
                 
@@ -137,7 +113,6 @@ public class HashIndex extends UnaryOperation {
                     constantTuples = null;
                 }
                 
-<<<<<<< HEAD
                 // Update memory statistics
                 QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - memoryFreed);
                 
@@ -165,38 +140,15 @@ public class HashIndex extends UnaryOperation {
                 } catch (Exception ignored) {
                     // Final safety: set references to null
                     tuples = null;
-=======
-                // Track memory for generic cleanup
-                operationMemoryUsed = memoryToTrack;
-                
-            } catch (Exception e) {
-                // If we can't calculate exact size, still clear the collections
-                if (tuples != null) {
-                    tuples.clear();
-                    tuples = null;
-                }
-                if (constantTuples != null) {
-                    constantTuples.clear();
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                     constantTuples = null;
                 }
             }
         }
         
-<<<<<<< HEAD
         // Call parent close to clean up child operations
         super.close();
     }
     
-=======
-        // Reset cancellation state for retry capability
-        cancellationRequested = false;
-        
-        // Call parent cleanup to propagate to child operations
-        super.cleanupOperationResources();
-    }
-
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
     //sets the list of columns that will be part of the hash keys
     private void prepareHashColumns() throws Exception {
 
@@ -429,18 +381,12 @@ public class HashIndex extends UnaryOperation {
         private void buildHash() {
             //build hash, if one does not exist yet
             if (tuples == null) {
-                // Reset cancellation flag to allow retry after previous cancellation
-                cancellationRequested = false;
-                // Clear thread interrupted status as well
+                // Clear thread interrupted status to allow fresh start
                 Thread.currentThread().interrupted();
                 
                 tuples = new HashMap();
                 constantTuples = new ArrayList();
                 long memoryUsed = 0;
-<<<<<<< HEAD
-=======
-                boolean wasInterrupted = false;
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                 
                 try {
                     //accesses and indexes all tuples that come from the child operation
@@ -448,7 +394,6 @@ public class HashIndex extends UnaryOperation {
                     int tupleSize = childOperation.getTupleSize();
                     int processedCount = 0;
                     while (it.hasNext()) {
-<<<<<<< HEAD
                         // Check for cancellation every 1000 tuples to allow responsive cancellation
                         if (processedCount % 1000 == 0 && Thread.currentThread().isInterrupted()) {
                             // Clear partially built hash and exit
@@ -457,12 +402,6 @@ public class HashIndex extends UnaryOperation {
                             tuples = null;
                             constantTuples = null;
                             return;
-=======
-                        // Use generic cancellation check
-                        if (isCancellationRequested()) {
-                            wasInterrupted = true;
-                            break;
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                         }
                         
                         Tuple tuple = (Tuple) it.next();
@@ -503,32 +442,12 @@ public class HashIndex extends UnaryOperation {
                     }
 
                 } catch (Exception ex) {
-<<<<<<< HEAD
                     
                 }
                 
                 // Only update memory stats if hash building completed successfully
                 if (tuples != null && !Thread.currentThread().isInterrupted()) {
                     QueryStats.MEMORY_USED += memoryUsed;
-=======
-                    wasInterrupted = true; // Treat exceptions as interruption
-                }
-                
-                // Only add memory usage if not interrupted
-                if (!wasInterrupted) {
-                    QueryStats.MEMORY_USED += memoryUsed;
-                    operationMemoryUsed += memoryUsed; // Track for cleanup
-                } else {
-                    // Clean up immediately if interrupted
-                    if (tuples != null) {
-                        tuples.clear();
-                        tuples = null;
-                    }
-                    if (constantTuples != null) {
-                        constantTuples.clear();
-                        constantTuples = null;
-                    }
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                 }
             }
         }

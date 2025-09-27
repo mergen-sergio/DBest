@@ -11,15 +11,10 @@ import files.FileUtils;
 import gui.utils.JTableUtils;
 import org.kordamp.ikonli.dashicons.Dashicons;
 import org.kordamp.ikonli.swing.FontIcon;
-<<<<<<< HEAD
-=======
-import ibd.query.CancellableOperation;
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
 import ibd.query.Operation;
 import ibd.query.QueryStats;
 import ibd.query.ReferedDataSource;
 import ibd.query.Tuple;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
@@ -105,28 +100,6 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         externalCancellationRequested = false;
     }
     
-<<<<<<< HEAD
-=======
-    /**
-     * Cleans up operation memory when operations are cancelled
-     * Uses the new generic hook-based cleanup system
-     */
-    private void cleanupOperationMemoryIfNeeded() {
-        try {
-            if (cell instanceof OperationCell) {
-                OperationCell operationCell = (OperationCell) cell;
-                Operation op = operationCell.getOperator();
-                // Simple generic cleanup - base class handles everything automatically!
-                op.requestCancellation();
-                op.cleanupOnCancellation();
-            }
-        } catch (Exception e) {
-            // Log error but don't prevent cancellation
-            System.err.println("Error cleaning operation memory: " + e.getMessage());
-        }
-    }
-
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
     public DataFrame(Cell cell) throws Exception {
 
         super((Window) null, ConstantController.getString("dataframe"));
@@ -178,7 +151,6 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         if (cell instanceof OperationCell) {
             OperationCell operationCell = (OperationCell) cell;
             if (operationCell.getType().isSetBasedProcessing) {
-<<<<<<< HEAD
                 // For set-based operations, directly process all tuples without showing dialog
                 // since OpenDataFrame already showed the loading dialog
                 currentIndex = 0;
@@ -227,61 +199,6 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             this.getTuples(currentIndex);
             this.updateTable(currentIndex);
         }
-=======
-                // Check if this operation is cancellable and handled by OpenDataFrame
-                if (operationCell.getOperator() instanceof CancellableOperation) {
-                    // For cancellable operations, directly process all tuples without showing dialog
-                    // since OpenDataFrame already showed the loading dialog
-                    currentIndex = 0;
-                    while (cell.getOperator().hasNext() && !externalCancellationRequested) {
-                        ibd.query.Tuple tuple = cell.getOperator().next();
-                        rows.add(tuple);
-                        largestElement++;
-                        
-                        // Allow cancellation and UI updates
-                        if (Thread.currentThread().isInterrupted() || externalCancellationRequested) {
-                            break;
-                        }
-                    }
-                    
-                    if (externalCancellationRequested) {
-                        // Clean up memory for cancelled operations
-                        cleanupOperationMemoryIfNeeded();
-                        // If cancelled, close this dialog
-                        this.dispose();
-                        return;
-                    }
-                    
-                    if (largestElement >= 0) {
-                        lastPage = largestElement / 15;
-                        currentIndex = 0; // Start at the beginning, not the end
-                        this.updateTable(currentIndex);
-                    } else {
-                        this.updateTable(0);
-                    }
-                } else {
-                    // For non-cancellable set-based operations, use the regular loading process
-                    this.getAllTuples();
-                    this.updateTable(lastPage);
-                }
-            }
-        }
-
-        boolean skipTupleLoading = false;
-        if (cell instanceof OperationCell) {
-            OperationCell operationCell = (OperationCell) cell;
-            if (operationCell.getType().isSetBasedProcessing && 
-                operationCell.getOperator() instanceof CancellableOperation) {
-                skipTupleLoading = true;
-            }
-        }
-        
-        if (!skipTupleLoading) {
-            currentIndex = 0;
-            this.getTuples(currentIndex);
-            this.updateTable(currentIndex);
-        }
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
         
         this.updateStats();
         this.verifyButtons();
@@ -392,11 +309,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         
         if (cell instanceof OperationCell) {
             OperationCell operationCell = (OperationCell) cell;
-<<<<<<< HEAD
             if (operationCell.getType().isSetBasedProcessing) {
-=======
-            if (operationCell.getOperator() instanceof CancellableOperation) {
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                 dialogTitle = "Generating " + operationCell.getType().displayName;
                 messageText = "Generating " + operationCell.getType().displayName.toLowerCase() + ". You can cancel the operation.";
             }

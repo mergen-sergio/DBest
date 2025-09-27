@@ -32,18 +32,13 @@ public class OpenDataFrame implements Runnable{
     
     /**
      * Cleans up operation memory when operations are cancelled
-     * Uses the generic CancellableOperation interface for reusability
+     * Uses the simple close() method for memory cleanup
      */
     private static void cleanupOperationMemoryIfNeeded(Cell cell) {
         try {
-            if (cell instanceof OperationCell) {
-                OperationCell operationCell = (OperationCell) cell;
-                ibd.query.Operation op = operationCell.getOperator();
-                if (op instanceof ibd.query.CancellableOperation) {
-                    ibd.query.CancellableOperation cancellableOp = (ibd.query.CancellableOperation) op;
-                    cancellableOp.requestCancellation();
-                    cancellableOp.cleanupOnCancellation();
-                }
+            if (cell != null) {
+                // Use the simple cleanup approach via freeOperatorResources
+                cell.freeOperatorResources();
             }
         } catch (Exception e) {
             // Log error but don't prevent cancellation
@@ -67,13 +62,8 @@ public class OpenDataFrame implements Runnable{
                 // Check if this is a cancellable set-based operation (hash, etc.)
                 if (cell instanceof OperationCell) {
                     OperationCell operationCell = (OperationCell) cell;
-<<<<<<< HEAD
                     if (operationCell.getType().isSetBasedProcessing) {
-=======
-                    if (operationCell.getType().isSetBasedProcessing &&
-                        operationCell.getOperator() instanceof ibd.query.CancellableOperation) {
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
-                        showCancellableOperationLoadingDialog(cell, operationCell.getType().displayName);
+                        showOperationLoadingDialog(cell, operationCell.getType().displayName);
                     } else {
                         try {
                             new DataFrame(cell);
@@ -94,7 +84,7 @@ public class OpenDataFrame implements Runnable{
         }
     }
 
-    private void showCancellableOperationLoadingDialog(Cell cell, String operationDisplayName) {
+    private void showOperationLoadingDialog(Cell cell, String operationDisplayName) {
         SwingUtilities.invokeLater(() -> {
             loadingDialog = new JDialog((Frame) null, operationDisplayName + " Operation", true);
             JButton cancelButton = new JButton("Cancel");
@@ -145,18 +135,9 @@ public class OpenDataFrame implements Runnable{
                     movingBar.stopAnimation();
                     loadingDialog.dispose();
                     
-<<<<<<< HEAD
                     // If cancelled, dispose of any created DataFrame
                     if (isCancelled() && dataFrame != null) {
                         dataFrame.dispose();
-=======
-                    // If cancelled, dispose of any created DataFrame and clean up memory
-                    if (isCancelled()) {
-                        cleanupOperationMemoryIfNeeded(cell);
-                        if (dataFrame != null) {
-                            dataFrame.dispose();
-                        }
->>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                     }
                     // If not cancelled, the DataFrame will already be visible
                 }
