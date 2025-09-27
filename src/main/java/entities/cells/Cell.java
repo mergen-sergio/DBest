@@ -212,7 +212,15 @@ public abstract sealed class Cell permits TableCell, OperationCell {
     }
 
     public void freeOperatorResources(){
-        //operator.freeResources();
+        // Simple memory cleanup - call freeResources if available
+        if (operator != null) {
+            try {
+                // Try to clean up hash tables and other data structures
+                operator.close();
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+        }
     }
 
     public Pair<Integer, CellStats> getCellStats(int amountOfTuples, CellStats initialCellStats){
