@@ -29,6 +29,27 @@ public class OpenDataFrame implements Runnable{
     public OpenDataFrame(mxCell jCell){
         this.jCell = jCell;
     }
+    
+    /**
+     * Cleans up operation memory when operations are cancelled
+     * Uses the generic CancellableOperation interface for reusability
+     */
+    private static void cleanupOperationMemoryIfNeeded(Cell cell) {
+        try {
+            if (cell instanceof OperationCell) {
+                OperationCell operationCell = (OperationCell) cell;
+                ibd.query.Operation op = operationCell.getOperator();
+                if (op instanceof ibd.query.CancellableOperation) {
+                    ibd.query.CancellableOperation cancellableOp = (ibd.query.CancellableOperation) op;
+                    cancellableOp.requestCancellation();
+                    cancellableOp.cleanupOnCancellation();
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't prevent cancellation
+            System.err.println("Error cleaning operation memory: " + e.getMessage());
+        }
+    }
 
     @Override
     public void run() {
@@ -46,7 +67,12 @@ public class OpenDataFrame implements Runnable{
                 // Check if this is a cancellable set-based operation (hash, etc.)
                 if (cell instanceof OperationCell) {
                     OperationCell operationCell = (OperationCell) cell;
+<<<<<<< HEAD
                     if (operationCell.getType().isSetBasedProcessing) {
+=======
+                    if (operationCell.getType().isSetBasedProcessing &&
+                        operationCell.getOperator() instanceof ibd.query.CancellableOperation) {
+>>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                         showCancellableOperationLoadingDialog(cell, operationCell.getType().displayName);
                     } else {
                         try {
@@ -119,9 +145,18 @@ public class OpenDataFrame implements Runnable{
                     movingBar.stopAnimation();
                     loadingDialog.dispose();
                     
+<<<<<<< HEAD
                     // If cancelled, dispose of any created DataFrame
                     if (isCancelled() && dataFrame != null) {
                         dataFrame.dispose();
+=======
+                    // If cancelled, dispose of any created DataFrame and clean up memory
+                    if (isCancelled()) {
+                        cleanupOperationMemoryIfNeeded(cell);
+                        if (dataFrame != null) {
+                            dataFrame.dispose();
+                        }
+>>>>>>> 0f80b781381b366f2d4f57bbaa3c4ed2d6b9ab25
                     }
                     // If not cancelled, the DataFrame will already be visible
                 }
