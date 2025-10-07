@@ -80,7 +80,75 @@ public class HashIndex extends UnaryOperation {
         //a new one is created when the first query is executed. 
         tuples = null;
     }
-
+    
+    @Override
+    public void close() throws Exception {
+        // Clean up hash tables to free memory (handles both complete and partial hashes)
+        if (tuples != null) {
+            // Calculate approximate memory being freed
+            try {
+                int tupleSize = getTupleSize();
+                long memoryFreed = 0;
+                
+                for (List<Tuple> tupleList : tuples.values()) {
+                    if (tupleList != null) {
+                        memoryFreed += tupleList.size() * tupleSize;
+                    }
+                }
+                if (constantTuples != null) {
+                    memoryFreed += constantTuples.size() * tupleSize;
+                }
+                
+                // Clear the collections aggressively
+                for (List<Tuple> tupleList : tuples.values()) {
+                    if (tupleList != null) {
+                        tupleList.clear();
+                    }
+                }
+                tuples.clear();
+                tuples = null;
+                
+                if (constantTuples != null) {
+                    constantTuples.clear();
+                    constantTuples = null;
+                }
+                
+                // Update memory statistics
+                QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - memoryFreed);
+                
+                // Force garbage collection hint (not guaranteed, but helps)
+                System.gc();
+                
+            } catch (Exception e) {
+                // If we can't calculate exact size, still clear the collections aggressively
+                try {
+                    if (tuples != null) {
+                        for (List<Tuple> tupleList : tuples.values()) {
+                            if (tupleList != null) {
+                                tupleList.clear();
+                            }
+                        }
+                        tuples.clear();
+                        tuples = null;
+                    }
+                    if (constantTuples != null) {
+                        constantTuples.clear();
+                        constantTuples = null;
+                    }
+                    // Force garbage collection hint
+                    System.gc();
+                } catch (Exception ignored) {
+                    // Final safety: set references to null
+                    tuples = null;
+                    constantTuples = null;
+                }
+            }
+        }
+        
+        // Call parent close to clean up child operations
+        super.close();
+    }
+    
     //sets the list of columns that will be part of the hash keys
     private void prepareHashColumns() throws Exception {
 
@@ -277,6 +345,14 @@ public class HashIndex extends UnaryOperation {
         private void queryHash() {
             //here is where we build an iterator to traverse the query results
             //the hash is queried using as key the values of the hashed filter columns
+            
+            // Check if the hash was cancelled/cleaned up
+            if (tuples == null) {
+                // Return empty iterator if hash was cancelled
+                it = new ArrayList<Tuple>().iterator();
+                return;
+            }
+            
             String key = "";
             for (SingleColumnLookupFilter lookupFilter : hashedFilters) {
                 Element elem2 = lookupFilter.getSecondElement();
@@ -286,25 +362,50 @@ public class HashIndex extends UnaryOperation {
             List<Tuple> result = tuples.get(key);
             if (result != null) {
                 //it = result.iterator();
-                it = new TwoListsIterator(constantTuples.iterator(), result.iterator());
+                // Also check constantTuples for null safety
+                if (constantTuples != null) {
+                    it = new TwoListsIterator(constantTuples.iterator(), result.iterator());
+                } else {
+                    it = result.iterator();
+                }
             } else {
-                it = constantTuples.iterator();
-                //it = new ArrayList<Tuple>().iterator();
+                // Safe check for constantTuples as well
+                if (constantTuples != null) {
+                    it = constantTuples.iterator();
+                } else {
+                    it = new ArrayList<Tuple>().iterator();
+                }
             }
         }
 
         private void buildHash() {
             //build hash, if one does not exist yet
             if (tuples == null) {
+                // Clear thread interrupted status to allow fresh start
+                Thread.currentThread().interrupted();
+                
                 tuples = new HashMap();
                 constantTuples = new ArrayList();
                 long memoryUsed = 0;
+                
                 try {
                     //accesses and indexes all tuples that come from the child operation
                     it = childOperation.lookUp(processedTuples, false);
                     int tupleSize = childOperation.getTupleSize();
+                    int processedCount = 0;
                     while (it.hasNext()) {
+                        // Check for cancellation every 1000 tuples to allow responsive cancellation
+                        if (processedCount % 1000 == 0 && Thread.currentThread().isInterrupted()) {
+                            // Clear partially built hash and exit
+                            tuples.clear();
+                            constantTuples.clear();
+                            tuples = null;
+                            constantTuples = null;
+                            return;
+                        }
+                        
                         Tuple tuple = (Tuple) it.next();
+                        processedCount++;
 
                         boolean foundNullTuple = false;
                         for (LookupFilter lookupFilter : nullFilters) {
@@ -315,6 +416,7 @@ public class HashIndex extends UnaryOperation {
                             {
                                 constantTuples.add(tuple);
                                 memoryUsed += tupleSize;
+                                foundNullTuple = true;
                                 break;
                             }
                         }
@@ -340,10 +442,14 @@ public class HashIndex extends UnaryOperation {
                     }
 
                 } catch (Exception ex) {
+                    
                 }
-                QueryStats.MEMORY_USED += memoryUsed;
+                
+                // Only update memory stats if hash building completed successfully
+                if (tuples != null && !Thread.currentThread().isInterrupted()) {
+                    QueryStats.MEMORY_USED += memoryUsed;
+                }
             }
-
         }
 
         @Override
