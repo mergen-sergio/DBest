@@ -217,6 +217,9 @@ public abstract sealed class Cell permits TableCell, OperationCell {
             try {
                 // Try to clean up hash tables and other data structures
                 operator.close();
+                
+                //operator is reopen in case the processing continues
+                openOperator();
             } catch (Exception e) {
                 // Ignore cleanup errors
             }

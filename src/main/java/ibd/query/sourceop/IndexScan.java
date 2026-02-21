@@ -89,6 +89,8 @@ public class IndexScan extends SourceOperation {
     @Override
     public void prepare() throws Exception {
 
+        table.open();
+        
         super.prepare();
 
         //separates filters into slow and fast, based on the tables hability to efficiently handle the search condition

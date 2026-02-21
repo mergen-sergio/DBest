@@ -81,6 +81,11 @@ public class MemoryPageFile extends AbstractStoringPageFile {
     public void flush() {
         
     }
+    
+    @Override
+    public void reopen() {
+        
+    }
 
     @Override
     public boolean initialize(PageHeader header) {

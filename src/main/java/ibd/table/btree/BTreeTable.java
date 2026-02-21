@@ -147,8 +147,11 @@ public class BTreeTable extends Table {
     @Override
     public void open() throws Exception {
         if (loaded) {
+            //resources mey be implicititly closed by jvm when a thread is cancelled, so we need to assure that file handles remain valid
+            tree.reopen();
             return;
         }
+        
 
         Path fileName = Paths.get(folder + File.separator + name);
         boolean exists = Files.exists(fileName);
@@ -178,7 +181,7 @@ public class BTreeTable extends Table {
             tree = new BPlusTreeFileTable(p, prototype);
         }
         tree.open();
-
+        
         loaded = true;
     }
 

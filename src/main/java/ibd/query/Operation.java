@@ -6,7 +6,6 @@
 package ibd.query;
 
 import ibd.query.binaryop.BinaryOperation;
-import ibd.query.binaryop.conditional.Exists;
 import ibd.query.binaryop.join.Join;
 import ibd.query.lookup.ColumnElement;
 import ibd.query.lookup.CompositeLookupFilter;
@@ -20,8 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * An operation in this context is defined as a data transformation step within

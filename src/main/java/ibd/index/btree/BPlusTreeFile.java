@@ -13,6 +13,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class implements a B+ tree whose nodes are stored on a disk file.
@@ -110,7 +112,11 @@ public abstract class BPlusTreeFile extends BPlusTree implements PageSerializati
             init = true;
         }
     }
-
+    
+    public void reopen() throws Exception{
+        file.reopen();
+    }
+    
     /**
      * Returns the capacity of a directory node (= 1 + maximum number of entries
      * in a directory node).

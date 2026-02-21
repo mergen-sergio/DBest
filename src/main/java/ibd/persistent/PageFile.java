@@ -132,6 +132,13 @@ public abstract class PageFile<P extends Page> {
    * @param page Page to write
    */
   protected abstract void writePage(int pageid, P page);
+  
+   /**
+   * Reopens the file, just to make sure that the internal variables are still valid
+   */
+  public abstract void reopen() throws Exception;  
+  
+  
 
   /**
    * Closes this file.

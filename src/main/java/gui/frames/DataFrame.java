@@ -296,7 +296,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 this.rows.add(tuple);
                 largestElement++;
             }
-
+            
             if (!this.cell.getOperator().hasNext())
                 this.lastPage = largestElement / 15;
         }
@@ -379,7 +379,6 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                         operationName = cell.getName();
                     }
                     lblText.setText(operationName + ":");
-                    
                     try {
                         updateTable(currentIndex);
                         updateTuplesLoaded();

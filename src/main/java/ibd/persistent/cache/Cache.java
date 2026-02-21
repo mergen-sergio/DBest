@@ -164,6 +164,12 @@ public abstract class Cache<P extends Page> extends PageFile<P> {
     }
 
     @Override
+    public void reopen() throws Exception{
+        //flush();
+        file.reopen();
+    }
+    
+    @Override
     public void close() {
         //flush();
         file.close();

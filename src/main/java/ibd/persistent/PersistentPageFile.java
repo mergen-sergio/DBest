@@ -44,7 +44,7 @@ public class PersistentPageFile<P extends Page> extends AbstractStoringPageFile 
     /**
      * The file storing the pages.
      */
-    protected final FileChannel file;
+    protected  FileChannel file;
 
     
 
@@ -53,8 +53,8 @@ public class PersistentPageFile<P extends Page> extends AbstractStoringPageFile 
      */
     private boolean existed;
 
-    
-    
+    Path fileName;
+        
   
     
     /**
@@ -64,6 +64,8 @@ public class PersistentPageFile<P extends Page> extends AbstractStoringPageFile 
      */
     public PersistentPageFile(int pageSize, Path filename, boolean recreate) throws IOException {
         super(pageSize);
+        this.fileName = filename;
+        
         // create from existing file
         if (recreate) {
             File f = filename.toFile();
@@ -73,9 +75,13 @@ public class PersistentPageFile<P extends Page> extends AbstractStoringPageFile 
         existed = Files.exists(filename);
 
         file = FileChannel.open(filename, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+
     }
 
-    
+    @Override
+    public void reopen() throws Exception {
+        file = FileChannel.open(fileName, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    }
     
     /**
      * Reads the page with the given id from this file.
