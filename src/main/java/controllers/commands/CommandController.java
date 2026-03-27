@@ -10,6 +10,13 @@ public class CommandController {
 
     private final Deque<UndoableRedoableCommand> redos;
 
+    /** Called before every UndoableRedoableCommand is executed (used by UndoRedoManager). */
+    private static Runnable beforeExecuteHook;
+
+    public static void setBeforeExecuteHook(Runnable hook) {
+        beforeExecuteHook = hook;
+    }
+
     public CommandController() {
         this.history = new ArrayList<>();
         this.undos = new ArrayDeque<>();
@@ -22,12 +29,12 @@ public class CommandController {
         command.execute();
 
         this.history.add(command);
-        this.undos.clear();
-        this.redos.clear();
     }
 
     public void execute(UndoableRedoableCommand command) {
         if (command == null) return;
+
+        if (beforeExecuteHook != null) beforeExecuteHook.run();
 
         command.execute();
 
