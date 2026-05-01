@@ -113,6 +113,9 @@ public class MainController extends MainFrame {
     /** True while CanvasSnapshot.restore() is executing. Suppresses graph listeners. */
     public static boolean isRestoring = false;
 
+    /** Snapshot captured on mousePressed so CELLS_MOVED can push a pre-move state. */
+    private CanvasSnapshot preMoveSnapshot = null;
+
     /**
      * Checks if an OperationCell represents a join operation by checking its form
      */
@@ -214,6 +217,8 @@ public class MainController extends MainFrame {
                 }
 
                 if (!source) {
+                    // Save snapshot before any state change (drag-based connection not via command)
+                    undoRedoManager.saveSnapshot();
                     Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
                             && previousTarget != terminalCell) {
@@ -269,6 +274,8 @@ public class MainController extends MainFrame {
                         }
                     }
                 } else {
+                    // Save snapshot before any state change (drag-based source reconnect)
+                    undoRedoManager.saveSnapshot();
                     Object previousSource = lastSources.get(edgeCell);
                     if (previousSource != null && previousSource instanceof mxCell prevSourceCell
                             && previousSource != terminalCell) {
@@ -332,6 +339,30 @@ public class MainController extends MainFrame {
                 lastSources.put(edgeCell, edgeCell.getSource());
             }
         }
+
+        // Capture a pre-move snapshot when the user presses the mouse on a cell.
+        // CELLS_MOVED fires AFTER the move, so we need the state captured here (before).
+        graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (isRestoring) return;
+                Object cell = graphComponent.getCellAt(e.getX(), e.getY());
+                if (cell instanceof mxCell c && !c.isEdge()) {
+                    preMoveSnapshot = CanvasSnapshot.capture();
+                }
+            }
+        });
+
+        // Save a snapshot when the user finishes dragging cells to a new position
+        graph.addListener(mxEvent.CELLS_MOVED, (sender, evt) -> {
+            if (MainController.isRestoring) return;
+            if (preMoveSnapshot != null) {
+                undoRedoManager.pushSnapshot(preMoveSnapshot);
+                preMoveSnapshot = null;
+            } else {
+                undoRedoManager.saveSnapshot(); // fallback
+            }
+        });
 
         // Set the background color of the graph component
         graphComponent.getViewport().setOpaque(true);

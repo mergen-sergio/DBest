@@ -25,8 +25,13 @@ public final class UndoRedoManager {
 
     /** Call this BEFORE performing any user action that modifies the canvas. */
     public void saveSnapshot() {
+        pushSnapshot(CanvasSnapshot.capture());
+    }
+
+    /** Pushes an already-captured snapshot onto the undo stack (e.g. captured before a drag). */
+    public void pushSnapshot(CanvasSnapshot snapshot) {
         redoStack.clear();
-        undoStack.push(CanvasSnapshot.capture());
+        undoStack.push(snapshot);
         while (undoStack.size() > MAX_HISTORY) {
             undoStack.pollLast(); // drop oldest
         }

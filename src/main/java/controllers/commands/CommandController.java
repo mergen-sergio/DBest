@@ -4,11 +4,9 @@ import java.util.*;
 
 public class CommandController {
 
+    private static final int MAX_HISTORY = 200;
+
     private final List<Command> history;
-
-    private final Deque<UndoableRedoableCommand> undos;
-
-    private final Deque<UndoableRedoableCommand> redos;
 
     /** Called before every UndoableRedoableCommand is executed (used by UndoRedoManager). */
     private static Runnable beforeExecuteHook;
@@ -19,8 +17,6 @@ public class CommandController {
 
     public CommandController() {
         this.history = new ArrayList<>();
-        this.undos = new ArrayDeque<>();
-        this.redos = new ArrayDeque<>();
     }
 
     public void execute(Command command) {
@@ -28,7 +24,7 @@ public class CommandController {
 
         command.execute();
 
-        this.history.add(command);
+        addToHistory(command);
     }
 
     public void execute(UndoableRedoableCommand command) {
@@ -38,39 +34,14 @@ public class CommandController {
 
         command.execute();
 
+        addToHistory(command);
+    }
+
+    private void addToHistory(Command command) {
         this.history.add(command);
-        this.redos.clear();
-        this.undos.push(command);
-    }
-
-    public void undo() {
-        if (this.undos.isEmpty()) return;
-
-        UndoableRedoableCommand command = this.undos.pop();
-
-        command.undo();
-
-        this.redos.push(command);
-        this.history.add(command);
-    }
-
-    public void redo() {
-        if (this.redos.isEmpty()) return;
-
-        UndoableRedoableCommand command = this.redos.pop();
-
-        command.redo();
-
-        this.undos.push(command);
-        this.history.add(command);
-    }
-
-    public boolean canUndo() {
-        return !this.undos.isEmpty();
-    }
-
-    public boolean canRedo() {
-        return !this.redos.isEmpty();
+        if (this.history.size() > MAX_HISTORY) {
+            this.history.remove(0);
+        }
     }
 
     public List<Command> getHistory() {
