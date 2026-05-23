@@ -198,7 +198,13 @@ public final class CanvasSnapshot {
                         };
                         if (tc == null) continue;
 
-                        tc.setAlias(snap.alias());
+                        // Use asOperator() instead of setAlias() so that jCell label,
+                        // column source names and sourceOperator alias are all updated.
+                        // At this point the cell has no children yet, so
+                        // TreeUtils.updateTreeBelow() inside asOperator() is a safe no-op.
+                        if (snap.alias() != null && !snap.alias().isBlank()) {
+                            tc.asOperator(snap.alias());
+                        }
                         tc.removeChild();   // clear stale child ref from prior canvas state
                         created[i] = tc;
 

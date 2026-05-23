@@ -217,8 +217,12 @@ public class MainController extends MainFrame {
                 }
 
                 if (!source) {
-                    // Save snapshot before any state change (drag-based connection not via command)
-                    undoRedoManager.saveSnapshot();
+                    // Save snapshot only when connecting to a real operation cell
+                    // (skip if target is the invisible tracking cell used during edge creation)
+                    Optional<Cell> optionalTerminalForSnapshot = CellUtils.getActiveCell(terminalCell);
+                    if (optionalTerminalForSnapshot.isPresent()) {
+                        undoRedoManager.saveSnapshot();
+                    }
                     Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
                             && previousTarget != terminalCell) {
@@ -801,18 +805,13 @@ public class MainController extends MainFrame {
                 if (canConnect) {
                     commandController.execute(new ConnectNodesCommand(
                         sourceJCell, this.jCell, this.invisibleCellReference));
-                } else {
-                    // Connection invalid — discard invisible cell
-                    if (this.invisibleCellReference.get() != null) {
-                        MainFrame.getGraph().removeCells(
-                            new Object[]{this.invisibleCellReference.get()}, true);
-                        this.invisibleCellReference.set(null);
-                    }
+                    // Reset edge mode only on successful connection
+                    resetCurrentEdgeReferenceValue();
+                    this.currentActionReference.set(ConstantController.NONE_ACTION);
                 }
-
-                // Always reset edge state after second click
-                resetCurrentEdgeReferenceValue();
-                this.currentActionReference.set(ConstantController.NONE_ACTION);
+                // On invalid target: silently ignore and keep the edge going
+                // so the user can click on the correct destination.
+                // Press Escape to cancel.
             }
         }
     }
@@ -885,6 +884,9 @@ public class MainController extends MainFrame {
         // )) {
         // return;
         // }
+        // Save snapshot BEFORE renaming so the rename itself can be undone with Ctrl+Z
+        undoRedoManager.saveSnapshot();
+
         Cell cell_ = CellUtils.getActiveCell(cell).get();
 
         if (cell_ instanceof TableCell)
