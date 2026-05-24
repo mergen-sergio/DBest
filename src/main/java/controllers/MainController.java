@@ -1148,6 +1148,9 @@ public class MainController extends MainFrame {
             }
 
             System.out.print("\n\n");
+        } else if (keyCode == KeyEvent.VK_A && (event.getModifiersEx() &  KeyEvent.CTRL_DOWN_MASK) != 0) {
+            Object[] allCells = graph.getChildVertices(graph.getDefaultParent());
+            graph.setSelectionCells(allCells);
         } else if (keyCode == KeyEvent.VK_A) {
             if (this.jCell != null && CellUtils.getActiveCell(this.jCell).isPresent()) {
                 CellUtils.getActiveCell(this.jCell).get().getTree().getTreeLayer();
