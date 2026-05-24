@@ -75,8 +75,33 @@ public abstract class JoinOperators implements IOperator {
         }
         Object[] edges = MainController.getGraph().getIncomingEdges(jCell);
 
-        MainController.getGraph().getModel().setValue(edges[0], ConstantController.getString("left"));
-        MainController.getGraph().getModel().setValue(edges[1], ConstantController.getString("right"));
+        if (edges.length < 2) {
+            if (edges.length == 1) {
+                MainController.getGraph().getModel().setValue(edges[0], ConstantController.getString("left"));
+            }
+
+            return;
+        }
+
+        String leftLabel = ConstantController.getString("left");
+        String rightLabel = ConstantController.getString("right");
+        Object firstEdgeValue = MainController.getGraph().getModel().getValue(edges[0]);
+        Object secondEdgeValue = MainController.getGraph().getModel().getValue(edges[1]);
+
+        if (leftLabel.equals(firstEdgeValue) || rightLabel.equals(secondEdgeValue)) {
+            MainController.getGraph().getModel().setValue(edges[0], leftLabel);
+            MainController.getGraph().getModel().setValue(edges[1], rightLabel);
+            return;
+        }
+
+        if (rightLabel.equals(firstEdgeValue) || leftLabel.equals(secondEdgeValue)) {
+            MainController.getGraph().getModel().setValue(edges[0], rightLabel);
+            MainController.getGraph().getModel().setValue(edges[1], leftLabel);
+            return;
+        }
+
+        MainController.getGraph().getModel().setValue(edges[0], leftLabel);
+        MainController.getGraph().getModel().setValue(edges[1], rightLabel);
     }
     
     

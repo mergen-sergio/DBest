@@ -160,6 +160,23 @@ public final class OperationCell extends Cell {
     }
 
     public void addParent(Cell cell) {
+        if (cell == null) {
+            return;
+        }
+
+        if (this.parents.size() == 1) {
+            Object[] incomingEdges = MainFrame.getGraph().getIncomingEdges(this.getJCell());
+
+            if (incomingEdges.length == 1 && incomingEdges[0] instanceof mxCell edgeCell) {
+                Object edgeValue = edgeCell.getValue();
+
+                if (ConstantController.getString("right").equals(edgeValue)) {
+                    this.parents.add(0, cell);
+                    return;
+                }
+            }
+        }
+
         this.parents.add(cell);
     }
 
