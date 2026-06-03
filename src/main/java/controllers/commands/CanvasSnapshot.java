@@ -3,6 +3,7 @@ package controllers.commands;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.view.mxGraph;
+import utils.TopologicalSort;
 import controllers.ConstantController;
 import entities.cells.Cell;
 import entities.cells.CSVTableCell;
@@ -27,31 +28,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Immutable snapshot of the entire canvas state (visual + business logic).
- * Used by {@link UndoRedoManager} to implement timeline-based undo/redo.
- */
 public final class CanvasSnapshot {
 
-    // -----------------------------------------------------------------------
-    // Snapshot data model
-
-    /** All information needed to restore a single vertex cell. */
     private record CellSnap(
         boolean isTable,
-        String name,           // display name (may be user-renamed)
+        String name,
         String alias,
-        String opTypeName,     // OperationType.name() — null for tables
-        List<String> args,     // null for tables
-        boolean initialized,   // hasBeenInitialized — false for tables
+        String opTypeName,
+        List<String> args,
+        boolean initialized,
         double x, double y, double w, double h
     ) {}
 
-    /** Indices (into {@code cells} list) of source → target for each edge, plus its visual label. */
     private record EdgeSnap(int srcIdx, int tgtIdx, String label) {}
-
-    // -----------------------------------------------------------------------
-    // Fields
 
     private final List<CellSnap> cells;
     private final List<EdgeSnap> edges;
@@ -61,10 +50,6 @@ public final class CanvasSnapshot {
         this.edges = edges;
     }
 
-    // -----------------------------------------------------------------------
-    // Capture
-
-    /** Captures the current canvas state into a new snapshot. */
     public static CanvasSnapshot capture() {
         Map<mxCell, Integer> jCellToIdx = new LinkedHashMap<>();
         List<CellSnap> cellSnaps = new ArrayList<>();
@@ -72,8 +57,6 @@ public final class CanvasSnapshot {
 
         mxGraph graph = MainFrame.getGraph();
 
-        // Walk every entry in ACTIVE_CELLS — skip edges (they have no Cell entry anyway)
-        // and skip cells that belong to the sidebar tablesGraph, not the main canvas.
         for (Map.Entry<com.mxgraph.model.mxICell, Cell> entry
                 : CellRepository.getActiveCells().entrySet()) {
 
@@ -100,7 +83,6 @@ public final class CanvasSnapshot {
                     geo.getX(), geo.getY(), geo.getWidth(), geo.getHeight()
                 ));
             } else {
-                // TableCell – name is the key in the tables map
                 cellSnaps.add(new CellSnap(
                     true,
                     cell.getName(),
@@ -111,7 +93,6 @@ public final class CanvasSnapshot {
             }
         }
 
-        // Build edge list from parent-child relationships (avoids iterating graph edges directly)
         for (Map.Entry<com.mxgraph.model.mxICell, Cell> entry
                 : CellRepository.getActiveCells().entrySet()) {
             if (!(entry.getKey() instanceof mxCell tgtJCell)) continue;
@@ -127,7 +108,6 @@ public final class CanvasSnapshot {
                 Integer srcIdx = jCellToIdx.get(parentJCell);
                 if (srcIdx == null) continue;
 
-                // Find the visual edge between this parent and the operation to capture its label
                 String edgeLabel = "";
                 for (Object inEdge : graph.getIncomingEdges(tgtJCell)) {
                     if (inEdge instanceof mxCell edgeMxCell
@@ -144,19 +124,10 @@ public final class CanvasSnapshot {
         return new CanvasSnapshot(cellSnaps, edgeSnaps);
     }
 
-    // -----------------------------------------------------------------------
-    // Restore
-
-    /**
-     * Clears the current canvas and rebuilds it from this snapshot.
-     *
-     * @param tables The application-level table registry (MainController.getTables()).
-     */
     void restore(Map<String, TableCell> tables) {
         controllers.MainController.isRestoring = true;
         mxGraph graph = MainFrame.getGraph();
         try {
-            // 1. Remove all visual cells from the graph
             graph.getModel().beginUpdate();
             try {
                 graph.removeCells(graph.getChildVertices(graph.getDefaultParent()), true);
@@ -164,10 +135,8 @@ public final class CanvasSnapshot {
                 graph.getModel().endUpdate();
             }
 
-            // 2. Clear both repository maps (Cell objects for tables still live in 'tables' map)
             CellRepository.clearAll();
 
-            // 3. Re-create cells
             Cell[] created = new Cell[cells.size()];
 
             graph.getModel().beginUpdate();
@@ -179,15 +148,11 @@ public final class CanvasSnapshot {
                         TableCell template = tables.get(snap.name());
                         if (template == null) continue;
 
-                        // Always create a fresh mxCell so that multiple instances of the
-                        // same table (same name) each get their own distinct vertex.
                         CellType cellType = CellType.fromTableCell(template);
                         mxCell jCell = (mxCell) graph.insertVertex(
                             graph.getDefaultParent(), null, snap.name(),
                             snap.x(), snap.y(), snap.w(), snap.h(), cellType.id);
 
-                        // Copy constructor auto-registers the cell in CellRepository
-                        // (via Cell base constructor -> CellUtils.addCell).
                         TableCell tc = switch (cellType) {
                             case CSV_TABLE    -> new CSVTableCell((CSVTableCell) template, jCell);
                             case FYI_TABLE    -> new FYITableCell((FYITableCell) template, jCell);
@@ -198,18 +163,13 @@ public final class CanvasSnapshot {
                         };
                         if (tc == null) continue;
 
-                        // Use asOperator() instead of setAlias() so that jCell label,
-                        // column source names and sourceOperator alias are all updated.
-                        // At this point the cell has no children yet, so
-                        // TreeUtils.updateTreeBelow() inside asOperator() is a safe no-op.
                         if (snap.alias() != null && !snap.alias().isBlank()) {
                             tc.asOperator(snap.alias());
                         }
-                        tc.removeChild();   // clear stale child ref from prior canvas state
+                        tc.removeChild();
                         created[i] = tc;
 
                     } else {
-                        // OperationCell — create a brand-new instance
                         OperationType opType;
                         try {
                             opType = OperationType.valueOf(snap.opTypeName());
@@ -222,16 +182,13 @@ public final class CanvasSnapshot {
                             snap.x(), snap.y(), snap.w(), snap.h(), CellType.OPERATION.id
                         );
 
-                        // OperationCell constructor registers itself in CellRepository
                         OperationCell oc = new OperationCell(jCell, opType);
                         oc.setAlias(snap.alias());
 
-                        // Restore the user-visible name if it was renamed
                         if (!snap.name().equals(opType.getFormattedDisplayName())) {
                             CellUtils.changeCellName(jCell, snap.name());
                         }
 
-                        // Set default operators for special types (mirrors InsertOperationCellCommand)
                         if (opType == OperationType.CONDITION) {
                             try { oc.setOperator(new Condition(new NoLookupFilter())); } catch (Exception ignored) {}
                         } else if (opType == OperationType.REFERENCE) {
@@ -245,7 +202,6 @@ public final class CanvasSnapshot {
                 graph.getModel().endUpdate();
             }
 
-            // 4. Reconnect parent-child relationships and add visual edges
             graph.getModel().beginUpdate();
             try {
                 for (EdgeSnap e : edges) {
@@ -262,22 +218,28 @@ public final class CanvasSnapshot {
                 graph.getModel().endUpdate();
             }
 
-            // 5. Restore configured state for initialised OperationCells (after all parents connected)
-            for (int i = 0; i < cells.size(); i++) {
-                CellSnap snap = cells.get(i);
-                if (snap.isTable() || !snap.initialized()) continue;
-                if (!(created[i] instanceof OperationCell oc)) continue;
+            {
+                List<OperationCell> opCells = new ArrayList<>();
+                for (int i = 0; i < cells.size(); i++) {
+                    CellSnap snap = cells.get(i);
+                    if (snap.isTable() || !snap.initialized()) continue;
+                    if (!(created[i] instanceof OperationCell oc)) continue;
+                    oc.setArguments(new ArrayList<>(snap.args()));
+                    oc.setAlias(snap.alias());
+                    opCells.add(oc);
+                }
 
-                oc.setArguments(new ArrayList<>(snap.args()));
-                oc.setAlias(snap.alias());
-                // Re-execute the operation so NULLARY ops (CONDITION, REFERENCE) and any
-                // operation whose parents were already reconnected in step 4 are fully
-                // recalculated. updateTreeBelow (step 6) only reaches ops that have a
-                // TableCell ancestor, so NULLARY ops would otherwise stay stale.
-                oc.updateOperation();
+                List<OperationCell> sorted = TopologicalSort.sort(opCells, oc ->
+                    oc.getParents().stream()
+                        .filter(p -> p instanceof OperationCell)
+                        .map(p -> (OperationCell) p)
+                        .collect(java.util.stream.Collectors.toList())
+                );
+                for (OperationCell oc : sorted) {
+                    oc.updateOperation();
+                }
             }
 
-            // 6. Recalculate trees bottom-up from every table root
             for (Cell c : created) {
                 if (c instanceof TableCell) {
                     TreeUtils.updateTreeBelow(c);
