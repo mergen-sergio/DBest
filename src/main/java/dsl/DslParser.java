@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
-import static operations.unary.Sort.PREFIXES;
-import utils.Utils;
+import static operations.unary.Sort.isAscending;
+import static operations.unary.Sort.removeOrderPrefix;
 
 public class DslParser {
 
@@ -275,12 +275,20 @@ public class DslParser {
             return new ibd.query.unaryop.filter.Filter(child1, filter);
         }
         if (operationExpression.getType() == OperationType.SORT) {
-        String column = arguments.get(0);
+            List<String> columns = new ArrayList<>();
+            boolean[] ascendingOrders = new boolean[arguments.size()];
 
-        boolean isAscendingOrder = !Utils.startsWithIgnoreCase(column, "DESC:");
+            for (int i = 0; i < arguments.size(); i++) {
+                String argument = arguments.get(i);
+                ascendingOrders[i] = isAscending(argument);
+                columns.add(removeOrderPrefix(argument));
+            }
 
-        column = Utils.replaceIfStartsWithIgnoreCase(column, PREFIXES, "");
-        return new ibd.query.unaryop.sort.Sort(child1, column, isAscendingOrder);
+            return new ibd.query.unaryop.sort.Sort(
+                child1,
+                columns.toArray(new String[0]),
+                ascendingOrders
+            );
         }
         
         if (operationExpression.getType() == OperationType.AGGREGATION) {
