@@ -29,6 +29,9 @@ public abstract class JoinOperators implements IOperator {
         OperationCell cell = (OperationCell) optionalCell.get();
         OperationErrorType errorType = null;
 
+        Cell leftParent = null;
+        Cell rightParent = null;
+
         try {
             //errorType = OperationErrorType.NULL_ARGUMENT;
             //OperationErrorVerifier.noNullArgument(arguments);
@@ -45,8 +48,11 @@ public abstract class JoinOperators implements IOperator {
             errorType = OperationErrorType.PARENT_ERROR;
             OperationErrorVerifier.noParentError(cell);
 
+            leftParent = cell.getLeftParent();
+            rightParent = cell.getRightParent();
+
             errorType = OperationErrorType.SAME_SOURCE;
-            OperationErrorVerifier.haveDifferentSources(cell.getParents().get(0), cell.getParents().get(1));
+            OperationErrorVerifier.haveDifferentSources(leftParent, rightParent);
 
             errorType = null;
         } catch (TreeException exception) {
@@ -55,8 +61,8 @@ public abstract class JoinOperators implements IOperator {
 
         if (errorType != null) return;
 
-        Cell parentCell1 = cell.getParents().get(0);
-        Cell parentCell2 = cell.getParents().get(1);
+        Cell parentCell1 = leftParent;
+        Cell parentCell2 = rightParent;
 
         ibd.query.Operation operator1 = parentCell1.getOperator();
         ibd.query.Operation operator2 = parentCell2.getOperator();
@@ -73,10 +79,7 @@ public abstract class JoinOperators implements IOperator {
         } catch (Exception exception) {
             cell.setError(exception.getMessage());
         }
-        Object[] edges = MainController.getGraph().getIncomingEdges(jCell);
-
-        MainController.getGraph().getModel().setValue(edges[0], ConstantController.getString("left"));
-        MainController.getGraph().getModel().setValue(edges[1], ConstantController.getString("right"));
+        updateJoinEdgeLabels(jCell, leftParent, rightParent);
     }
     
     
@@ -87,6 +90,36 @@ public abstract class JoinOperators implements IOperator {
     }
     return String.join(" and ", arguments);
 }
+
+    private void updateJoinEdgeLabels(mxCell jCell, Cell leftParent, Cell rightParent) {
+        Object[] edges = MainController.getGraph().getIncomingEdges(jCell);
+        if (edges.length == 0) {
+            return;
+        }
+
+        String leftLabel = ConstantController.getString("left");
+        String rightLabel = ConstantController.getString("right");
+
+        for (Object edge : edges) {
+            if (!(edge instanceof mxCell edgeCell)) {
+                continue;
+            }
+
+            Object source = edgeCell.getSource();
+            if (!(source instanceof mxCell sourceCell)) {
+                continue;
+            }
+
+            if (leftParent != null && sourceCell == leftParent.getJCell()) {
+                MainController.getGraph().getModel().setValue(edgeCell, leftLabel);
+                continue;
+            }
+
+            if (rightParent != null && sourceCell == rightParent.getJCell()) {
+                MainController.getGraph().getModel().setValue(edgeCell, rightLabel);
+            }
+        }
+    }
 
     abstract ibd.query.Operation createJoinOperator(ibd.query.Operation operator1, ibd.query.Operation operator2, BooleanExpression booleanExpression);
     abstract ibd.query.Operation createJoinOperator(ibd.query.Operation operator1, ibd.query.Operation operator2, JoinPredicate joinPredicate);

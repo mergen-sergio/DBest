@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +86,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private int currentLastPage = -1;
 
     private int largestElement = -1;
+
+    private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
@@ -550,7 +553,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 .append("\n")
                 .append(ConstantController.getString("MEMORY_USED"))
                 .append(" = ")
-                .append(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE)
+                .append(formatMemoryKb(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE))
                 .append("\n\n")
                 .append(ConstantController.getString("dataframe.disk"))
                 .append(":")
@@ -592,6 +595,11 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
         this.revalidate();
         this.repaint();
+    }
+
+    private String formatMemoryKb(long value) {
+        double valueInKb = value / 1024.0;
+        return memoryFormatter.format(valueInKb) + " KB";
     }
     
     private void closeWindow() {

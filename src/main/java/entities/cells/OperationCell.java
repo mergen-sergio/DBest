@@ -35,7 +35,9 @@ public final class OperationCell extends Cell {
 
     private final OperationType type;
 
-    private List<Cell> parents;
+    private Cell leftParent;
+
+    private Cell rightParent;
 
     private final OperationArity arity;
 
@@ -56,7 +58,8 @@ public final class OperationCell extends Cell {
                 type.getFormattedDisplayName(), jCell, ConstantController.OPERATION_CELL_HEIGHT
         );
 
-        this.parents = new ArrayList<>();
+        this.leftParent = null;
+        this.rightParent = null;
         this.arguments = new ArrayList<>();
         this.error = false;
         this.errorMessage = null;
@@ -73,20 +76,28 @@ public final class OperationCell extends Cell {
         this.arguments = arguments;
         this.alias = alias;
 
-        //if (parents != null && !parents.isEmpty()) 
-        
+        //if (parents != null && !parents.isEmpty())
+
         {
             this.hasBeenInitialized = true;
-            this.parents = parents;
 
-            parents.forEach(parent -> {
+            if (parents != null && !parents.isEmpty()) {
+                if (parents.size() >= 1) {
+                    this.leftParent = parents.get(0);
+                }
+                if (parents.size() >= 2) {
+                    this.rightParent = parents.get(1);
+                }
+            }
+
+            for (Cell parent : getParents()) {
                 parent.setChild(this);
                 if (this.canBeChild()) {
                     MainFrame.getGraph().insertEdge(parent.getJCell(), null, "", parent.getJCell(), jCell);
                 } else {
                     System.err.println("Warning: Attempted to create edge to cell that cannot be a child");
                 }
-            });
+            }
 
             this.updateOperation();
         }
@@ -156,15 +167,68 @@ public final class OperationCell extends Cell {
 
     @Override
     public List<Cell> getParents() {
-        return this.parents;
+        List<Cell> parents = new ArrayList<>(2);
+        if (this.leftParent != null) {
+            parents.add(this.leftParent);
+        }
+        if (this.rightParent != null) {
+            parents.add(this.rightParent);
+        }
+        return parents;
+    }
+
+    public Cell getLeftParent() {
+        return this.leftParent;
+    }
+
+    public Cell getRightParent() {
+        return this.rightParent;
     }
 
     public void addParent(Cell cell) {
-        this.parents.add(cell);
+        if (cell == null) {
+            return;
+        }
+
+        if (cell.equals(this.leftParent) || cell.equals(this.rightParent)) {
+            return;
+        }
+
+        if (this.arity == OperationArity.UNARY) {
+            if (this.leftParent == null && this.rightParent == null) {
+                this.leftParent = cell;
+            }
+            return;
+        }
+
+        if (this.leftParent == null && this.rightParent == null) {
+            this.leftParent = cell;
+            return;
+        }
+
+        if (this.leftParent == null) {
+            this.leftParent = cell;
+            return;
+        }
+
+        if (this.rightParent == null) {
+            this.rightParent = cell;
+        }
     }
 
     public void removeParent(Cell cell) {
-        this.parents.remove(cell);
+        if (cell == null) {
+            return;
+        }
+
+        if (cell.equals(this.leftParent)) {
+            this.leftParent = null;
+            return;
+        }
+
+        if (cell.equals(this.rightParent)) {
+            this.rightParent = null;
+        }
     }
 
     public void removeParent(mxCell jCell) {
@@ -178,12 +242,13 @@ public final class OperationCell extends Cell {
     }
 
     public void removeParents() {
-        this.parents.clear();
+        this.leftParent = null;
+        this.rightParent = null;
     }
 
     @Override
     public boolean hasParents() {
-        return !this.parents.isEmpty();
+        return this.leftParent != null || this.rightParent != null;
     }
 
     public Boolean hasTree() {
@@ -255,8 +320,10 @@ public final class OperationCell extends Cell {
 
     public void reset() {
         this.name = this.type.getFormattedDisplayName();
-        this.parents.clear();
-        this.arguments.clear();        this.hasBeenInitialized = false;
+        this.leftParent = null;
+        this.rightParent = null;
+        this.arguments.clear();
+        this.hasBeenInitialized = false;
 
         this.removeError();
 
@@ -282,9 +349,9 @@ public final class OperationCell extends Cell {
         operationCell.arguments = new ArrayList<>(this.arguments);
         operationCell.hasBeenInitialized = this.hasBeenInitialized;
         operationCell.error = this.error;
-        operationCell.errorMessage = this.errorMessage;        // IMPORTANT: Don't copy parents list - the copied cell should be independent
-        // operationCell.parents remains empty (new ArrayList<>() from constructor)
-        // This ensures the copied cell has no parent relationships initially        // Don't copy the operator - it will be rebuilt by TreeUtils.recalculateContent()
+        operationCell.errorMessage = this.errorMessage;
+        // IMPORTANT: Don't copy parents - left/right stay null so the copy is independent.
+        // Don't copy the operator - it will be rebuilt by TreeUtils.recalculateContent()
         // This ensures no shared state between original and copied cells
         operationCell.setOperator(null);
           // Ensure columns are independent copies if they exist
@@ -302,7 +369,8 @@ public final class OperationCell extends Cell {
     public void updateFrom(OperationCell cell) {
         this.name = cell.name;
         this.alias = cell.alias;
-        this.parents = cell.parents;
+        this.leftParent = cell.leftParent;
+        this.rightParent = cell.rightParent;
         this.arguments = cell.arguments;
         this.hasBeenInitialized = cell.hasBeenInitialized;
         this.error = cell.error;
@@ -380,7 +448,7 @@ public final class OperationCell extends Cell {
             for (String columnName : contentInfo.getValue()) {
                 Column column = new Column(columnName, contentInfo.getKey(), ColumnDataType.NONE, false);
 
-                for (Cell parent : this.parents) {
+                for (Cell parent : getParents()) {
                     Column finalColumn = column;
                     column = parent.getColumns().stream().filter(c -> c.equals(finalColumn)).findAny().orElse(column);
                 }
@@ -396,7 +464,7 @@ public final class OperationCell extends Cell {
     public boolean hasParentErrors() {
         boolean error = false;
 
-        for (Cell cell : this.parents) {
+        for (Cell cell : getParents()) {
             if (cell.hasError()) {
                 error = true;
             }
@@ -445,18 +513,25 @@ public final class OperationCell extends Cell {
 
         columns = newColumns;
     }    public void setParents(List<Cell> newParents) {
-        for (Cell oldParent : this.parents) {
-            if (oldParent.getChild() == this) {
-                oldParent.removeChild();
-            }
+        if (this.leftParent != null && this.leftParent.getChild() == this) {
+            this.leftParent.removeChild();
+        }
+        if (this.rightParent != null && this.rightParent.getChild() == this) {
+            this.rightParent.removeChild();
         }
 
-        this.parents.clear();
+        this.leftParent = null;
+        this.rightParent = null;
 
-        if (newParents != null) {
-            this.parents.addAll(newParents);
+        if (newParents != null && !newParents.isEmpty()) {
+            if (newParents.size() >= 1) {
+                this.leftParent = newParents.get(0);
+            }
+            if (newParents.size() >= 2) {
+                this.rightParent = newParents.get(1);
+            }
 
-            for (Cell newParent : newParents) {
+            for (Cell newParent : getParents()) {
                 newParent.setChild(this);
             }
         }

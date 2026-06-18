@@ -45,6 +45,7 @@ public class ComparatorFrame extends JFrame implements ActionListener {
     private int totalTuples = 0;    private SwingWorker<Void, Void> tupleLoaderWorker;
     private JDialog cancelDialog;
     private final DecimalFormat numberFormatter = new DecimalFormat("#,###");
+    private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
     public ComparatorFrame() {
 
@@ -205,7 +206,7 @@ public class ComparatorFrame extends JFrame implements ActionListener {
             Vector<String> row = new Vector<>();
             row.add(ConstantController.getString(parameterName));
             for (Long l : cellStats.get(parameterName)) {
-                row.add(String.valueOf(l));
+                row.add(formatStatValue(parameterName, l));
             }
             data.add(row);
         }
@@ -226,6 +227,15 @@ public class ComparatorFrame extends JFrame implements ActionListener {
 
         firstColumn.setPreferredWidth(maxWidth);
         jTable.revalidate();
+    }
+
+    private String formatStatValue(String parameterName, long value) {
+        if (parameterName.startsWith("MEMORY_")) {
+            double valueInKb = value / 1024.0;
+            return memoryFormatter.format(valueInKb) + " KB";
+        }
+
+        return String.valueOf(value);
     }
     
     @Override
