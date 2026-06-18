@@ -52,11 +52,7 @@ public abstract class OperationForm extends FormBase {
         this.operator = cell.getType().operatorClass;
         this.jCell = jCell;
 
-        if (cell.getParents() != null && !cell.getParents().isEmpty()) {
-            this.leftChild = cell.getParents().get(0);
-        } else {
-            this.leftChild = null;
-        }
+        this.leftChild = cell.getLeftParent();
 
         if (!cell.getArguments().isEmpty()) {
             previousArguments.addAll(cell.getArguments());
@@ -118,16 +114,30 @@ public abstract class OperationForm extends FormBase {
     }
 
     protected void setLeftComboBoxData(Cell cell) {
-        Cell parentCell = cell.getParents().get(0);
+        if (!(cell instanceof OperationCell operationCell)) {
+            return;
+        }
+
+        Cell parentCell = operationCell.getLeftParent();
+        if (parentCell == null) {
+            return;
+        }
+
         setComboBoxData(parentCell.getColumns(), comboBoxSource, comboBoxColumn);
 
     }
 
     protected java.util.List<Column> setLeftComboBoxColumns(Cell cell) {
         //OperationCell cell = (OperationCell) CellUtils.getActiveCell(jCell).get();
-        if (cell.getParents().isEmpty())
+        if (!(cell instanceof OperationCell operationCell)) {
             return new ArrayList();
-        Cell parentCell = cell.getParents().get(0);
+        }
+
+        Cell parentCell = operationCell.getLeftParent();
+        if (parentCell == null) {
+            return new ArrayList();
+        }
+
         return new ArrayList(parentCell.getColumns());
 
     }
