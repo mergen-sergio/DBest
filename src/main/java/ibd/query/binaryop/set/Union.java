@@ -182,6 +182,95 @@ public class Union extends Set implements SingleSource{
                 //returnTp.setSourceRows(leftTuple);
                 returnTp.rows = new LinkedDataRow[1];
                 returnTp.rows[0] = buildRow(leftTuple);
+
+                while (returnTp.compareTo(leftTuple)==0){ //executa pelo menos 1 vez
+                    if (!leftTuples.hasNext()){
+                        leftTuple = null;
+                        break;
+                    }
+                    leftTuple = leftTuples.next();
+                }
+
+                while (returnTp.compareTo(rightTuple)==0){ //executa plmns 1 vez
+                    if (!rightTuples.hasNext()){
+                        rightTuple = null;
+                        break;
+                    }
+                    rightTuple = rightTuples.next();
+                }
+
+                return returnTp;
+
+            } else if (leftTuple != null && (rightTuple == null
+                    || (leftTuple.compareTo(rightTuple) < 0))) {
+                Tuple returnTp = new Tuple();
+                //returnTp.setSourceRows(leftTuple);
+                returnTp.rows = new LinkedDataRow[1];
+                returnTp.rows[0] = buildRow(leftTuple);
+
+                //percorre as tuplas da esquerda enqt forem iguais
+                while (returnTp.compareTo(leftTuple)==0){ //executa pelo menos 1 vez
+                    if (!leftTuples.hasNext()){
+                        leftTuple = null;
+                        return returnTp; //return para a tuple manter null
+                    }
+                    leftTuple = leftTuples.next();
+                }
+                return returnTp;
+            } else {
+                Tuple returnTp = new Tuple();
+                //tuple.setSourceRows(rightTuple);
+                returnTp.rows = new LinkedDataRow[1];
+                returnTp.rows[0] = buildRow(rightTuple);
+
+                //percorre as tuplas da direita enqt forem iguais
+                while (returnTp.compareTo(rightTuple) == 0){ //executa plmns 1 vez
+                    if (!rightTuples.hasNext()){
+                        rightTuple = null;
+                        return returnTp; //return para a tuple manter null
+                    }
+                    rightTuple = rightTuples.next();
+                }
+                return returnTp;
+
+            }
+        }
+
+
+        
+        
+        /**
+         *
+         * @return the next satisfying tuple, if any
+         */
+        protected Tuple findNextTupleOld() {
+
+            if (leftTuple == null) {
+                if (leftTuples.hasNext()) {
+                    while (leftTuples.hasNext()) {
+                        leftTuple = leftTuples.next();
+                        break;
+                    }
+                }
+            }
+
+            if (rightTuple == null) {
+                while (rightTuples.hasNext()) {
+                    rightTuple = rightTuples.next();
+                    break;
+                }
+            }
+
+            if (leftTuple == null && rightTuple == null) {
+                return null;
+            }
+
+            if (leftTuple != null && rightTuple != null
+                    && (leftTuple.compareTo(rightTuple) == 0)) {
+                Tuple returnTp = new Tuple();
+                //returnTp.setSourceRows(leftTuple);
+                returnTp.rows = new LinkedDataRow[1];
+                returnTp.rows[0] = buildRow(leftTuple);
                 leftTuple = null;
                 rightTuple = null;
                 return returnTp;

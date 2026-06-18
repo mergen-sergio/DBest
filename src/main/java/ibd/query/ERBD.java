@@ -113,7 +113,7 @@ public class ERBD {
 
         Operation op;
         try {
-            op = DslParser.readQuery(new File("C:\\Users\\ferna\\Documents\\erbd 2025\\semi join\\movieHashJoin.txt"));
+            op = DslParser.readQuery(new File("C:\\Users\\ferna\\Documents\\erbd 2025\\sem indice\\filtro em movie\\semi join\\movieHashJoin.txt"));
             main.changeFilter(op, 1940);
             //main.runQuery(op, -1);
             
