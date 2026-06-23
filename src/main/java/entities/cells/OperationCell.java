@@ -116,10 +116,18 @@ public final class OperationCell extends Cell {
         if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
             return;
         }
-        // Guard: do not attempt execution with too few parents (avoids ArrayIndexOutOfBoundsException
-        // in binary operators when an undo/restore leaves the node temporarily without all parents)
-        if (this.arity == OperationArity.BINARY && this.parents.size() < 2) return;
-        if (this.arity == OperationArity.UNARY  && this.parents.isEmpty())  return;
+        if (this.arity == OperationArity.BINARY && this.parents.size() < 2) {
+            if (controllers.MainController.isRestoring) return;
+            this.setError(enums.OperationErrorType.NO_TWO_PARENTS);
+            this.setOperator(null);
+            return;
+        }
+        if (this.arity == OperationArity.UNARY && this.parents.isEmpty()) {
+            if (controllers.MainController.isRestoring) return;
+            this.setError(enums.OperationErrorType.NO_ONE_PARENT);
+            this.setOperator(null);
+            return;
+        }
 
         try {
             Constructor<? extends IOperator> constructor = this.operatorClass.getDeclaredConstructor();
