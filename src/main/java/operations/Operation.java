@@ -44,6 +44,10 @@ public class Operation {
         String a = "";
         //if (operator instanceof SingleSource ssOp) 
         {
+            String preservedAlias = cell.getAlias();
+            if (preservedAlias != null && !preservedAlias.isEmpty()) {
+                operator.setDataSourceAlias(preservedAlias);
+            }
             cell.setAlias(operator.getDataSourceAlias());
             a = operator.getDataSourceAlias();
             if (!a.isBlank()) {

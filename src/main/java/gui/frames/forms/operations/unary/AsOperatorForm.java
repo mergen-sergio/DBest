@@ -4,6 +4,8 @@ import controllers.ConstantController;
 import gui.frames.forms.FormBase;
 import gui.frames.forms.IFormCondition;
 
+import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
@@ -11,6 +13,7 @@ import javax.swing.event.DocumentListener;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -20,6 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AsOperatorForm extends FormBase implements ActionListener, IFormCondition {
 
     private final JTextField textField = new JTextField();
+
+    private final JButton btnErase = new JButton(ConstantController.getString("operationForm.clear"));
 
     private final AtomicReference<Boolean> cancelService;
 
@@ -40,7 +45,8 @@ public class AsOperatorForm extends FormBase implements ActionListener, IFormCon
 
         btnCancel.addActionListener(this);
         btnReady.addActionListener(this);
-        
+        btnErase.addActionListener(this);
+
         textField.setText(text);
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
@@ -61,6 +67,11 @@ public class AsOperatorForm extends FormBase implements ActionListener, IFormCon
         });
 
         contentPanel.add(textField, BorderLayout.CENTER);
+
+        Component south = ((BorderLayout) contentPanel.getLayout()).getLayoutComponent(BorderLayout.SOUTH);
+        if (south instanceof JPanel) {
+            ((JPanel) south).add(btnErase, 0);
+        }
 
         checkBtnReady();
 
@@ -83,6 +94,11 @@ public class AsOperatorForm extends FormBase implements ActionListener, IFormCon
         }
 
         if(e.getSource() == this.btnReady){
+            dispose();
+        }
+
+        if(e.getSource() == this.btnErase){
+            textField.setText("");
             dispose();
         }
 
