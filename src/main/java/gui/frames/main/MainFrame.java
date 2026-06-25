@@ -629,6 +629,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.redistributeNodesMenuItem.addActionListener(this);
         this.selectionMenuItem.addActionListener(this);
         this.projectionMenuItem.addActionListener(this);
+        this.filterColumnMenuItem.addActionListener(this);
         this.sortMenuItem.addActionListener(this);
         this.aggregationMenuItem.addActionListener(this);
         this.groupMenuItem.addActionListener(this);
