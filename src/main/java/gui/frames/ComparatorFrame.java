@@ -82,7 +82,8 @@ public class ComparatorFrame extends JFrame implements ActionListener {
                 stats = CellStats.getTotalCurrentStats().getDiff(prevStats);
             }
             allCellStats.put(cell, stats);
-            prevStats = stats;
+            //prevStats = stats;
+            prevStats = CellStats.getTotalCurrentStats();
         };
 
         updateJTable(true);

@@ -4,11 +4,8 @@ abstract class BaseCommand implements Command {
 
     protected final Class<?> clazz;
 
-    protected final CommandController commandController;
-
     protected BaseCommand() {
         this.clazz = this.getClass();
-        this.commandController = new CommandController();
     }
 
     @Override

@@ -52,6 +52,12 @@ public class CellRepository {
         return INACTIVE_CELLS;
     }
 
+    /** Clears both the active and inactive maps. Used by snapshot-based restore. */
+    public static void clearAll() {
+        ACTIVE_CELLS.clear();
+        INACTIVE_CELLS.clear();
+    }
+
     public static boolean activeCellsContainsKey(mxICell jCell) {
         if (jCell == null) return false;
 

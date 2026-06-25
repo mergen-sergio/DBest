@@ -155,9 +155,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem gtkThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.gtk"));
 
-    //protected JMenuItem undoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.undo"), ConstantController.getString("menu.edit.undo.shortcut")));
+    protected JButton undoButton = new JButton("<<");
 
-    //protected JMenuItem redoTopMenuBarItem = new JMenuItem(String.format("%s (%s)", ConstantController.getString("menu.edit.redo"), ConstantController.getString("menu.edit.redo.shortcut")));
+    protected JButton redoButton = new JButton(">>");
 
     protected MainFrame(Set<Button<?>> buttons) {
         super(ConstantController.APPLICATION_TITLE);
@@ -264,7 +264,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.addBottomButtons();
         this.addTopMenuBarFileItems();
         this.addTopMenuBarAppearanceItems();
-        //this.addTopMenuBarEditItems();
+        this.addTopMenuBarEditItems();
 
         this.getContentPane().addKeyListener(this);
 
@@ -344,25 +344,30 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         JMenu themeMenu = new JMenu(ConstantController.getString("menu.appearance.theme"));
         appearanceMenu.add(themeMenu);
 
-        themeMenu.add(this.gtkThemeTopMenuBarItem);
+
+        // GTK is only available on Linux, so we check the OS before adding it to avoid confusion on unsupported platforms
+        boolean isLinux = System.getProperty("os.name").toLowerCase().contains("linux");
+        if (isLinux) {
+            themeMenu.add(this.gtkThemeTopMenuBarItem);
+            this.gtkThemeTopMenuBarItem.addActionListener(this);
+        }
         themeMenu.add(this.motifThemeTopMenuBarItem);
         themeMenu.add(this.nimbusThemeTopMenuBarItem);
 
-        this.gtkThemeTopMenuBarItem.addActionListener(this);
         this.motifThemeTopMenuBarItem.addActionListener(this);
         this.nimbusThemeTopMenuBarItem.addActionListener(this);
     }
 
     private void addTopMenuBarEditItems() {
-//        JMenu editMenu = new JMenu(ConstantController.getString("menu.edit"));
-//
-//        editMenu.add(this.undoTopMenuBarItem);
-//        editMenu.add(this.redoTopMenuBarItem);
-//
-//        this.undoTopMenuBarItem.addActionListener(this);
-//        this.redoTopMenuBarItem.addActionListener(this);
-//
-//        this.topMenuBar.add(editMenu);
+        for (JButton btn : new JButton[]{this.undoButton, this.redoButton}) {
+            btn.setPreferredSize(new Dimension(50, 28));
+            btn.setMaximumSize(new Dimension(50, 28));
+            btn.setFont(btn.getFont().deriveFont(Font.PLAIN, 16f));
+            btn.setFocusPainted(false);
+            btn.setEnabled(false);
+            btn.addActionListener(this);
+            this.topMenuBar.add(btn);
+        }
     }
 
     private void setJCellStyles() {
