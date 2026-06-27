@@ -127,13 +127,13 @@ public final class OperationCell extends Cell {
         if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
             return;
         }
-        if (this.arity == OperationArity.BINARY && this.getParents().size() < 2) {
+        if (this.arity == OperationArity.BINARY && this.parentsSet()<2) {
             if (controllers.MainController.isRestoring) return;
             this.setError(enums.OperationErrorType.NO_TWO_PARENTS);
             this.setOperator(null);
             return;
         }
-        if (this.arity == OperationArity.UNARY && this.getParents().isEmpty()) {
+        if (this.arity == OperationArity.UNARY && this.parentsSet()!=1) {
             if (controllers.MainController.isRestoring) return;
             this.setError(enums.OperationErrorType.NO_ONE_PARENT);
             this.setOperator(null);
@@ -261,6 +261,13 @@ public final class OperationCell extends Cell {
     @Override
     public boolean hasParents() {
         return this.leftParent != null || this.rightParent != null;
+    }
+    
+    public int parentsSet() {
+        int count = 0;
+        if (this.leftParent != null) count++;
+        if (this.rightParent != null) count++;
+        return count;
     }
 
     public Boolean hasTree() {
@@ -553,3 +560,4 @@ public final class OperationCell extends Cell {
         }
     }
 }
+
