@@ -29,9 +29,11 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
     private final mxCell ghostCell;
     private final AtomicReference<CurrentAction> currentActionReference;
     private final OperationType operationType;
+    private final mxCell parentToAutoConnect;
 
     private mxCell createdJCell;
     private OperationCell createdOperationCell;
+    private ConnectNodesCommand autoConnectCommand;
 
     public InsertOperationCellCommand(
         MouseEvent mouseEvent,
@@ -43,6 +45,7 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         this.ghostCell = ghostCell;
         this.currentActionReference = currentActionReference;
         this.operationType = action.getOperationType();
+        this.parentToAutoConnect = action.hasParent() ? action.getParent() : null;
     }
 
     @Override
@@ -80,10 +83,21 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         }
 
         this.currentActionReference.set(ConstantController.NONE_ACTION);
+
+        if (this.parentToAutoConnect != null) {
+            this.autoConnectCommand = new ConnectNodesCommand(
+                this.parentToAutoConnect, this.createdJCell, null
+            );
+            this.autoConnectCommand.execute();
+        }
     }
 
     @Override
     public void undo() {
+        if (this.autoConnectCommand != null) {
+            this.autoConnectCommand.undo();
+        }
+
         if (this.createdJCell == null) return;
         CellRepository.removeCell(this.createdJCell);
         MainFrame.getGraph().removeCells(new Object[]{this.createdJCell}, false);
@@ -101,6 +115,9 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         }
         CellRepository.addCell(this.createdJCell, this.createdOperationCell);
         MainFrame.getGraph().refresh();
+
+        if (this.autoConnectCommand != null) {
+            this.autoConnectCommand.redo();
+        }
     }
 }
-
