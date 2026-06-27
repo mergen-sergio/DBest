@@ -127,13 +127,13 @@ public final class OperationCell extends Cell {
         if (!(this.hasBeenInitialized || type==OperationType.CONDITION)) {
             return;
         }
-        if (this.arity == OperationArity.BINARY && this.parents.size() < 2) {
+        if (this.arity == OperationArity.BINARY && this.getParents().size() < 2) {
             if (controllers.MainController.isRestoring) return;
             this.setError(enums.OperationErrorType.NO_TWO_PARENTS);
             this.setOperator(null);
             return;
         }
-        if (this.arity == OperationArity.UNARY && this.parents.isEmpty()) {
+        if (this.arity == OperationArity.UNARY && this.getParents().isEmpty()) {
             if (controllers.MainController.isRestoring) return;
             this.setError(enums.OperationErrorType.NO_ONE_PARENT);
             this.setOperator(null);
