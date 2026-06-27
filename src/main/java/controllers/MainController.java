@@ -974,6 +974,19 @@ public class MainController extends MainFrame {
             createOperationAction = OperationType.SORT.getAction();
             style = OperationType.SORT.displayName;
         }
+        else if (menuItem == this.filterColumnMenuItem) {
+            createOperationAction = OperationType.SELECT_COLUMNS.getAction();
+            style = OperationType.SELECT_COLUMNS.displayName;
+        } else if (menuItem == this.aggregationMenuItem) {
+            createOperationAction = OperationType.AGGREGATION.getAction();
+            style = OperationType.AGGREGATION.displayName;
+        } else if (menuItem == this.groupMenuItem) {
+            createOperationAction = OperationType.GROUP.getAction();
+            style = OperationType.GROUP.displayName;
+        } else if (menuItem == this.renameMenuItem) {
+            createOperationAction = OperationType.RENAME.getAction();
+            style = OperationType.RENAME.displayName;
+        }
         // else if (this.indexerMenuItem == menuItem) {
         // createOperationAction = OperationType.INDEXER.getAction();
         // style = OperationType.INDEXER.displayName;
