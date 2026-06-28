@@ -67,6 +67,11 @@ public abstract class JoinOperators implements IOperator {
         ibd.query.Operation operator1 = parentCell1.getOperator();
         ibd.query.Operation operator2 = parentCell2.getOperator();
 
+        if (operator1 == null || operator2 == null) {
+            cell.setError(OperationErrorType.PARENT_ERROR);
+            return;
+        }
+
         try {
             //BooleanExpression booleanExpression = new BooleanExpressionRecognizer(jCell).recognizer(arguments.get(0));
             JoinPredicate joinPredicate = ibd.query.binaryop.join.Join.createJoinPredicate(arguments);
