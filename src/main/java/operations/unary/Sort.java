@@ -12,13 +12,25 @@ import operations.Operation;
 import operations.OperationErrorVerifier;
 import utils.Utils;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class Sort implements IOperator {
 
     public static final List<String> PREFIXES = List.of("ASC:", "DESC:");
+
+    public static boolean isAscending(String argument) {
+        return !Utils.startsWithIgnoreCase(argument, "DESC:");
+    }
+
+    public static String getPrefix(boolean ascending) {
+        return ascending ? "ASC:" : "DESC:";
+    }
+
+    public static String removeOrderPrefix(String argument) {
+        return Utils.replaceIfStartsWithIgnoreCase(argument, PREFIXES, "");
+    }
 
     @Override
     @SuppressWarnings(value = "deprecation")
@@ -43,11 +55,16 @@ public class Sort implements IOperator {
             errorType = OperationErrorType.NULL_ARGUMENT;
             OperationErrorVerifier.noNullArgument(arguments);
 
+            errorType = OperationErrorType.EMPTY_ARGUMENT;
+            OperationErrorVerifier.noEmptyArgument(arguments);
+
             errorType = OperationErrorType.PARENT_WITHOUT_COLUMN;
             OperationErrorVerifier.parentContainsColumns(
                 cell.getParents().get(0).getColumnSourcesAndNames(),
-                Collections.singletonList(
-                    Utils.replaceIfStartsWithIgnoreCase(arguments.get(0), PREFIXES, ""))
+                arguments
+                    .stream()
+                    .map(Sort::removeOrderPrefix)
+                    .toList()
             );
 
             errorType = null;
@@ -61,27 +78,37 @@ public class Sort implements IOperator {
 
         ibd.query.Operation operator = parentCell.getOperator();
 
-        String column = arguments.get(0);
+        List<String> fixedArguments = new ArrayList<>();
+        List<String> columns = new ArrayList<>();
+        boolean[] ascendingOrders = new boolean[arguments.size()];
 
-        boolean isAscendingOrder = !Utils.startsWithIgnoreCase(column, "DESC:");
+        for (int i = 0; i < arguments.size(); i++) {
+            String argument = arguments.get(i);
+            boolean isAscendingOrder = isAscending(argument);
+            String column = removeOrderPrefix(argument);
 
-        column = Utils.replaceIfStartsWithIgnoreCase(column, PREFIXES, "");
+            boolean hasSource = Column.hasSource(column);
+            String sourceName = hasSource ? Column.removeName(column) : parentCell.getSourceNameByColumnName(column);
+            String columnName = hasSource ? Column.removeSource(column) : column;
+            String sourceAndName = Column.composeSourceAndName(sourceName, columnName);
 
-        boolean hasSource = Column.hasSource(column);
-        String sourceName = hasSource ? Column.removeName(column) : parentCell.getSourceNameByColumnName(column);
-        String columnName = hasSource ? Column.removeSource(column) : column;
-
-        String prefix = isAscendingOrder ? "ASC:" : "DESC:";
-        arguments = List.of(prefix + Column.composeSourceAndName(sourceName, columnName));
+            ascendingOrders[i] = isAscendingOrder;
+            columns.add(sourceAndName);
+            fixedArguments.add(getPrefix(isAscendingOrder) + sourceAndName);
+        }
 
         ibd.query.Operation readyOperator = null;
         try {
-            readyOperator = new ibd.query.unaryop.sort.Sort(operator, sourceName+"."+columnName, isAscendingOrder);
+            readyOperator = new ibd.query.unaryop.sort.Sort(
+                operator,
+                columns.toArray(new String[0]),
+                ascendingOrders
+            );
         } catch (Exception ex) {
         }
 
-        String operationName = String.format("%s %s", cell.getType().symbol, arguments);
+        String operationName = String.format("%s %s", cell.getType().symbol, fixedArguments);
 
-        Operation.operationSetter(cell, operationName, arguments, readyOperator);
+        Operation.operationSetter(cell, operationName, fixedArguments, readyOperator);
     }
 }

@@ -12,6 +12,7 @@ import ibd.query.UnpagedOperationIterator;
 import ibd.query.Tuple;
 import ibd.query.unaryop.UnaryOperation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -34,8 +35,10 @@ public class Sort extends UnaryOperation {
      */
     ArrayList<Tuple> tuples;
 
-    List <ColumnDescriptor> sortColumns;
-    
+    List<ColumnDescriptor> sortColumns;
+
+    List<Boolean> ascendingOrders;
+
     boolean ascending = true;
 
     
@@ -48,11 +51,7 @@ public class Sort extends UnaryOperation {
      */
     public Sort(Operation childOperation, String col, boolean ascending) throws Exception {
         super(childOperation);
-        this.ascending = ascending;
-        sortColumns = new ArrayList();
-            ColumnDescriptor sortColumn = new ColumnDescriptor(col);
-            sortColumns.add(sortColumn);
-        
+        setSortCriteria(new String[]{col}, new boolean[]{ascending});
     }
     
     /**
@@ -63,13 +62,42 @@ public class Sort extends UnaryOperation {
      */
     public Sort(Operation childOperation, String[] columns, boolean ascending) throws Exception {
         super(childOperation);
-        this.ascending = ascending;
+        boolean[] ascendingOrders = new boolean[columns.length];
+        Arrays.fill(ascendingOrders, ascending);
+        setSortCriteria(columns, ascendingOrders);
+    }
+
+    /**
+     *
+     * @param childOperation the child operation
+     * @param columns the names of the columns used to sort the tuples.
+     * @param ascendingOrders the sorting direction of each corresponding column.
+     * @throws Exception
+     */
+    public Sort(Operation childOperation, String[] columns, boolean[] ascendingOrders) throws Exception {
+        super(childOperation);
+        setSortCriteria(columns, ascendingOrders);
+    }
+
+    private void setSortCriteria(String[] columns, boolean[] ascendingOrders) throws Exception {
+        if (columns == null || ascendingOrders == null || columns.length == 0) {
+            throw new Exception("At least one sort column must be provided");
+        }
+
+        if (columns.length != ascendingOrders.length) {
+            throw new Exception("Sort columns and sort directions must have the same size");
+        }
+
         sortColumns = new ArrayList();
-        for (String col : columns) {
+        this.ascendingOrders = new ArrayList<>();
+        for (int i = 0; i < columns.length; i++) {
+            String col = columns[i];
             ColumnDescriptor sortColumn = new ColumnDescriptor(col);
             sortColumns.add(sortColumn);
+            this.ascendingOrders.add(ascendingOrders[i]);
         }
-        
+
+        this.ascending = this.ascendingOrders.get(0);
     }
 
     @Override
@@ -142,9 +170,7 @@ public class Sort extends UnaryOperation {
                     }
                     QueryStats.MEMORY_USED+=tuples.size()*tupleSize;
                     //sort collection
-                    Comparator comparator = createComparator();
-                    if (!ascending)
-                        comparator = Collections.reverseOrder(comparator);
+                    Comparator<Tuple> comparator = createComparator();
                     Collections.sort(tuples, comparator);
                     
                     ibd.query.QueryStats.SORT_TUPLES+=tuples.size();
@@ -181,10 +207,14 @@ public class Sort extends UnaryOperation {
 
         @Override
         public int compare(Tuple tt1, Tuple tt2) {
-            for (ColumnDescriptor sortColumn : sortColumns) {
+            for (int i = 0; i < sortColumns.size(); i++) {
+                ColumnDescriptor sortColumn = sortColumns.get(i);
                 Comparable value1 = tt1.rows[sortColumn.getColumnLocation().rowIndex].getValue(sortColumn.getColumnLocation().colIndex);
                 Comparable value2 = tt2.rows[sortColumn.getColumnLocation().rowIndex].getValue(sortColumn.getColumnLocation().colIndex);
                 int comp = value1.compareTo(value2);
+                if (!ascendingOrders.get(i)) {
+                    comp = -comp;
+                }
                 if (comp!=0) return comp;
             }
             
