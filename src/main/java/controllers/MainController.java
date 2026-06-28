@@ -1016,6 +1016,9 @@ public class MainController extends MainFrame {
         AtomicReference<Boolean> cancelServiceReference = new AtomicReference<>(false);
         JFileChooser fileUpload = new JFileChooser();
         fileUpload.setFileFilter(ImportFile.getFileNameExtensionFilter(FileType.CSV));
+
+        fileUpload.setCurrentDirectory(MainController.getLastDirectory());
+
         if (fileUpload.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
             MainController.setLastDirectory(new File(fileUpload.getCurrentDirectory().getAbsolutePath()));
             File file = fileUpload.getSelectedFile();

@@ -1,6 +1,7 @@
 package gui.frames.jdbc;
 
 import controllers.ConstantController;
+import controllers.MainController;
 import database.jdbc.DynamicDriverManager;
 import database.jdbc.UniversalConnectionConfig;
 import enums.DatabaseType;
@@ -515,8 +516,13 @@ public class ConnectionPanel extends JPanel {
                     "SQLite Database Files (*.db, *.sqlite, *.sqlite3)", "db", "sqlite", "sqlite3"));
         }
 
+        fileChooser.setCurrentDirectory(MainController.getLastDirectory());
+
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
+
+            MainController.setLastDirectory(fileChooser.getCurrentDirectory());
+
             File selectedFile = fileChooser.getSelectedFile();
             filePathTextField.setText(selectedFile.getAbsolutePath());
         }
