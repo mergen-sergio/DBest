@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private final JLabel lblPages = new JLabel();
 
     private final JLabel lblTuplesLoaded = new JLabel();
+
+    private final JLabel lblExecutionTime = new JLabel();
 
     private final JTable table = new JTable();
 
@@ -85,6 +88,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private int currentLastPage = -1;
 
     private int largestElement = -1;
+
+    private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
@@ -302,6 +307,14 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         }
     }
 
+    private static String formatElapsed(long elapsedNanos) {
+        long totalMs = elapsedNanos / 1_000_000L;
+        long minutes = totalMs / 60_000;
+        long seconds = (totalMs / 1_000) % 60;
+        long centis = (totalMs / 10) % 100;
+        return String.format("%02d:%02d.%02d", minutes, seconds, centis);
+    }
+
     private void getAllTuples() throws Exception {
         // Determine dialog title and message based on operation type
         String dialogTitle = "Loading All Tuples";
@@ -328,16 +341,27 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         movingBar.setAlignmentX(Component.CENTER_ALIGNMENT);
         cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        JLabel lblElapsed = new JLabel(formatElapsed(0));
+        lblElapsed.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         dialogPanel.add(messageLabel);
         dialogPanel.add(Box.createVerticalStrut(15));
         dialogPanel.add(movingBar);
+        dialogPanel.add(Box.createVerticalStrut(10));
+        dialogPanel.add(lblElapsed);
         dialogPanel.add(Box.createVerticalStrut(15));
         dialogPanel.add(cancelButton);
 
         cancelDialog.setContentPane(dialogPanel);
-        cancelDialog.setSize(400, 150);
+        cancelDialog.setSize(400, 180);
         cancelDialog.setLocationRelativeTo(this);
         cancelDialog.setResizable(false);
+
+        final long startNanos = System.nanoTime();
+        final Timer elapsedTimer = new Timer(100, e ->
+            lblElapsed.setText(formatElapsed(System.nanoTime() - startNanos))
+        );
+
         tupleLoaderWorker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() throws Exception {
@@ -352,6 +376,10 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             @Override
             protected void done() {
                 movingBar.stopAnimation();
+                elapsedTimer.stop();
+                lblExecutionTime.setText(
+                    ConstantController.getString("dataframe.executionTime")
+                        + ": " + formatElapsed(System.nanoTime() - startNanos));
                 cancelDialog.dispose();
                 
                 if (isCancelled()) {
@@ -411,6 +439,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             }
         });
 
+        elapsedTimer.start();
         tupleLoaderWorker.execute();
         cancelDialog.setVisible(true);
     }
@@ -432,6 +461,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         northPane.add(this.lblText);
         northPane.add(this.lblPages);
         northPane.add(this.lblTuplesLoaded);
+        northPane.add(this.lblExecutionTime);
         northPane.add(this.btnStats);
 
         this.tablePanel.add(this.table.getTableHeader(), BorderLayout.NORTH);
@@ -550,7 +580,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 .append("\n")
                 .append(ConstantController.getString("MEMORY_USED"))
                 .append(" = ")
-                .append(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE)
+                .append(formatMemoryKb(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE))
                 .append("\n\n")
                 .append(ConstantController.getString("dataframe.disk"))
                 .append(":")
@@ -592,6 +622,11 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
         this.revalidate();
         this.repaint();
+    }
+
+    private String formatMemoryKb(long value) {
+        double valueInKb = value / 1024.0;
+        return memoryFormatter.format(valueInKb) + " KB";
     }
     
     private void closeWindow() {

@@ -71,8 +71,11 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
 //		setColumns(comboBoxColumn2, comboBoxSource2, parent1);
         rightChild = null;
 
-        if (CellUtils.getActiveCell(jCell).get().getParents().size() == 2) {
-            this.rightChild = CellUtils.getActiveCell(jCell).get().getParents().get(1);
+        if (CellUtils.getActiveCell(jCell).get() instanceof entities.cells.OperationCell operationCell) {
+            this.rightChild = operationCell.getRightParent();
+        }
+
+        if (this.rightChild != null) {
 //			parent2.getColumns().stream()
 //					.map(column -> column.SOURCE).distinct()
 //					.forEach(comboBoxSource::addItem);
@@ -164,7 +167,7 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
         checkBtnReady();
 
         if (e.getSource() == comboBoxSource) {
-            if (leftChild.getColumns().stream().anyMatch(column -> column.SOURCE.
+            if (leftChild != null && leftChild.getColumns().stream().anyMatch(column -> column.SOURCE.
                     equals(Objects.requireNonNull(comboBoxSource.getSelectedItem()).toString()))) {
 
                 setColumns(comboBoxColumn, comboBoxSource, leftChild.getColumns());
@@ -218,6 +221,10 @@ public class JoinForm extends OperationForm implements ActionListener, IOperatio
 
     private void autoJoin() {
         ArrayList<String> joins = new ArrayList<>();
+
+        if (leftChild == null || rightChild == null) {
+            return;
+        }
 
         leftChild.getColumns().forEach(leftColumn -> {
             rightChild.getColumns().forEach(rightColumn -> {

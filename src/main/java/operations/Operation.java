@@ -16,6 +16,11 @@ public class Operation {
     }
 
     public static void operationSetter(OperationCell cell, String name, List<String> arguments, ibd.query.Operation operator) {
+        if (operator == null) {
+            cell.setOperator(null);
+            cell.setError("Operation creation failed");
+            return;
+        }
         mxCell jCell = cell.getJCell();
 //                int index = name.indexOf(":");
 //                String alias = "";
@@ -44,6 +49,10 @@ public class Operation {
         String a = "";
         //if (operator instanceof SingleSource ssOp) 
         {
+            String preservedAlias = cell.getAlias();
+            if (preservedAlias != null && !preservedAlias.isEmpty()) {
+                operator.setDataSourceAlias(preservedAlias);
+            }
             cell.setAlias(operator.getDataSourceAlias());
             a = operator.getDataSourceAlias();
             if (!a.isBlank()) {

@@ -85,6 +85,9 @@ public class MainController extends MainFrame {
 
     public static final CommandController commandController = new CommandController();
 
+    /** Timeline-based undo/redo manager (snapshot-per-action, max 10 steps). */
+    public static final UndoRedoManager undoRedoManager = new UndoRedoManager();
+
     private static File lastDirectory = new File("");
 
     public static ConsoleFrame consoleFrame = null;
@@ -106,6 +109,12 @@ public class MainController extends MainFrame {
     private final Map<Object, Object> lastSources = new HashMap<>();
 
     public static boolean isImporting = false;
+
+    /** True while CanvasSnapshot.restore() is executing. Suppresses graph listeners. */
+    public static boolean isRestoring = false;
+
+    /** Snapshot captured on mousePressed so CELLS_MOVED can push a pre-move state. */
+    private CanvasSnapshot preMoveSnapshot = null;
 
     /**
      * Checks if an OperationCell represents a join operation by checking its form
@@ -132,6 +141,9 @@ public class MainController extends MainFrame {
     // private static Map<mxCell, String> originalStyles = new HashMap<>();
     public MainController() {
         super(new HashSet<>());
+        // Register snapshot hook so every undoable command auto-saves before executing
+        CommandController.setBeforeExecuteHook(undoRedoManager::saveSnapshot);
+        undoRedoManager.setOnStateChanged(this::refreshUndoRedoButtons);
         this.tablesComponent.getGraphControl().addMouseListener(new MouseAdapter() {
 
             @Override
@@ -157,14 +169,14 @@ public class MainController extends MainFrame {
         });
 
         graph.addListener(mxEvent.CELLS_ADDED, (sender, event) -> {
-            if (this.isTableCellSelected) {
+            if (this.isTableCellSelected && !MainController.isRestoring) {
                 this.executeInsertTableCellCommand((mxCell) graph.getSelectionCell(), this.ghostCell);
                 this.isTableCellSelected = false;
             }
         });
 
         graph.addListener(mxEvent.CELL_CONNECTED, (sender, evt) -> {
-            if (MainController.isImporting) {
+            if (MainController.isImporting || MainController.isRestoring) {
                 return;
             }
             if (PasteCellsCommand.getIsPasting()) {
@@ -205,6 +217,12 @@ public class MainController extends MainFrame {
                 }
 
                 if (!source) {
+                    // Save snapshot only when connecting to a real operation cell
+                    // (skip if target is the invisible tracking cell used during edge creation)
+                    Optional<Cell> optionalTerminalForSnapshot = CellUtils.getActiveCell(terminalCell);
+                    if (optionalTerminalForSnapshot.isPresent()) {
+                        undoRedoManager.saveSnapshot();
+                    }
                     Object previousTarget = lastTargets.get(edgeCell);
                     if (previousTarget != null && previousTarget instanceof mxCell prevTargetCell
                             && previousTarget != terminalCell) {
@@ -260,6 +278,8 @@ public class MainController extends MainFrame {
                         }
                     }
                 } else {
+                    // Save snapshot before any state change (drag-based source reconnect)
+                    undoRedoManager.saveSnapshot();
                     Object previousSource = lastSources.get(edgeCell);
                     if (previousSource != null && previousSource instanceof mxCell prevSourceCell
                             && previousSource != terminalCell) {
@@ -323,6 +343,30 @@ public class MainController extends MainFrame {
                 lastSources.put(edgeCell, edgeCell.getSource());
             }
         }
+
+        // Capture a pre-move snapshot when the user presses the mouse on a cell.
+        // CELLS_MOVED fires AFTER the move, so we need the state captured here (before).
+        graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (isRestoring) return;
+                Object cell = graphComponent.getCellAt(e.getX(), e.getY());
+                if (cell instanceof mxCell c && !c.isEdge()) {
+                    preMoveSnapshot = CanvasSnapshot.capture();
+                }
+            }
+        });
+
+        // Save a snapshot when the user finishes dragging cells to a new position
+        graph.addListener(mxEvent.CELLS_MOVED, (sender, evt) -> {
+            if (MainController.isRestoring) return;
+            if (preMoveSnapshot != null) {
+                undoRedoManager.pushSnapshot(preMoveSnapshot);
+                preMoveSnapshot = null;
+            } else {
+                undoRedoManager.saveSnapshot(); // fallback
+            }
+        });
 
         // Set the background color of the graph component
         graphComponent.getViewport().setOpaque(true);
@@ -606,10 +650,12 @@ public class MainController extends MainFrame {
             theme = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
         } else if (source == this.nimbusThemeTopMenuBarItem) {
             theme = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
-            // } else if (source == this.undoTopMenuBarItem) {
-            // commandController.undo();
-            // } else if (source == this.redoTopMenuBarItem) {
-            // commandController.redo();
+        } else if (source == this.undoButton) {
+            undoRedoManager.undo(tables);
+            cancelEdgeCreation();
+        } else if (source == this.redoButton) {
+            undoRedoManager.redo(tables);
+            cancelEdgeCreation();
         }
 
         if (theme == null) {
@@ -716,7 +762,7 @@ public class MainController extends MainFrame {
     }
 
     public static void executeImportTableCommand(TableCell tableCell) {
-        commandController.execute(new ImportTableCommand(tableCell));
+        commandController.execute((Command) new ImportTableCommand(tableCell));
     }
 
     public void executeInsertTableCellCommand(mxCell jCell, mxCell ghostCell) {
@@ -727,28 +773,55 @@ public class MainController extends MainFrame {
     }
 
     public void executeInsertOperationCellCommand(MouseEvent event) {
-        UndoableRedoableCommand command = new InsertOperationCellCommand(
-                event, new AtomicReference<>(this.jCell), this.invisibleCellReference,
-                new AtomicReference<>(this.ghostCell), new AtomicReference<>(currentEdgeReference.get()),
-                this.currentActionReference);
+        ActionType actionType = this.currentActionReference.get().getType();
 
-        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE
-                && !currentEdgeReference.get().hasParent()
-                && this.jCell != null && CellUtils.getActiveCell(jCell).isPresent()
-                && !CellUtils.getActiveCell(jCell).get().canBeParent()) {
-            return;
-        }
-
-        if (this.currentActionReference.get().getType() == ActionType.CREATE_EDGE
-                && this.invisibleCellReference.get() == null) {
-            command.execute();
-        } else if (this.currentActionReference.get().getType() != ActionType.NONE) {
+        if (actionType == ActionType.CREATE_OPERATOR_CELL) {
+            // Place a new operation node; ghost cell is removed inside execute()
+            UndoableRedoableCommand command = new InsertOperationCellCommand(
+                event, this.ghostCell, this.currentActionReference);
             commandController.execute(command);
+            this.ghostCell = null;
+
+        } else if (actionType == ActionType.CREATE_EDGE) {
+            if (this.invisibleCellReference.get() == null) {
+                // --- FIRST CLICK: set source + create invisible tracking cell ---
+                if (this.jCell == null) return;
+                if (CellUtils.getActiveCell(jCell).isEmpty()) return;
+                if (!CellUtils.getActiveCell(jCell).get().canBeParent()) return;
+
+                currentEdgeReference.get().addParent(this.jCell);
+                if (currentEdgeReference.get().hasParent()) {
+                    CellUtils.addMovableEdge(event, this.invisibleCellReference, this.jCell);
+                }
+            } else {
+                // --- SECOND CLICK: complete the connection ---
+                mxCell sourceJCell = currentEdgeReference.get().getParent();
+                boolean canConnect = this.jCell != null
+                    && sourceJCell != null
+                    && !this.jCell.equals(sourceJCell)
+                    && CellUtils.getActiveCell(jCell).isPresent()
+                    && CellUtils.getActiveCell(jCell).get() instanceof entities.cells.OperationCell;
+
+                if (canConnect) {
+                    commandController.execute(new ConnectNodesCommand(
+                        sourceJCell, this.jCell, this.invisibleCellReference));
+                    // Reset edge mode only on successful connection
+                    resetCurrentEdgeReferenceValue();
+                    this.currentActionReference.set(ConstantController.NONE_ACTION);
+                }
+                // On invalid target: silently ignore and keep the edge going
+                // so the user can click on the correct destination.
+                // Press Escape to cancel.
+            }
         }
     }
 
     public void executeRemoveCellCommand(mxCell jCell) {
-        commandController.execute(new RemoveCellCommand(new AtomicReference<>(jCell)));
+        if (jCell.isEdge()) {
+            commandController.execute(new RemoveEdgeCommand(jCell));
+        } else {
+            commandController.execute(new RemoveCellCommand(new AtomicReference<>(jCell)));
+        }
     }
 
     public static void resetCurrentEdgeReferenceValue(Edge edge) {
@@ -757,6 +830,30 @@ public class MainController extends MainFrame {
 
     public static void resetCurrentEdgeReferenceValue() {
         resetCurrentEdgeReferenceValue(new Edge());
+    }
+
+    /**
+     * Cancels any in-progress edge-drawing operation.
+     * Called after undo/redo to avoid stale invisible cells or dangling edge state.
+     */
+    public void cancelEdgeCreation() {
+        if (this.invisibleCellReference.get() != null) {
+            MainFrame.getGraph().removeCells(
+                new Object[]{this.invisibleCellReference.get()}, true);
+            this.invisibleCellReference.set(null);
+        }
+        this.ghostCell = null;
+        resetCurrentEdgeReferenceValue();
+        this.currentActionReference.set(ConstantController.NONE_ACTION);
+    }
+
+    private void refreshUndoRedoButtons() {
+        int u = undoRedoManager.undoCount();
+        int r = undoRedoManager.redoCount();
+        undoButton.setEnabled(u > 0);
+        redoButton.setEnabled(r > 0);
+        undoButton.setToolTipText(u > 0 ? "Undo (" + u + (u > 1 ? " steps)" : " step)") : "Nothing to undo");
+        redoButton.setToolTipText(r > 0 ? "Redo (" + r + (r > 1 ? " steps)" : " step)") : "Nothing to redo");
     }
 
     private void executeAsOperator(mxCell cell) {
@@ -787,6 +884,9 @@ public class MainController extends MainFrame {
         // )) {
         // return;
         // }
+        // Save snapshot BEFORE renaming so the rename itself can be undone with Ctrl+Z
+        undoRedoManager.saveSnapshot();
+
         Cell cell_ = CellUtils.getActiveCell(cell).get();
 
         if (cell_ instanceof TableCell)
@@ -873,6 +973,19 @@ public class MainController extends MainFrame {
         } else if (menuItem == this.sortMenuItem) {
             createOperationAction = OperationType.SORT.getAction();
             style = OperationType.SORT.displayName;
+        }
+        else if (menuItem == this.filterColumnMenuItem) {
+            createOperationAction = OperationType.SELECT_COLUMNS.getAction();
+            style = OperationType.SELECT_COLUMNS.displayName;
+        } else if (menuItem == this.aggregationMenuItem) {
+            createOperationAction = OperationType.AGGREGATION.getAction();
+            style = OperationType.AGGREGATION.displayName;
+        } else if (menuItem == this.groupMenuItem) {
+            createOperationAction = OperationType.GROUP.getAction();
+            style = OperationType.GROUP.displayName;
+        } else if (menuItem == this.renameMenuItem) {
+            createOperationAction = OperationType.RENAME.getAction();
+            style = OperationType.RENAME.displayName;
         }
         // else if (this.indexerMenuItem == menuItem) {
         // createOperationAction = OperationType.INDEXER.getAction();
@@ -1151,6 +1264,9 @@ public class MainController extends MainFrame {
             }
 
             System.out.print("\n\n");
+        } else if (keyCode == KeyEvent.VK_A && (event.getModifiersEx() &  KeyEvent.CTRL_DOWN_MASK) != 0) {
+            Object[] allCells = graph.getChildVertices(graph.getDefaultParent());
+            graph.setSelectionCells(allCells);
         } else if (keyCode == KeyEvent.VK_A) {
             if (this.jCell != null && CellUtils.getActiveCell(this.jCell).isPresent()) {
                 CellUtils.getActiveCell(this.jCell).get().getTree().getTreeLayer();
@@ -1161,12 +1277,12 @@ public class MainController extends MainFrame {
         } else if (keyCode == KeyEvent.VK_V && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
             // Ctrl+V: Paste cells from clipboard
             commandController.execute(new PasteCellsCommand());
-            // } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() &
-            // KeyEvent.CTRL_DOWN_MASK) != 0) {
-            // commandController.undo();
-            // } else if (keyCode == KeyEvent.VK_Y && (event.getModifiersEx() &
-            // KeyEvent.CTRL_DOWN_MASK) != 0) {
-            // commandController.redo();
+        } else if (keyCode == KeyEvent.VK_Z && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+            undoRedoManager.undo(tables);
+            cancelEdgeCreation();
+        } else if (keyCode == KeyEvent.VK_Y && (event.getModifiersEx() & KeyEvent.CTRL_DOWN_MASK) != 0) {
+            undoRedoManager.redo(tables);
+            cancelEdgeCreation();
         } else if (keyCode == KeyEvent.VK_M) {
         }
 
@@ -1225,7 +1341,9 @@ public class MainController extends MainFrame {
 
         mxGeometry geo = cellMoved.getGeometry();
 
-        if (cellMoved.getEdgeAt(0) != null
+        if (cellMoved.getEdgeCount() > 0 && cellMoved.getEdgeAt(0) != null
+                && cellMoved.getEdgeAt(0).getTerminal(true) != null
+                && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry() != null
                 && cellMoved.getEdgeAt(0).getTerminal(true).getGeometry().getCenterY() < transformedY) {
             spaceBetweenCursorY *= -1;
         }

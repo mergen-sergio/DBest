@@ -38,12 +38,14 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
     private final mxGraph graph;
     private final Coordinates pasteLocation;
     private Map<mxCell, mxCell> pastedCells;
+    private List<mxCell> savedEdges;
     private static final double PASTE_OFFSET = 1.0;
 
     public PasteCellsCommand(Coordinates pasteLocation) {
         this.graph = MainFrame.getGraph();
         this.pasteLocation = pasteLocation;
         this.pastedCells = new HashMap<>();
+        this.savedEdges = new ArrayList<>();
     }
 
     public PasteCellsCommand() {
@@ -333,22 +335,40 @@ public class PasteCellsCommand extends BaseCommand implements UndoableRedoableCo
 
     @Override
     public void undo() {
-        graph.getModel().beginUpdate();
-        try {
-            // Remove all pasted cells and edges
-            Object[] cellsToRemove = pastedCells.values().toArray();
-            graph.removeCells(cellsToRemove, true);
-
-            System.out.println("Undid paste operation");
-
-        } finally {
-            graph.getModel().endUpdate();
+        // Collect all adjacent edges before removing any cell
+        savedEdges = new ArrayList<>();
+        for (mxCell pastedCell : pastedCells.values()) {
+            Object[] edges = graph.getEdges(pastedCell);
+            for (Object edge : edges) {
+                if (!savedEdges.contains(edge)) {
+                    savedEdges.add((mxCell) edge);
+                }
+            }
+        }
+        // Deactivate each cell via CellUtils so CellRepository is properly updated
+        for (mxCell pastedCell : pastedCells.values()) {
+            CellUtils.deactivateActiveJCell(graph, pastedCell);
         }
     }
 
     @Override
     public void redo() {
-        execute();
+        // Restore previously pasted cells from INACTIVE state
+        for (mxCell pastedCell : pastedCells.values()) {
+            CellUtils.activateInactiveJCell(graph, pastedCell);
+        }
+        // Re-add the saved edges
+        if (!savedEdges.isEmpty()) {
+            graph.getModel().beginUpdate();
+            try {
+                for (mxCell edge : savedEdges) {
+                    graph.addCell(edge);
+                }
+            } finally {
+                graph.getModel().endUpdate();
+            }
+            graph.refresh();
+        }
     }
 
     @Override
