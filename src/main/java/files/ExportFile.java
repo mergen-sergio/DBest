@@ -418,12 +418,16 @@ public class ExportFile extends JPanel {
             fileChooser.setDialogTitle(ConstantController.getString("exportFile.saveImage"));
             fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
+            fileChooser.setCurrentDirectory(MainController.getLastDirectory());
+
             String defaultFileName = String.format("%s.jpeg", ConstantController.getString("file.treeFileName"));
             fileChooser.setSelectedFile(new File(defaultFileName));
 
             int userSelection = fileChooser.showSaveDialog(component);
 
             if (userSelection == JFileChooser.APPROVE_OPTION) {
+                MainController.setLastDirectory(new File(fileChooser.getCurrentDirectory().getAbsolutePath()));
+
                 File fileToSave = fileChooser.getSelectedFile();
                 String path = fileToSave.getPath();
 
@@ -454,12 +458,16 @@ public class ExportFile extends JPanel {
         fileChooser.setDialogTitle(ConstantController.getString("exportFile.saveTree"));
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
+        fileChooser.setCurrentDirectory(MainController.getLastDirectory());
+
         String defaultFileName = String.format("%s.txt", ConstantController.getString("file.treeFileName"));
         fileChooser.setSelectedFile(new File(defaultFileName));
 
         if (fileChooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) {
             return;
         }
+        
+        MainController.setLastDirectory(new File(fileChooser.getCurrentDirectory().getAbsolutePath()));
 
         String filePath = fileChooser.getSelectedFile().getPath();
 
