@@ -19,8 +19,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
@@ -40,6 +43,10 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private final JLabel lblExecutionTime = new JLabel();
 
     private final JTable table = new JTable();
+
+    private final JPopupMenu tablePopupMenu = new JPopupMenu();
+
+    private final JMenuItem copyMenuItem = new JMenuItem("Copy");
 
     private final JButton btnLeft = new JButton();
 
@@ -93,6 +100,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
+
+    private static final String COPY_SELECTION_ACTION = "copySelection";
     
     // Static flag to allow external cancellation (e.g., from OpenDataFrame)
     private static volatile boolean externalCancellationRequested = false;
@@ -237,7 +246,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         int firstElement = page * 15;
         int lastElement = page * 15 + 14;
 
-        DefaultTableModel model = new DefaultTableModel();
+        DefaultTableModel model = new ReadOnlyTableModel();
 
         model.addColumn("");
 
@@ -286,7 +295,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         JTableUtils.setColumnBold(this.table, 0);
         JTableUtils.setNullInRed(this.table);
 
-        this.table.setEnabled(false);
+        this.table.setEnabled(true);
         this.table.setFillsViewportHeight(true);
         this.table.repaint();
     }
@@ -456,6 +465,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.btnRight.addActionListener(this);
         this.btnAllRight.addActionListener(this);
         this.btnStats.addActionListener(this);
+        this.configureTableInteraction();
 
         JPanel northPane = new JPanel(new FlowLayout());
         northPane.add(this.lblText);
@@ -496,6 +506,126 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         if (!externalCancellationRequested) {
             this.setVisible(true);
         }
+    }
+
+    private void configureTableInteraction() {
+        this.table.setEnabled(true);
+        this.table.setFocusable(true);
+        this.table.setCellSelectionEnabled(true);
+        this.table.setRowSelectionAllowed(true);
+        this.table.setColumnSelectionAllowed(true);
+        this.table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        this.table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(KeyStroke.getKeyStroke("control C"), COPY_SELECTION_ACTION);
+        this.table.getActionMap().put(COPY_SELECTION_ACTION, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                copySelectionToClipboard();
+            }
+        });
+
+        this.copyMenuItem.addActionListener(event -> copySelectionToClipboard());
+        this.tablePopupMenu.add(this.copyMenuItem);
+
+        this.table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                selectRowFromIndexColumn(event);
+                showTablePopup(event);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent event) {
+                showTablePopup(event);
+            }
+        });
+
+        this.table.getTableHeader().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                selectColumnFromHeader(event);
+            }
+        });
+    }
+
+    private void selectRowFromIndexColumn(MouseEvent event) {
+        if (!SwingUtilities.isLeftMouseButton(event)) {
+            return;
+        }
+
+        int row = this.table.rowAtPoint(event.getPoint());
+        int column = this.table.columnAtPoint(event.getPoint());
+        if (row < 0 || column != 0 || this.table.getColumnCount() <= 1) {
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            this.table.requestFocusInWindow();
+            this.table.setRowSelectionInterval(row, row);
+            this.table.setColumnSelectionInterval(1, this.table.getColumnCount() - 1);
+        });
+    }
+
+    private void selectColumnFromHeader(MouseEvent event) {
+        if (!SwingUtilities.isLeftMouseButton(event) || this.table.getRowCount() == 0) {
+            return;
+        }
+
+        int column = this.table.columnAtPoint(event.getPoint());
+        if (column < 0) {
+            return;
+        }
+
+        this.table.requestFocusInWindow();
+        this.table.setRowSelectionInterval(0, this.table.getRowCount() - 1);
+        this.table.setColumnSelectionInterval(column, column);
+    }
+
+    private void showTablePopup(MouseEvent event) {
+        if (!event.isPopupTrigger()) {
+            return;
+        }
+
+        this.copyMenuItem.setEnabled(this.table.getSelectedRowCount() > 0 && this.table.getSelectedColumnCount() > 0);
+        this.tablePopupMenu.show(event.getComponent(), event.getX(), event.getY());
+    }
+
+    private void copySelectionToClipboard() {
+        int[] selectedRows = this.table.getSelectedRows();
+        int[] selectedColumns = this.table.getSelectedColumns();
+        if (selectedRows.length == 0 || selectedColumns.length == 0) {
+            return;
+        }
+
+        StringBuilder clipboardText = new StringBuilder();
+        for (int rowIndex = 0; rowIndex < selectedRows.length; rowIndex++) {
+            if (rowIndex > 0) {
+                clipboardText.append(System.lineSeparator());
+            }
+
+            for (int columnIndex = 0; columnIndex < selectedColumns.length; columnIndex++) {
+                if (columnIndex > 0) {
+                    clipboardText.append('\t');
+                }
+                Object value = this.table.getValueAt(selectedRows[rowIndex], selectedColumns[columnIndex]);
+                clipboardText.append(formatClipboardValue(value));
+            }
+        }
+
+        StringSelection selection = new StringSelection(clipboardText.toString());
+        this.table.getToolkit().getSystemClipboard().setContents(selection, null);
+    }
+
+    private String formatClipboardValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.toString()
+            .replace('\t', ' ')
+            .replace('\n', ' ')
+            .replace('\r', ' ');
     }
 
     private void updateTuplesLoaded() {
@@ -642,6 +772,13 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.cell.closeOperator();
         this.cell.freeOperatorResources();
         this.dispose();
+    }
+
+    private static class ReadOnlyTableModel extends DefaultTableModel {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
     }
 
     private static class MovingSquareBar extends JPanel {
