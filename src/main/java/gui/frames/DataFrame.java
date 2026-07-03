@@ -96,12 +96,20 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private int largestElement = -1;
 
+    private TableSelectionType tableSelectionType = TableSelectionType.NONE;
+
+    private int selectedTableRow = -1;
+
+    private int selectedTableColumn = -1;
+
     private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
 
     private static final String COPY_SELECTION_ACTION = "copySelection";
+
+    private static final String CLEAR_SELECTION_ACTION = "clearSelection";
     
     // Static flag to allow external cancellation (e.g., from OpenDataFrame)
     private static volatile boolean externalCancellationRequested = false;
@@ -297,6 +305,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
         this.table.setEnabled(true);
         this.table.setFillsViewportHeight(true);
+        this.clearTableSelection();
         this.table.repaint();
     }
 
@@ -524,6 +533,14 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 copySelectionToClipboard();
             }
         });
+        this.table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(KeyStroke.getKeyStroke("ESCAPE"), CLEAR_SELECTION_ACTION);
+        this.table.getActionMap().put(CLEAR_SELECTION_ACTION, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                clearTableSelection();
+            }
+        });
 
         this.copyMenuItem.addActionListener(event -> copySelectionToClipboard());
         this.tablePopupMenu.add(this.copyMenuItem);
@@ -531,7 +548,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent event) {
-                selectRowFromIndexColumn(event);
+                handleTableSelectionClick(event);
                 showTablePopup(event);
             }
 
@@ -549,21 +566,57 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         });
     }
 
-    private void selectRowFromIndexColumn(MouseEvent event) {
+    private void handleTableSelectionClick(MouseEvent event) {
         if (!SwingUtilities.isLeftMouseButton(event)) {
             return;
         }
 
         int row = this.table.rowAtPoint(event.getPoint());
         int column = this.table.columnAtPoint(event.getPoint());
-        if (row < 0 || column != 0 || this.table.getColumnCount() <= 1) {
+        if (row < 0 || column < 0) {
+            this.clearTableSelection();
             return;
         }
 
+        if (column == 0) {
+            selectRowFromIndexColumn(row);
+            return;
+        }
+
+        if (this.tableSelectionType == TableSelectionType.CELL
+            && this.selectedTableRow == row
+            && this.selectedTableColumn == column) {
+            SwingUtilities.invokeLater(this::clearTableSelection);
+            return;
+        }
+
+        if ((this.tableSelectionType == TableSelectionType.ROW && this.selectedTableRow == row)
+            || (this.tableSelectionType == TableSelectionType.COLUMN && this.selectedTableColumn == column)) {
+            SwingUtilities.invokeLater(this::clearTableSelection);
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> markCellSelection(row, column));
+    }
+
+    private void selectRowFromIndexColumn(int row) {
+        if (row < 0 || this.table.getColumnCount() <= 1) {
+            return;
+        }
+
+        boolean selectedRow = this.tableSelectionType == TableSelectionType.ROW
+            && this.selectedTableRow == row;
+
         SwingUtilities.invokeLater(() -> {
+            if (selectedRow) {
+                this.clearTableSelection();
+                return;
+            }
+
             this.table.requestFocusInWindow();
             this.table.setRowSelectionInterval(row, row);
             this.table.setColumnSelectionInterval(1, this.table.getColumnCount() - 1);
+            this.markRowSelection(row);
         });
     }
 
@@ -577,9 +630,43 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             return;
         }
 
+        boolean selectedColumn = this.tableSelectionType == TableSelectionType.COLUMN
+            && this.selectedTableColumn == column;
+
+        if (selectedColumn) {
+            this.clearTableSelection();
+            return;
+        }
+
         this.table.requestFocusInWindow();
         this.table.setRowSelectionInterval(0, this.table.getRowCount() - 1);
         this.table.setColumnSelectionInterval(column, column);
+        this.markColumnSelection(column);
+    }
+
+    private void clearTableSelection() {
+        this.table.clearSelection();
+        this.tableSelectionType = TableSelectionType.NONE;
+        this.selectedTableRow = -1;
+        this.selectedTableColumn = -1;
+    }
+
+    private void markCellSelection(int row, int column) {
+        this.tableSelectionType = TableSelectionType.CELL;
+        this.selectedTableRow = row;
+        this.selectedTableColumn = column;
+    }
+
+    private void markRowSelection(int row) {
+        this.tableSelectionType = TableSelectionType.ROW;
+        this.selectedTableRow = row;
+        this.selectedTableColumn = -1;
+    }
+
+    private void markColumnSelection(int column) {
+        this.tableSelectionType = TableSelectionType.COLUMN;
+        this.selectedTableRow = -1;
+        this.selectedTableColumn = column;
     }
 
     private void showTablePopup(MouseEvent event) {
@@ -592,6 +679,11 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     }
 
     private void copySelectionToClipboard() {
+        if (this.tableSelectionType == TableSelectionType.COLUMN && this.selectedTableColumn >= 0) {
+            this.copyLoadedColumnToClipboard(this.selectedTableColumn);
+            return;
+        }
+
         int[] selectedRows = this.table.getSelectedRows();
         int[] selectedColumns = this.table.getSelectedColumns();
         if (selectedRows.length == 0 || selectedColumns.length == 0) {
@@ -613,7 +705,35 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             }
         }
 
-        StringSelection selection = new StringSelection(clipboardText.toString());
+        copyTextToClipboard(clipboardText.toString());
+    }
+
+    private void copyLoadedColumnToClipboard(int column) {
+        if (column >= this.table.getColumnCount() || this.rows.isEmpty()) {
+            return;
+        }
+
+        StringBuilder clipboardText = new StringBuilder();
+        String columnName = this.table.getColumnName(column);
+        for (int rowIndex = 0; rowIndex < this.rows.size(); rowIndex++) {
+            if (rowIndex > 0) {
+                clipboardText.append(System.lineSeparator());
+            }
+
+            if (column == 0) {
+                clipboardText.append(rowIndex + 1);
+                continue;
+            }
+
+            Map<String, String> currentRow = TuplesExtractor.getRow_(this.rows.get(rowIndex), this.cell.getOperator(), true);
+            clipboardText.append(formatClipboardValue(currentRow.get(columnName)));
+        }
+
+        copyTextToClipboard(clipboardText.toString());
+    }
+
+    private void copyTextToClipboard(String text) {
+        StringSelection selection = new StringSelection(text);
         this.table.getToolkit().getSystemClipboard().setContents(selection, null);
     }
 
@@ -779,6 +899,13 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         public boolean isCellEditable(int row, int column) {
             return false;
         }
+    }
+
+    private enum TableSelectionType {
+        NONE,
+        CELL,
+        ROW,
+        COLUMN
     }
 
     private static class MovingSquareBar extends JPanel {
