@@ -18,6 +18,7 @@ import ibd.query.Tuple;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
@@ -28,6 +29,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +108,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private int selectedTableColumn = -1;
 
     private final Set<Integer> selectedLoadedColumns = new TreeSet<>();
+
+    private final Map<String, Integer> columnWidths = new HashMap<>();
 
     private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
@@ -261,6 +265,8 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         int firstElement = page * 15;
         int lastElement = page * 15 + 14;
 
+        this.saveColumnWidths();
+
         DefaultTableModel model = new ReadOnlyTableModel();
 
         model.addColumn("");
@@ -306,6 +312,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         }
 
         this.table.getColumnModel().getColumn(0).setResizable(false);
+        this.restoreColumnWidths();
 
         JTableUtils.setColumnBold(this.table, 0);
         JTableUtils.setNullInRed(this.table);
@@ -314,6 +321,28 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.table.setFillsViewportHeight(true);
         this.clearTableSelection();
         this.table.repaint();
+    }
+
+    private void saveColumnWidths() {
+        for (int i = 1; i < this.table.getColumnCount(); i++) {
+            TableColumn column = this.table.getColumnModel().getColumn(i);
+            String columnName = String.valueOf(column.getHeaderValue());
+            this.columnWidths.put(columnName, column.getWidth());
+        }
+    }
+
+    private void restoreColumnWidths() {
+        for (int i = 1; i < this.table.getColumnCount(); i++) {
+            TableColumn column = this.table.getColumnModel().getColumn(i);
+            String columnName = String.valueOf(column.getHeaderValue());
+            Integer width = this.columnWidths.get(columnName);
+            if (width == null || width <= 0) {
+                continue;
+            }
+
+            column.setPreferredWidth(width);
+            column.setWidth(width);
+        }
     }
 
     private void getTuples(int page) throws Exception {
