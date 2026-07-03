@@ -786,12 +786,12 @@ public class MainController extends MainFrame {
             if (this.invisibleCellReference.get() == null) {
                 // --- FIRST CLICK: set source + create invisible tracking cell ---
                 if (this.jCell == null) return;
-                if (CellUtils.getActiveCell(jCell).isEmpty()) return;
-                if (!CellUtils.getActiveCell(jCell).get().canBeParent()) return;
+                if (!Edge.canAcceptParent(this.jCell)) return;
 
                 currentEdgeReference.get().addParent(this.jCell);
                 if (currentEdgeReference.get().hasParent()) {
                     CellUtils.addMovableEdge(event, this.invisibleCellReference, this.jCell);
+                    this.setEdgeCursor();
                 }
             } else {
                 // --- SECOND CLICK: complete the connection ---
@@ -1298,6 +1298,15 @@ public class MainController extends MainFrame {
         graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }
 
+    private void updateEdgeSourceCursor(MouseEvent event) {
+        Object cell = graphComponent.getCellAt(event.getX(), event.getY());
+        int cursorType = cell instanceof mxCell jCell && Edge.canAcceptParent(jCell)
+            ? Cursor.HAND_CURSOR
+            : Cursor.CROSSHAIR_CURSOR;
+
+        graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(cursorType));
+    }
+
     private void moveCell2(MouseEvent event, mxCell cellMoved) {
         entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
 
@@ -1365,7 +1374,7 @@ public class MainController extends MainFrame {
         } else if (this.currentActionReference.get() instanceof CreateTableCellAction createTable) {
             this.moveCell(event, createTable.getTableCell().getJCell());
         } else if (currentActionType == ActionType.CREATE_EDGE) {
-            this.setEdgeCursor();
+            this.updateEdgeSourceCursor(event);
         }
     }
 
