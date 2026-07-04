@@ -699,6 +699,7 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.copyMenuItem);
             this.popupMenuJCell.add(this.redistributeNodesMenuItem);
             this.popupMenuJCell.add(this.swapBinarySidesMenuItem);
+            this.popupMenuJCell.add(this.replaceJoinMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -739,6 +740,12 @@ public class MainController extends MainFrame {
                 this.popupMenuJCell.remove(this.swapBinarySidesMenuItem);
             }
 
+            if (canReplaceJoinOperation(cell)) {
+                configureReplaceJoinMenu((OperationCell) cell);
+            } else {
+                this.popupMenuJCell.remove(this.replaceJoinMenuItem);
+            }
+
             if (cell.hasError()) {
                 this.popupMenuJCell.remove(this.runQueryMenuItem);
                 this.popupMenuJCell.remove(this.operationsMenuItem);
@@ -772,6 +779,31 @@ public class MainController extends MainFrame {
                 && operationCell.getParents().size() == 2
                 && operationCell.getLeftParent() != null
                 && operationCell.getRightParent() != null;
+    }
+
+    private boolean canReplaceJoinOperation(Cell cell) {
+        return cell instanceof OperationCell operationCell && isJoinOperation(operationCell);
+    }
+
+    private void configureReplaceJoinMenu(OperationCell operationCell) {
+        this.replaceJoinMenuItem.removeAll();
+
+        Arrays.stream(OperationType.values())
+                .filter(this::isJoinOperationType)
+                .filter(operationType -> operationType != operationCell.getType())
+                .forEach(operationType -> {
+                    JMenuItem menuItem = new JMenuItem(operationType.displayName);
+                    menuItem.addActionListener(actionEvent -> commandController.execute(
+                            new ReplaceJoinOperationCommand(this.jCell, operationType)
+                    ));
+                    this.replaceJoinMenuItem.add(menuItem);
+                });
+    }
+
+    private boolean isJoinOperationType(OperationType operationType) {
+        return operationType != null
+                && operationType.arity == OperationArity.BINARY
+                && operationType.form == JoinForm.class;
     }
 
     public static void executeImportTableCommand(TableCell tableCell) {
