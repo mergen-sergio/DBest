@@ -261,6 +261,26 @@ public final class OperationCell extends Cell {
         }
     }
 
+    public boolean replaceParent(Cell oldParent, Cell newParent) {
+        if (oldParent == null || newParent == null) {
+            return false;
+        }
+
+        if (oldParent.equals(this.leftParent)) {
+            this.leftParent = newParent;
+        } else if (oldParent.equals(this.rightParent)) {
+            this.rightParent = newParent;
+        } else {
+            return false;
+        }
+
+        if (oldParent.getChild() == this) {
+            oldParent.removeChild();
+        }
+        newParent.setChild(this);
+        return true;
+    }
+
     public void removeParent(mxCell jCell) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(jCell);
 

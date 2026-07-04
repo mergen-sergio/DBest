@@ -732,10 +732,6 @@ public class MainController extends MainFrame {
                 this.popupMenuJCell.remove(this.editMenuItem);
             }
 
-            if (cell.hasChild()) {
-                this.popupMenuJCell.remove(this.operationsMenuItem);
-            }
-
             if (!canSwapBinaryOperationSides(cell)) {
                 this.popupMenuJCell.remove(this.swapBinarySidesMenuItem);
             }
@@ -1042,6 +1038,16 @@ public class MainController extends MainFrame {
         if (createOperationAction != null) {
             createOperationAction.setParent(this.jCell);
             this.currentActionReference.set(createOperationAction);
+
+            if (shouldInsertOperationBetweenExistingConnection()) {
+                commandController.execute(new InsertOperationCellCommand(
+                    getMiddlePositionBetweenCellAndChild(this.jCell),
+                    null,
+                    this.currentActionReference
+                ));
+                this.ghostCell = null;
+                return;
+            }
         }
 
         if (createOperationAction != null || (clickedButton != null
@@ -1052,6 +1058,33 @@ public class MainController extends MainFrame {
                     MouseInfo.getPointerInfo().getLocation().getY() - MainFrame.getGraphComponent().getHeight(),
                     80, 30, style);
         }
+    }
+
+    private boolean shouldInsertOperationBetweenExistingConnection() {
+        if (this.jCell == null) {
+            return false;
+        }
+
+        Optional<Cell> optionalCell = CellUtils.getActiveCell(this.jCell);
+        return optionalCell.isPresent() && optionalCell.get().hasChild();
+    }
+
+    private entities.Coordinates getMiddlePositionBetweenCellAndChild(mxCell parentJCell) {
+        Cell parentCell = CellUtils.getActiveCell(parentJCell).orElseThrow();
+        mxCell childJCell = parentCell.getChild().getJCell();
+
+        mxGeometry parentGeometry = parentJCell.getGeometry();
+        mxGeometry childGeometry = childJCell.getGeometry();
+
+        double parentCenterX = parentGeometry.getX() + parentGeometry.getWidth() / 2.0;
+        double parentCenterY = parentGeometry.getY() + parentGeometry.getHeight() / 2.0;
+        double childCenterX = childGeometry.getX() + childGeometry.getWidth() / 2.0;
+        double childCenterY = childGeometry.getY() + childGeometry.getHeight() / 2.0;
+
+        return new entities.Coordinates(
+            (int) Math.round((parentCenterX + childCenterX) / 2.0),
+            (int) Math.round((parentCenterY + childCenterY) / 2.0)
+        );
     }
 
     // not used
