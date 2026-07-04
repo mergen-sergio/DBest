@@ -698,6 +698,7 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.removeMenuItem);
             this.popupMenuJCell.add(this.copyMenuItem);
             this.popupMenuJCell.add(this.redistributeNodesMenuItem);
+            this.popupMenuJCell.add(this.swapBinarySidesMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -734,6 +735,10 @@ public class MainController extends MainFrame {
                 this.popupMenuJCell.remove(this.operationsMenuItem);
             }
 
+            if (!canSwapBinaryOperationSides(cell)) {
+                this.popupMenuJCell.remove(this.swapBinarySidesMenuItem);
+            }
+
             if (cell.hasError()) {
                 this.popupMenuJCell.remove(this.runQueryMenuItem);
                 this.popupMenuJCell.remove(this.operationsMenuItem);
@@ -759,6 +764,14 @@ public class MainController extends MainFrame {
         if (optionalCell.isPresent() && event.getClickCount() == 2) {
             CellUtils.showTable(this.jCell);
         }
+    }
+
+    private boolean canSwapBinaryOperationSides(Cell cell) {
+        return cell instanceof OperationCell operationCell
+                && operationCell.getArity() == OperationArity.BINARY
+                && operationCell.getParents().size() == 2
+                && operationCell.getLeftParent() != null
+                && operationCell.getRightParent() != null;
     }
 
     public static void executeImportTableCommand(TableCell tableCell) {
@@ -940,6 +953,8 @@ public class MainController extends MainFrame {
             commandController.execute(new CopyCellsCommand());
         } else if (menuItem == this.redistributeNodesMenuItem) {
             this.redistributeNodes();
+        } else if (menuItem == this.swapBinarySidesMenuItem) {
+            commandController.execute(new SwapBinaryOperationSidesCommand(this.jCell));
         } else if (menuItem == this.pasteMenuItem) {
             Point mousePosition = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());

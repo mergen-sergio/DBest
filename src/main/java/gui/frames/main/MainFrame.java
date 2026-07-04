@@ -93,6 +93,8 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem redistributeNodesMenuItem;
 
+    protected JMenuItem swapBinarySidesMenuItem;
+
     protected JMenuItem selectionMenuItem;
 
     protected JMenuItem projectionMenuItem;
@@ -210,6 +212,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.copyMenuItem = new JMenuItem("Copy");
         this.pasteMenuItem = new JMenuItem("Paste");
         this.redistributeNodesMenuItem = new JMenuItem("Redistribute Nodes");
+        this.swapBinarySidesMenuItem = new JMenuItem("Swap Edges");
         this.removeTableMenuItem = new JMenuItem("Remove Table");
         this.renameTableMenuItem = new JMenuItem("Rename Table");
         this.operationsMenuItem = new JMenu(ConstantController.getString("cell.operations"));
@@ -632,6 +635,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.copyMenuItem.addActionListener(this);
         this.pasteMenuItem.addActionListener(this);
         this.redistributeNodesMenuItem.addActionListener(this);
+        this.swapBinarySidesMenuItem.addActionListener(this);
         this.selectionMenuItem.addActionListener(this);
         this.projectionMenuItem.addActionListener(this);
         this.filterColumnMenuItem.addActionListener(this);
