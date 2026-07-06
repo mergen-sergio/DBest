@@ -40,16 +40,25 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         mxCell ghostCell,
         AtomicReference<CurrentAction> currentActionReference
     ) {
-        CreateOperationCellAction action = (CreateOperationCellAction) currentActionReference.get();
+
+        CurrentAction current = currentActionReference.get();
+        CreateOperationCellAction action =
+                (current instanceof CreateOperationCellAction c) ? c : null;
         this.mouseEvent = mouseEvent;
         this.ghostCell = ghostCell;
         this.currentActionReference = currentActionReference;
-        this.operationType = action.getOperationType();
-        this.parentToAutoConnect = action.hasParent() ? action.getParent() : null;
+        this.operationType = action != null ? action.getOperationType() : null;
+        this.parentToAutoConnect = (action != null && action.hasParent()) ? action.getParent() : null;
     }
 
     @Override
     public void execute() {
+        if (this.operationType == null) {
+            if (this.ghostCell != null) {
+                MainFrame.getGraph().removeCells(new Object[]{this.ghostCell}, true);
+            }
+            return;
+        }
         // Remove the ghost (preview) cell
         if (this.ghostCell != null) {
             MainFrame.getGraph().removeCells(new Object[]{this.ghostCell}, true);

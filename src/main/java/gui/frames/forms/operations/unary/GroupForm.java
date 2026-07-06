@@ -7,17 +7,25 @@ import entities.cells.Cell;
 import entities.utils.cells.CellUtils;
 import gui.frames.forms.operations.IOperationForm;
 import gui.frames.forms.operations.OperationForm;
+import operations.unary.Aggregation;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.AbstractButton;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class GroupForm extends OperationForm implements ActionListener, IOperationForm {
 
@@ -26,20 +34,14 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
     private final JButton btnAdd = new JButton(ConstantController.getString("operationForm.add"));
 
     private final JPanel checkBoxPanel = new JPanel();
-    private final ArrayList<JCheckBox> aggregationCheckBoxes = new ArrayList<>();
+    private final List<JCheckBox> aggregationCheckBoxes = new ArrayList<>();
 
     private final JComboBox<String> comboBoxGroupBySource = new JComboBox<>();
     private final JComboBox<String> comboBoxGroupByColumn = new JComboBox<>();
-    private final JComboBox<String> comboBoxAggregation = new JComboBox<>(new String[]{
-        ConstantController.getString("operationForm.minimum"),
-        ConstantController.getString("operationForm.maximum"),
-        ConstantController.getString("operationForm.average"),
-        ConstantController.getString("operationForm.sum"),
-        ConstantController.getString("operationForm.first"),
-        ConstantController.getString("operationForm.last"),
-        ConstantController.getString("operationForm.count"),
-        ConstantController.getString("operationForm.countAll"),
-        ConstantController.getString("operationForm.countNull")});
+    private final JComboBox<String> comboBoxAggregation = new JComboBox<>(
+            Arrays.stream(Aggregation.Function.values())
+                    .map(Aggregation.Function::getDisplayName)
+                    .toArray(String[]::new));
 
     public GroupForm(mxCell jCell) {
         super(jCell);
@@ -48,6 +50,7 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
 
     public void initGUI() {
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 closeWindow();
             }
@@ -83,10 +86,11 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
         addExtraComponent(new JLabel(ConstantController.getString("operationForm.groupBy") + ":"), 0, 7, 1, 1);
         addExtraComponent(comboBoxGroupByColumn, 1, 7, 2, 1);
 
-        comboBoxGroupBySource.addActionListener(actionEvent -> setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild.getColumns()));
+        comboBoxGroupBySource.addActionListener(actionEvent ->
+                setColumns(comboBoxGroupByColumn, comboBoxGroupBySource, leftChild.getColumns()));
 
         Cell cell = CellUtils.getActiveCell(jCell).get();
-        java.util.List<Column> columns = setLeftComboBoxColumns(cell);
+        List<Column> columns = setLeftComboBoxColumns(cell);
         setComboBoxData(columns, comboBoxGroupBySource, comboBoxGroupByColumn);
 
         setPreviousArgs();
@@ -118,7 +122,8 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
         if (actionEvent.getSource() == btnAdd) {
             if (comboBoxColumn.getItemCount() > 0) {
                 String aggregation = createAggregationString();
-                if (aggregationCheckBoxes.stream().noneMatch(cb -> cb.getText().equals(aggregation))) {
+                if (aggregation != null
+                        && aggregationCheckBoxes.stream().noneMatch(cb -> cb.getText().equals(aggregation))) {
                     aggregationCheckBoxes.add(new JCheckBox(aggregation));
                     refreshCheckBoxPanel();
                 }
@@ -132,42 +137,35 @@ public class GroupForm extends OperationForm implements ActionListener, IOperati
         } else if (actionEvent.getSource() == btnCancel) {
             closeWindow();
         } else if (actionEvent.getSource() == btnReady) {
+            Object gbSource = comboBoxGroupBySource.getSelectedItem();
+            Object gbColumn = comboBoxGroupByColumn.getSelectedItem();
+            if (gbSource == null || gbColumn == null) return;
             arguments.clear();
             arguments.add(Column.composeSourceAndName(
-                Objects.requireNonNull(comboBoxGroupBySource.getSelectedItem()).toString(),
-                Objects.requireNonNull(comboBoxGroupByColumn.getSelectedItem()).toString())
-            );
-            arguments.addAll(aggregationCheckBoxes.stream().map(JCheckBox::getText).collect(Collectors.toList()));
+                    Objects.requireNonNull(gbSource).toString(),
+                    Objects.requireNonNull(gbColumn).toString()));
+            arguments.addAll(aggregationCheckBoxes.stream().map(JCheckBox::getText).toList());
             btnReady();
         }
     }
 
     private String createAggregationString() {
-        String selected = Objects.requireNonNull(comboBoxAggregation.getSelectedItem()).toString();
-        String suffix;
+        Object selectedFn = comboBoxAggregation.getSelectedItem();
+        Object selectedSource = comboBoxSource.getSelectedItem();
+        Object selectedColumn = comboBoxColumn.getSelectedItem();
+        if (selectedFn == null || selectedSource == null || selectedColumn == null) return null;
 
-        if (selected.equals(ConstantController.getString("operationForm.maximum")))
-            suffix = "MAX:";
-        else if (selected.equals(ConstantController.getString("operationForm.minimum")))
-            suffix = "MIN:";
-        else if (selected.equals(ConstantController.getString("operationForm.average")))
-            suffix = "AVG:";
-        else if (selected.equals(ConstantController.getString("operationForm.sum")))
-            suffix = "SUM:";
-        else if (selected.equals(ConstantController.getString("operationForm.first")))
-            suffix = "FIRST:";
-        else if (selected.equals(ConstantController.getString("operationForm.last")))
-            suffix = "LAST:";
-        else if (selected.equals(ConstantController.getString("operationForm.count")))
-            suffix = "COUNT:";
-        else if (selected.equals(ConstantController.getString("operationForm.countAll")))
-            suffix = "COUNT_ALL:";
-        else if (selected.equals(ConstantController.getString("operationForm.countNull")))
-            suffix = "COUNT_NULL:";
-        else
-            throw new IllegalStateException("Unexpected value: " + selected);
+        String selectedName = selectedFn.toString();
+        String prefix = null;
+        for (Aggregation.Function fn : Aggregation.Function.values()) {
+            if (fn.getDisplayName().equals(selectedName)) {
+                prefix = fn.getPrefix();
+                break;
+            }
+        }
+        if (prefix == null) return null;
 
-        return suffix + comboBoxSource.getSelectedItem() + "." + comboBoxColumn.getSelectedItem();
+        return prefix + selectedSource + "." + selectedColumn;
     }
 
     private void refreshCheckBoxPanel() {

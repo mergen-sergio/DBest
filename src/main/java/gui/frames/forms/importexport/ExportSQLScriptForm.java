@@ -27,8 +27,6 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
 import controllers.ConstantController;
 
@@ -41,6 +39,7 @@ import entities.cells.Cell;
 import gui.frames.forms.FormBase;
 import gui.frames.forms.IFormCondition;
 
+import gui.utils.Forms;
 import gui.utils.JTableUtils;
 
 public class ExportSQLScriptForm extends FormBase implements ActionListener, IFormCondition {
@@ -140,42 +139,12 @@ public class ExportSQLScriptForm extends FormBase implements ActionListener, IFo
         this.addComponent(new JLabel(String.format("%s:", ConstantController.getString("exportSQLScript.databaseName"))), 0, 0, 1, 1);
         this.addComponent(this.txtFieldDatabaseName, 1, 0, 1, 1);
         this.txtFieldDatabaseName.setMaximumSize(new Dimension(3000, 50));
-        this.txtFieldDatabaseName.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-        });
+        Forms.onDocumentChange(this.txtFieldDatabaseName, this::checkBtnReady);
 
         this.addComponent(new JLabel(String.format("%s:", ConstantController.getString("exportSQLScript.tableName"))), 0, 1, 1, 1);
         this.addComponent(this.txtFieldTableName, 1, 1, 1, 1);
         this.txtFieldTableName.setMaximumSize(new Dimension(3000, 50));
-        this.txtFieldTableName.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent documentEvent) {
-                ExportSQLScriptForm.this.checkBtnReady();
-            }
-        });
+        Forms.onDocumentChange(this.txtFieldTableName, this::checkBtnReady);
 
         this.addComponent(this.checkBoxCreateDatabase, 0, 2, 1, 1);
 
@@ -250,23 +219,7 @@ public class ExportSQLScriptForm extends FormBase implements ActionListener, IFo
 
                     pkCheckBox.addActionListener(this);
 
-                    newColumnNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-
-                        @Override
-                        public void insertUpdate(DocumentEvent documentEvent) {
-                            ExportSQLScriptForm.this.checkBtnReady();
-                        }
-
-                        @Override
-                        public void removeUpdate(DocumentEvent documentEvent) {
-                            ExportSQLScriptForm.this.checkBtnReady();
-                        }
-
-                        @Override
-                        public void changedUpdate(DocumentEvent documentEvent) {
-                            ExportSQLScriptForm.this.checkBtnReady();
-                        }
-                    });
+                    Forms.onDocumentChange(newColumnNameTextField, this::checkBtnReady);
 
                     this.pkCheckBoxes.put(inf, pkCheckBox);
                     this.nullCheckBoxes.put(inf, nullCheckBox);

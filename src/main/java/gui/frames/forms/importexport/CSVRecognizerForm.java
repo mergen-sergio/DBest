@@ -10,13 +10,12 @@ import files.csv.CSVInfo;
 import files.csv.CSVRecognizer;
 import files.csv.CSVRecognizer.CSVData;
 import gui.frames.ErrorFrame;
+import gui.utils.Forms;
 import gui.frames.forms.FormBase;
 import gui.utils.JTableUtils;
 import gui.utils.JTableUtils.CustomTableModel;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -190,22 +189,7 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
         itemTableName.add(new JLabel(String.format("%s:", ConstantController.getString("csvRecognizer.name"))));
         itemTableName.add(this.tableNameTextField);
 
-        this.tableNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.verifyReadyButton();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.verifyReadyButton();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.verifyReadyButton();
-            }
-        });
+        Forms.onDocumentChange(this.tableNameTextField, this::verifyReadyButton);
 
         this.tableNameTextField.setMaximumSize(new Dimension(3000, 50));
 
@@ -236,26 +220,9 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
         this.separatorGroup.add(this.otherRadioButton);
         this.separatorGroup.getElements().asIterator().forEachRemaining(x -> x.addActionListener(this));
 
-        this.otherSeparatorTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent event) {
-				if (CSVRecognizerForm.this.otherRadioButton.isSelected()) {
-                    CSVRecognizerForm.this.updateTable();
-				}
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent event) {
-				if (CSVRecognizerForm.this.otherRadioButton.isSelected()) {
-                    CSVRecognizerForm.this.updateTable();
-				}
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent event) {
-				if (CSVRecognizerForm.this.otherRadioButton.isSelected()) {
-                    CSVRecognizerForm.this.updateTable();
-				}
+        Forms.onDocumentChange(this.otherSeparatorTextField, () -> {
+            if (this.otherRadioButton.isSelected()) {
+                this.updateTable();
             }
         });
 
@@ -274,22 +241,7 @@ public class CSVRecognizerForm extends FormBase implements ActionListener {
 
         itemStringDelimiter.add(new JLabel(String.format("%s:", ConstantController.getString("csvRecognizer.stringDelimiter"))));
 
-        this.stringDelimiterTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.updateTable();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.updateTable();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent event) {
-                CSVRecognizerForm.this.updateTable();
-            }
-        });
+        Forms.onDocumentChange(this.stringDelimiterTextField, this::updateTable);
 
         this.stringDelimiterTextField.setMaximumSize(dimension);
         this.stringDelimiterTextField.setText(String.valueOf(this.defaultStringDelimiter));

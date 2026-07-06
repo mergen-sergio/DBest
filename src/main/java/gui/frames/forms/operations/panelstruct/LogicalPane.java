@@ -4,6 +4,7 @@ import booleanexpression.BooleanExpressionRecognizer;
 
 import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
+import gui.components.IconButton;
 import gui.frames.forms.operations.BooleanExpressionForm;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
 import lib.booleanexpression.entities.expressions.LogicalExpression;
@@ -18,9 +19,9 @@ import java.util.List;
 
 public class LogicalPane extends ExpressionPane implements ActionListener {
 
-    private final JButton btnAnd = new JButton("AND");
-    private final JButton btnOr = new JButton("OR");
-    private final JButton btnAtomic = new JButton(ConstantController.getString("operationForm.atomicPane.atomicExpression"));
+    private final JButton btnAnd = new IconButton("AND", null, IconButton.Variant.DEFAULT);
+    private final JButton btnOr = new IconButton("OR", null, IconButton.Variant.DEFAULT);
+    private final JButton btnAtomic = new IconButton(ConstantController.getString("operationForm.atomicPane.atomicExpression"), null, IconButton.Variant.DEFAULT);
 
     public final LogicalOperator logicalOperator;
 

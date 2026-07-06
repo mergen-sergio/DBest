@@ -4,7 +4,9 @@ import booleanexpression.BooleanExpressionException;
 import booleanexpression.BooleanExpressionRecognizer;
 import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
+import gui.theme.Theme;
 import gui.frames.ErrorFrame;
+import gui.components.IconButton;
 import gui.frames.forms.IFormCondition;
 import gui.frames.forms.operations.panelstruct.AtomicPane;
 import gui.frames.forms.operations.panelstruct.ExpressionPane;
@@ -24,9 +26,9 @@ import java.util.List;
 
 public class BooleanExpressionForm extends OperationForm implements ActionListener, IOperationForm, IFormCondition {
 
-    private final JButton btnAnd = new JButton("AND");
-    private final JButton btnOr = new JButton("OR");
-    private final JButton btnAtomic = new JButton(ConstantController.getString("operationForm.booleanExpression.atomicExpressionButton"));
+    private final JButton btnAnd = new IconButton("AND", null, IconButton.Variant.DEFAULT);
+    private final JButton btnOr = new IconButton("OR", null, IconButton.Variant.DEFAULT);
+    private final JButton btnAtomic = new IconButton(ConstantController.getString("operationForm.booleanExpression.atomicExpressionButton"), null, IconButton.Variant.DEFAULT);
     private final mxCell jCell;
     private ExpressionPane root = null;
 
@@ -71,7 +73,7 @@ public class BooleanExpressionForm extends OperationForm implements ActionListen
 
     public void initGUI() {
 
-        centerPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        centerPanel.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
 
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(WindowEvent e) {

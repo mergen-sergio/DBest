@@ -2,6 +2,8 @@ package gui.frames.forms.operations.panelstruct;
 
 import com.mxgraph.model.mxCell;
 import gui.frames.forms.operations.BooleanExpressionForm;
+import gui.theme.Theme;
+import gui.components.IconButton;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
 
 import javax.swing.*;
@@ -9,7 +11,7 @@ import java.awt.*;
 
 public abstract class ExpressionPane extends JPanel {
 
-    protected final JButton btnDeleteExpression = new JButton(" X ");
+    protected final JButton btnDeleteExpression = new IconButton(" X ", null, IconButton.Variant.DEFAULT);
     protected final mxCell jCell;
 
     public BooleanExpression booleanExpression;
@@ -29,7 +31,7 @@ public abstract class ExpressionPane extends JPanel {
 
         setLayout(new BorderLayout());
 
-        setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        setBorder(BorderFactory.createLineBorder(Theme.BORDER));
 
         btnDeleteExpression.addActionListener(actionEvent -> {
             root.removeLayer(this);
