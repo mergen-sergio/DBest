@@ -3,6 +3,7 @@ package gui.frames.forms.operations.panelstruct;
 import booleanexpression.BooleanExpressionRecognizer;
 import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
+import gui.components.IconButton;
 import gui.frames.forms.operations.AtomicExpressionForm;
 import gui.frames.forms.operations.BooleanExpressionForm;
 import lib.booleanexpression.entities.expressions.BooleanExpression;
@@ -15,7 +16,7 @@ import lib.booleanexpression.entities.expressions.AtomicExpression;
 
 public class AtomicPane extends ExpressionPane implements ActionListener {
 
-    private final JButton btnEdit = new JButton(ConstantController.getString("operationForm.atomicPane.edit"));
+    private final JButton btnEdit = new IconButton(ConstantController.getString("operationForm.atomicPane.edit"), null, IconButton.Variant.DEFAULT);
     private final mxCell jCell;
     private final JLabel expression = new JLabel();
 

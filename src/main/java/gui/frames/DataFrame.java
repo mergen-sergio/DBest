@@ -18,16 +18,22 @@ import ibd.query.Tuple;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +46,12 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
     private final JLabel lblExecutionTime = new JLabel();
 
     private final JTable table = new JTable();
+
+    private final JPopupMenu tablePopupMenu = new JPopupMenu();
+
+    private final JMenuItem copyMenuItem = new JMenuItem("Copy");
+
+    private final JButton btnSelectLoaded = new JButton("All");
 
     private final JButton btnLeft = new JButton();
 
@@ -89,10 +101,24 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private int largestElement = -1;
 
+    private TableSelectionType tableSelectionType = TableSelectionType.NONE;
+
+    private int selectedTableRow = -1;
+
+    private int selectedTableColumn = -1;
+
+    private final Set<Integer> selectedLoadedColumns = new TreeSet<>();
+
+    private final Map<String, Integer> columnWidths = new HashMap<>();
+
     private final DecimalFormat memoryFormatter = new DecimalFormat("#,###.##");
 
     private SwingWorker<Void, Tuple> tupleLoaderWorker;
     private JDialog cancelDialog;
+
+    private static final String COPY_SELECTION_ACTION = "copySelection";
+
+    private static final String CLEAR_SELECTION_ACTION = "clearSelection";
     
     // Static flag to allow external cancellation (e.g., from OpenDataFrame)
     private static volatile boolean externalCancellationRequested = false;
@@ -231,13 +257,17 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.iconStats = FontIcon.of(Dashicons.BOOK);
         this.iconStats.setIconSize(buttonsSize);
         this.btnStats.setIcon(this.iconStats);
+
+        this.btnSelectLoaded.setToolTipText("Select loaded tuples");
     }
 
     private void updateTable(int page) throws Exception {
         int firstElement = page * 15;
         int lastElement = page * 15 + 14;
 
-        DefaultTableModel model = new DefaultTableModel();
+        this.saveColumnWidths();
+
+        DefaultTableModel model = new ReadOnlyTableModel();
 
         model.addColumn("");
 
@@ -282,13 +312,37 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         }
 
         this.table.getColumnModel().getColumn(0).setResizable(false);
+        this.restoreColumnWidths();
 
         JTableUtils.setColumnBold(this.table, 0);
         JTableUtils.setNullInRed(this.table);
 
-        this.table.setEnabled(false);
+        this.table.setEnabled(true);
         this.table.setFillsViewportHeight(true);
+        this.clearTableSelection();
         this.table.repaint();
+    }
+
+    private void saveColumnWidths() {
+        for (int i = 1; i < this.table.getColumnCount(); i++) {
+            TableColumn column = this.table.getColumnModel().getColumn(i);
+            String columnName = String.valueOf(column.getHeaderValue());
+            this.columnWidths.put(columnName, column.getWidth());
+        }
+    }
+
+    private void restoreColumnWidths() {
+        for (int i = 1; i < this.table.getColumnCount(); i++) {
+            TableColumn column = this.table.getColumnModel().getColumn(i);
+            String columnName = String.valueOf(column.getHeaderValue());
+            Integer width = this.columnWidths.get(columnName);
+            if (width == null || width <= 0) {
+                continue;
+            }
+
+            column.setPreferredWidth(width);
+            column.setWidth(width);
+        }
     }
 
     private void getTuples(int page) throws Exception {
@@ -456,12 +510,15 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.btnRight.addActionListener(this);
         this.btnAllRight.addActionListener(this);
         this.btnStats.addActionListener(this);
+        this.btnSelectLoaded.addActionListener(this);
+        this.configureTableInteraction();
 
         JPanel northPane = new JPanel(new FlowLayout());
         northPane.add(this.lblText);
         northPane.add(this.lblPages);
         northPane.add(this.lblTuplesLoaded);
         northPane.add(this.lblExecutionTime);
+        northPane.add(this.btnSelectLoaded);
         northPane.add(this.btnStats);
 
         this.tablePanel.add(this.table.getTableHeader(), BorderLayout.NORTH);
@@ -496,6 +553,298 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         if (!externalCancellationRequested) {
             this.setVisible(true);
         }
+    }
+
+    private void configureTableInteraction() {
+        this.table.setEnabled(true);
+        this.table.setFocusable(true);
+        this.table.setCellSelectionEnabled(true);
+        this.table.setRowSelectionAllowed(true);
+        this.table.setColumnSelectionAllowed(true);
+        this.table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        this.table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(KeyStroke.getKeyStroke("control C"), COPY_SELECTION_ACTION);
+        this.table.getActionMap().put(COPY_SELECTION_ACTION, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                copySelectionToClipboard();
+            }
+        });
+        this.table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            .put(KeyStroke.getKeyStroke("ESCAPE"), CLEAR_SELECTION_ACTION);
+        this.table.getActionMap().put(CLEAR_SELECTION_ACTION, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                clearTableSelection();
+            }
+        });
+
+        this.copyMenuItem.addActionListener(event -> copySelectionToClipboard());
+        this.tablePopupMenu.add(this.copyMenuItem);
+
+        this.table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                handleTableSelectionClick(event);
+                showTablePopup(event);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent event) {
+                showTablePopup(event);
+            }
+        });
+
+        this.table.getTableHeader().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                selectColumnFromHeader(event);
+            }
+        });
+    }
+
+    private void handleTableSelectionClick(MouseEvent event) {
+        if (!SwingUtilities.isLeftMouseButton(event)) {
+            return;
+        }
+
+        int row = this.table.rowAtPoint(event.getPoint());
+        int column = this.table.columnAtPoint(event.getPoint());
+        if (row < 0 || column < 0) {
+            this.clearTableSelection();
+            return;
+        }
+
+        if (column == 0) {
+            selectRowFromIndexColumn(row);
+            return;
+        }
+
+        if (this.tableSelectionType == TableSelectionType.CELL
+            && this.selectedTableRow == row
+            && this.selectedTableColumn == column) {
+            SwingUtilities.invokeLater(this::clearTableSelection);
+            return;
+        }
+
+        if (this.tableSelectionType == TableSelectionType.ROW && this.selectedTableRow == row) {
+            SwingUtilities.invokeLater(this::clearTableSelection);
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> markCellSelection(row, column));
+    }
+
+    private void selectRowFromIndexColumn(int row) {
+        if (row < 0 || this.table.getColumnCount() <= 1) {
+            return;
+        }
+
+        boolean selectedRow = this.tableSelectionType == TableSelectionType.ROW
+            && this.selectedTableRow == row;
+
+        SwingUtilities.invokeLater(() -> {
+            if (selectedRow) {
+                this.clearTableSelection();
+                return;
+            }
+
+            this.table.requestFocusInWindow();
+            this.table.setRowSelectionInterval(row, row);
+            this.table.setColumnSelectionInterval(1, this.table.getColumnCount() - 1);
+            this.markRowSelection(row);
+        });
+    }
+
+    private void selectColumnFromHeader(MouseEvent event) {
+        if (!SwingUtilities.isLeftMouseButton(event) || this.table.getRowCount() == 0) {
+            return;
+        }
+
+        int column = this.table.columnAtPoint(event.getPoint());
+        if (column < 0) {
+            return;
+        }
+
+        if (this.selectedLoadedColumns.contains(column)) {
+            this.selectedLoadedColumns.remove(column);
+        } else {
+            this.selectedLoadedColumns.add(column);
+        }
+
+        if (this.selectedLoadedColumns.isEmpty()) {
+            this.clearTableSelection();
+            return;
+        }
+
+        this.applyLoadedColumnSelection();
+        this.markColumnSelection(column);
+    }
+
+    private void selectAllLoadedRows() {
+        if (this.tableSelectionType == TableSelectionType.ALL_LOADED) {
+            this.clearTableSelection();
+            return;
+        }
+
+        if (this.rows.isEmpty() || this.table.getRowCount() == 0 || this.table.getColumnCount() <= 1) {
+            return;
+        }
+
+        this.table.requestFocusInWindow();
+        this.table.setRowSelectionInterval(0, this.table.getRowCount() - 1);
+        this.table.setColumnSelectionInterval(1, this.table.getColumnCount() - 1);
+        this.markAllLoadedSelection();
+    }
+
+    private void applyLoadedColumnSelection() {
+        this.table.requestFocusInWindow();
+        this.table.clearSelection();
+        if (this.table.getRowCount() > 0) {
+            this.table.setRowSelectionInterval(0, this.table.getRowCount() - 1);
+        }
+        for (Integer selectedColumn : this.selectedLoadedColumns) {
+            if (selectedColumn >= 0 && selectedColumn < this.table.getColumnCount()) {
+                this.table.addColumnSelectionInterval(selectedColumn, selectedColumn);
+            }
+        }
+    }
+
+    private void clearTableSelection() {
+        this.table.clearSelection();
+        this.tableSelectionType = TableSelectionType.NONE;
+        this.selectedTableRow = -1;
+        this.selectedTableColumn = -1;
+        this.selectedLoadedColumns.clear();
+    }
+
+    private void markCellSelection(int row, int column) {
+        this.selectedLoadedColumns.clear();
+        this.tableSelectionType = TableSelectionType.CELL;
+        this.selectedTableRow = row;
+        this.selectedTableColumn = column;
+    }
+
+    private void markRowSelection(int row) {
+        this.selectedLoadedColumns.clear();
+        this.tableSelectionType = TableSelectionType.ROW;
+        this.selectedTableRow = row;
+        this.selectedTableColumn = -1;
+    }
+
+    private void markColumnSelection(int column) {
+        this.tableSelectionType = TableSelectionType.COLUMN;
+        this.selectedTableRow = -1;
+        this.selectedTableColumn = column;
+    }
+
+    private void markAllLoadedSelection() {
+        this.selectedLoadedColumns.clear();
+        this.tableSelectionType = TableSelectionType.ALL_LOADED;
+        this.selectedTableRow = -1;
+        this.selectedTableColumn = -1;
+    }
+
+    private void showTablePopup(MouseEvent event) {
+        if (!event.isPopupTrigger()) {
+            return;
+        }
+
+        this.copyMenuItem.setEnabled(this.table.getSelectedRowCount() > 0 && this.table.getSelectedColumnCount() > 0);
+        this.tablePopupMenu.show(event.getComponent(), event.getX(), event.getY());
+    }
+
+    private void copySelectionToClipboard() {
+        if (this.tableSelectionType == TableSelectionType.ALL_LOADED) {
+            this.copyLoadedColumnsToClipboard(this.getDataColumnIndexes());
+            return;
+        }
+
+        if (this.tableSelectionType == TableSelectionType.COLUMN && !this.selectedLoadedColumns.isEmpty()) {
+            this.copyLoadedColumnsToClipboard(new ArrayList<>(this.selectedLoadedColumns));
+            return;
+        }
+
+        int[] selectedRows = this.table.getSelectedRows();
+        int[] selectedColumns = this.table.getSelectedColumns();
+        if (selectedRows.length == 0 || selectedColumns.length == 0) {
+            return;
+        }
+
+        StringBuilder clipboardText = new StringBuilder();
+        for (int rowIndex = 0; rowIndex < selectedRows.length; rowIndex++) {
+            if (rowIndex > 0) {
+                clipboardText.append(System.lineSeparator());
+            }
+
+            for (int columnIndex = 0; columnIndex < selectedColumns.length; columnIndex++) {
+                if (columnIndex > 0) {
+                    clipboardText.append('\t');
+                }
+                Object value = this.table.getValueAt(selectedRows[rowIndex], selectedColumns[columnIndex]);
+                clipboardText.append(formatClipboardValue(value));
+            }
+        }
+
+        copyTextToClipboard(clipboardText.toString());
+    }
+
+    private void copyLoadedColumnsToClipboard(List<Integer> columns) {
+        if (columns.isEmpty() || this.rows.isEmpty()) {
+            return;
+        }
+
+        StringBuilder clipboardText = new StringBuilder();
+        for (int rowIndex = 0; rowIndex < this.rows.size(); rowIndex++) {
+            if (rowIndex > 0) {
+                clipboardText.append(System.lineSeparator());
+            }
+
+            Map<String, String> currentRow = TuplesExtractor.getRow_(this.rows.get(rowIndex), this.cell.getOperator(), true);
+            for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
+                if (columnIndex > 0) {
+                    clipboardText.append('\t');
+                }
+
+                int column = columns.get(columnIndex);
+                if (column == 0) {
+                    clipboardText.append(rowIndex + 1);
+                    continue;
+                }
+
+                if (column > 0 && column < this.table.getColumnCount()) {
+                    String columnName = this.table.getColumnName(column);
+                    clipboardText.append(formatClipboardValue(currentRow.get(columnName)));
+                }
+            }
+        }
+
+        copyTextToClipboard(clipboardText.toString());
+    }
+
+    private List<Integer> getDataColumnIndexes() {
+        List<Integer> columns = new ArrayList<>();
+        for (int column = 1; column < this.table.getColumnCount(); column++) {
+            columns.add(column);
+        }
+        return columns;
+    }
+
+    private void copyTextToClipboard(String text) {
+        StringSelection selection = new StringSelection(text);
+        this.table.getToolkit().getSystemClipboard().setContents(selection, null);
+    }
+
+    private String formatClipboardValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.toString()
+            .replace('\t', ' ')
+            .replace('\n', ' ')
+            .replace('\r', ' ');
     }
 
     private void updateTuplesLoaded() {
@@ -546,6 +895,9 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
             }
             else if (event.getSource() == this.btnStats) {
                 this.alternateScreen();
+            }
+            else if (event.getSource() == this.btnSelectLoaded) {
+                this.selectAllLoadedRows();
             }
 
             this.updateTuplesLoaded();
@@ -642,6 +994,21 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         this.cell.closeOperator();
         this.cell.freeOperatorResources();
         this.dispose();
+    }
+
+    private static class ReadOnlyTableModel extends DefaultTableModel {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    }
+
+    private enum TableSelectionType {
+        NONE,
+        CELL,
+        ROW,
+        COLUMN,
+        ALL_LOADED
     }
 
     private static class MovingSquareBar extends JPanel {

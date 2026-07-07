@@ -7,6 +7,7 @@ import entities.Column;
 import entities.cells.Cell;
 import gui.frames.forms.FormBase;
 import gui.frames.forms.IFormCondition;
+import gui.utils.Forms;
 import gui.utils.JTableUtils;
 
 import javax.swing.DefaultCellEditor;
@@ -15,8 +16,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
@@ -169,22 +168,7 @@ public class PKAndNameChooserForm extends FormBase implements ActionListener, IF
 
         this.contentPanel.add(box, BorderLayout.NORTH);
 
-        tableNameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                checkBtnReady();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                checkBtnReady();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                checkBtnReady();
-            }
-        });
+        Forms.onDocumentChange(tableNameTextField, this::checkBtnReady);
 
     }
 

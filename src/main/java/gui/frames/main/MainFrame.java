@@ -4,12 +4,8 @@ import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
-import com.mxgraph.view.mxStylesheet;
 import controllers.ConstantController;
 import entities.Action.CurrentAction;
-import entities.buttons.Button;
-import entities.buttons.OperationButton;
-import entities.buttons.ToolBarButton;
 import enums.CellType;
 import enums.OperationType;
 import files.FileUtils;
@@ -20,7 +16,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+
+import gui.palette.MxStyles;
+import gui.palette.OperatorPalette;
+import gui.palette.ViewMode;
+import gui.theme.Theme;
+import gui.theme.ThemeVariant;
+import gui.theme.Themed;
+import gui.components.IconButton;
+import controllers.MainController;
 
 public abstract class MainFrame extends JFrame implements ActionListener, MouseListener, KeyListener, MouseMotionListener {
 
@@ -30,20 +34,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected static CustomGraphComponent graphComponent;
 
-    protected JPanel  operationsPanel;
 
-    protected JPanel  indexOperatorsPanel;
-    protected JPanel  aggregationOperatorsPanel;
-    protected JPanel  innerJoinOperatorsPanel;
-    protected JPanel  outerJoinOperatorsPanel;
-    protected JPanel  semiJoinOperatorsPanel;
-    protected JPanel  antiJoinOperatorsPanel;
-    protected JPanel  setOperatorsPanel;
-    protected JPanel  logicalOperatorsPanel;
-    protected JPanel  ETLOperatorsPanel;
-    protected JPanel  algebraOperatorsPanel;
-    protected JPanel  removeOperatorsPanel;
-    protected JPanel  otherOperatorsPanel;
+
+    protected OperatorPalette operatorPalette;
 
     protected static mxGraph tablesGraph;
 
@@ -53,7 +46,6 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JToolBar toolBar;
 
-    protected Set<Button<?>> buttons;
 
     protected JPopupMenu tablesPopupMenu;
 
@@ -153,17 +145,15 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     protected JMenuItem openQueryTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.file.openQuery"));
 
-    protected JMenuItem nimbusThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.nimbus"));
+    protected JButton undoButton = new IconButton(null,
+            org.kordamp.ikonli.materialdesign2.MaterialDesignA.ARROW_LEFT,
+            IconButton.Variant.QUIET);
 
-    protected JMenuItem motifThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.motif"));
+    protected JButton redoButton = new IconButton(null,
+            org.kordamp.ikonli.materialdesign2.MaterialDesignA.ARROW_RIGHT,
+            IconButton.Variant.QUIET);
 
-    protected JMenuItem gtkThemeTopMenuBarItem = new JMenuItem(ConstantController.getString("menu.appearance.theme.gtk"));
-
-    protected JButton undoButton = new JButton("<<");
-
-    protected JButton redoButton = new JButton(">>");
-
-    protected MainFrame(Set<Button<?>> buttons) {
+    protected MainFrame() {
         super(ConstantController.APPLICATION_TITLE);
 
         try {
@@ -171,31 +161,18 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         }catch (Exception ignored){
         }
 
-        this.initializeFields(buttons);
+        this.initializeFields();
         this.initializeGUI();
     }
 
-    private void initializeFields(Set<Button<?>> buttons) {
+    private void initializeFields() {
         graph = new mxGraph();
         graphComponent = new CustomGraphComponent(graph);
-        this.operationsPanel = new JPanel();
-        this.indexOperatorsPanel = new JPanel();
-        this.aggregationOperatorsPanel = new JPanel();
-        this.innerJoinOperatorsPanel = new JPanel();
-        this.outerJoinOperatorsPanel = new JPanel();
-        this.semiJoinOperatorsPanel = new JPanel();
-        this.antiJoinOperatorsPanel = new JPanel();
-        this.setOperatorsPanel = new JPanel();
-        this.logicalOperatorsPanel = new JPanel();
-        this.ETLOperatorsPanel = new JPanel();
-        this.algebraOperatorsPanel = new JPanel();
-        this.removeOperatorsPanel = new JPanel();
-        this.otherOperatorsPanel = new JPanel();;
+        this.operatorPalette = new OperatorPalette();
         tablesGraph = new mxGraph();
         this.tablesComponent = new mxGraphComponent(tablesGraph);
         tablesPanel = new JPanel();
         this.toolBar = new JToolBar();
-        this.buttons = buttons;
         this.popupMenuJCell = new JPopupMenu();
         this.tablesPopupMenu = new JPopupMenu();
 
@@ -242,15 +219,10 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
           //this.importTreeMenuItem = new JMenuItem(ConstantController.getString("menu.file.importTree"));
     }
 
-    protected void refreshAllComponents(){
-        SwingUtilities.updateComponentTreeUI(this);
-    }
-
     private void initializeGUI() {
         this.setSize(ConstantController.UI_SCREEN_WIDTH, ConstantController.UI_SCREEN_HEIGHT);
         this.setLocationRelativeTo(null);
 
-        this.operationsPanel.setLayout(new BoxLayout(this.operationsPanel, BoxLayout.Y_AXIS));
 
 
 
@@ -258,15 +230,50 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         this.getContentPane().add(this.topMenuBar, BorderLayout.NORTH);
         this.getContentPane().add(graphComponent, BorderLayout.CENTER);
+
+        Runnable applyCanvasBackground = () -> {
+            graphComponent.setBackground(Theme.BACKGROUND);
+            graphComponent.getViewport().setBackground(Theme.BACKGROUND);
+        };
+        applyCanvasBackground.run();
+        Theme.addChangeListener(applyCanvasBackground);
         this.getContentPane().add(tablesPanel, BorderLayout.WEST);
-        JScrollPane scrollPane = new JScrollPane(operationsPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        this.getContentPane().add(scrollPane, BorderLayout.EAST);
+
+        tablesPanel.setOpaque(true);
+        Themed.background(tablesPanel, () -> Theme.SURFACE);
+        Themed.background(this.tablesComponent, () -> Theme.SURFACE);
+        this.tablesComponent.getViewport().setOpaque(true);
+        Themed.background(this.tablesComponent.getViewport(), () -> Theme.SURFACE);
+
+        //this.tablesPanel.setPreferredSize(new Dimension(0, 0));
+        this.getContentPane().add(this.operatorPalette, BorderLayout.EAST);
+
+        MxStyles.registerOperatorCellStyles(graph);
+
+        Theme.addChangeListener(() -> {
+            MxStyles.registerDefaultEdgeStyle(graph);
+
+            setOperationCellStyle();
+            graphComponent.refresh();
+        });
         this.getContentPane().add(this.toolBar, BorderLayout.SOUTH);
 
+        Themed.background(this.toolBar, () -> Theme.SURFACE);
+        Themed.background(this.topMenuBar, () -> Theme.SURFACE);
+        Themed.foreground(this.topMenuBar, () -> Theme.TEXT_PRIMARY);
+        this.toolBar.setBorder(BorderFactory.createEmptyBorder(
+            Theme.SPACING_SMALL, Theme.SPACING_SMALL,
+            Theme.SPACING_SMALL, Theme.SPACING_SMALL));
+        this.toolBar.setOpaque(true);
+        this.topMenuBar.setOpaque(true);
+
+        this.topMenuBar.setBorder(BorderFactory.createEmptyBorder());
+        this.graphComponent.setBorder(BorderFactory.createEmptyBorder());
+        this.tablesPanel.setBorder(BorderFactory.createEmptyBorder());
+        this.tablesComponent.setBorder(BorderFactory.createEmptyBorder());
 
 
-        this.addOperationButtons();
+
         this.addBottomButtons();
         this.addTopMenuBarFileItems();
         this.addTopMenuBarAppearanceItems();
@@ -293,35 +300,6 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         this.setVisible(true);
     }
 
-    private void addGroupButton(JPanel panel, String buttonName){
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        // Add an empty border to the panel to shift all buttons to the right
-        int leftPadding = 20; // Amount of pixels to shift to the right
-        panel.setBorder(BorderFactory.createEmptyBorder(0, leftPadding, 0, 0));
-
-        JButton groupedButton = new JButton("+" + buttonName);
-        groupedButton.setBackground(new Color(173, 216, 230)); // Light blue color (RGB)
-        groupedButton.setBounds(600, 50, 200, 50);
-        groupedButton.setBounds(600, 300, 100, 50);
-        groupedButton.setMaximumSize(new Dimension(200, 50));
-        this.operationsPanel.add(groupedButton);
-        this.operationsPanel.add(panel);
-        panel.setVisible(false);
-        // Add action listener to toggle visibility of the first panel
-        groupedButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (panel.isVisible()) {
-                    panel.setVisible(false);
-                    groupedButton.setText("+" +buttonName);
-                }
-                else {
-                    panel.setVisible(true);
-                    groupedButton.setText("-" + buttonName);
-                }
-            }
-        });
-
-    }
 
     private void addTopMenuBarFileItems() {
         JMenu fileMenu = new JMenu(ConstantController.getString("menu.file"));
@@ -347,28 +325,38 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         JMenu appearanceMenu = new JMenu(ConstantController.getString("menu.appearance"));
         this.topMenuBar.add(appearanceMenu);
 
-        JMenu themeMenu = new JMenu(ConstantController.getString("menu.appearance.theme"));
-        appearanceMenu.add(themeMenu);
 
-
-        // GTK is only available on Linux, so we check the OS before adding it to avoid confusion on unsupported platforms
-        boolean isLinux = System.getProperty("os.name").toLowerCase().contains("linux");
-        if (isLinux) {
-            themeMenu.add(this.gtkThemeTopMenuBarItem);
-            this.gtkThemeTopMenuBarItem.addActionListener(this);
+        JMenu paletteMenu = new JMenu(ConstantController.getString("menu.appearance.palette"));
+        appearanceMenu.add(paletteMenu);
+        ButtonGroup paletteGroup = new ButtonGroup();
+        for (ThemeVariant variant : ThemeVariant.values()) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(variant.getDisplayName());
+            item.setSelected(variant == Theme.getActive());
+            item.addActionListener(event -> Theme.setActive(variant));
+            paletteGroup.add(item);
+            paletteMenu.add(item);
         }
-        themeMenu.add(this.motifThemeTopMenuBarItem);
-        themeMenu.add(this.nimbusThemeTopMenuBarItem);
 
-        this.motifThemeTopMenuBarItem.addActionListener(this);
-        this.nimbusThemeTopMenuBarItem.addActionListener(this);
+
+        JMenu iconDisplayMenu = new JMenu(
+                ConstantController.getString("menu.appearance.iconDisplay"));
+        appearanceMenu.add(iconDisplayMenu);
+        ButtonGroup iconDisplayGroup = new ButtonGroup();
+        for (ViewMode mode : ViewMode.values()) {
+            String key = "palette.viewMode." + mode.name().toLowerCase();
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(
+                    ConstantController.getString(key));
+            item.setSelected(mode == this.operatorPalette.getCurrentViewMode());
+            item.addActionListener(event -> this.operatorPalette.setCurrentViewMode(mode));
+            iconDisplayGroup.add(item);
+            iconDisplayMenu.add(item);
+        }
     }
 
     private void addTopMenuBarEditItems() {
         for (JButton btn : new JButton[]{this.undoButton, this.redoButton}) {
-            btn.setPreferredSize(new Dimension(50, 28));
-            btn.setMaximumSize(new Dimension(50, 28));
-            btn.setFont(btn.getFont().deriveFont(Font.PLAIN, 16f));
+            btn.setPreferredSize(new Dimension(34, 28));
+            btn.setMaximumSize(new Dimension(34, 28));
             btn.setFocusPainted(false);
             btn.setEnabled(false);
             btn.addActionListener(this);
@@ -434,6 +422,9 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
         style.put(mxConstants.STYLE_FILLCOLOR, "none");
         style.put(mxConstants.STYLE_STROKECOLOR, "none");
 
+        style.put(mxConstants.STYLE_FONTCOLOR,
+                com.mxgraph.util.mxUtils.getHexColorString(Theme.CANVAS_TEXT));
+
         String customStyle = CellType.OPERATION.id;
 
         graph.getStylesheet().putCellStyle(customStyle, style);
@@ -455,131 +446,74 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
     }
 
-    private void addOperationButtons() {
-        mxStylesheet stylesheet = graph.getStylesheet();
 
 
 
+    private JButton sidebarToggleButton;
+    private boolean sidebarVisible = true;
 
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SORT, this, this.operationsPanel));
+    private void addBottomButtons() {
 
-        addGroupButton(this.algebraOperatorsPanel, "Rel. Algebra Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_RIGHT_OUTER_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_SEMI_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.algebraOperatorsPanel));
+        MainController controller = (MainController) this;
 
+        addBottomAction(controller, "toolBarButtons.importTable",    "i",    CurrentAction.ActionType.IMPORT_FILE,       IconButton.Variant.PRIMARY);
+        addBottomAction(controller, "toolBarButtons.createTable",    "c",    CurrentAction.ActionType.CREATE_TABLE_CELL, IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.edge",           "e",    CurrentAction.ActionType.CREATE_EDGE,       IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.remove",         "del",  CurrentAction.ActionType.DELETE_CELL,       IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.removeAll",      null,   CurrentAction.ActionType.DELETE_ALL,        IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.screenshot",     null,   CurrentAction.ActionType.PRINT_SCREEN,      IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.console",        null,   CurrentAction.ActionType.OPEN_CONSOLE,      IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.textEditor",     null,   CurrentAction.ActionType.OPEN_TEXT_EDITOR,  IconButton.Variant.DEFAULT);
+        addBottomAction(controller, "toolBarButtons.comparator",     null,   CurrentAction.ActionType.OPEN_COMPARATOR,   IconButton.Variant.DEFAULT);
 
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_UNION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_INTERSECTION, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.algebraOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.algebraOperatorsPanel));
-        //this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.algebraOperatorsPanel));
-        addGroupButton(this.removeOperatorsPanel, "Remove Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.PROJECTION, this, this.removeOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SELECT_COLUMNS, this, this.removeOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.FILTER, this, this.removeOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DUPLICATE_REMOVAL, this, this.removeOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.LIMIT, this, this.removeOperatorsPanel));
+        JLabel hint = new JLabel(ConstantController.getString("toolBarButtons.dragHint"));
+        hint.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        Themed.foreground(hint, () -> Theme.TEXT_MUTED);
+        this.toolBar.add(hint);
 
-
-        addGroupButton(this.ETLOperatorsPanel, "ETL Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.EXPLODE, this, this.ETLOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AUTO_INCREMENT, this, this.ETLOperatorsPanel));
-//        this.buttons.add(new OperationButton(stylesheet, OperationType.INDEXER, this, this.operationsPanel));
-
-        addGroupButton(this.indexOperatorsPanel, "Index Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH, this, this.indexOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MEMOIZE, this, this.indexOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MATERIALIZATION, this, this.indexOperatorsPanel));
-
-
-        addGroupButton(this.aggregationOperatorsPanel, "Aggregation Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AGGREGATION, this, this.aggregationOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.GROUP, this, this.aggregationOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_GROUP, this, this.aggregationOperatorsPanel));
-
-
-        addGroupButton(this.innerJoinOperatorsPanel, "Inner Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_JOIN, this, this.innerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_JOIN, this, this.innerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_JOIN, this, this.innerJoinOperatorsPanel));
-
-        addGroupButton(this.outerJoinOperatorsPanel, "Outer Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        //this.buttons.add(new OperationButton(stylesheet, OperationType.RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_FULL_OUTER_JOIN, this, this.outerJoinOperatorsPanel));
-
-        addGroupButton(this.semiJoinOperatorsPanel, "Semi Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_SEMI_JOIN, this, this.semiJoinOperatorsPanel));
-
-
-        addGroupButton(this.antiJoinOperatorsPanel, "Anti Join Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.NESTED_LOOP_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.MERGE_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_LEFT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_RIGHT_ANTI_JOIN, this, this.antiJoinOperatorsPanel));
-
-
-        addGroupButton(this.setOperatorsPanel, "Set Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.APPEND, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.UNION, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_UNION, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.INTERSECTION, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_INTERSECTION, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.DIFFERENCE, this, this.setOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.HASH_DIFFERENCE, this, this.setOperatorsPanel));
-
-        addGroupButton(this.logicalOperatorsPanel, "Logical Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.AND, this, this.logicalOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.OR, this, this.logicalOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.XOR, this, this.logicalOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CONDITION, this, this.logicalOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.IF, this, this.logicalOperatorsPanel));
-
-        addGroupButton(this.otherOperatorsPanel, "Other Operators");
-        this.buttons.add(new OperationButton(stylesheet, OperationType.SCAN, this, this.otherOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.CARTESIAN_PRODUCT, this, this.otherOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.RENAME, this, this.otherOperatorsPanel));
-        this.buttons.add(new OperationButton(stylesheet, OperationType.REFERENCE, this, this.otherOperatorsPanel));
-
-        //this.buttons.add(new OperationButton(stylesheet, OperationType.UNILATERAL_EXISTENCE, this, this.setOperatorsPanel));
-        //this.buttons.add(new OperationButton(stylesheet, OperationType.BILATERAL_EXISTENCE, this, this.setOperatorsPanel));
-
+        this.toolBar.add(javax.swing.Box.createHorizontalGlue());
+        this.sidebarToggleButton = buildSidebarToggle();
+        this.toolBar.add(this.sidebarToggleButton);
     }
 
 
+    private void addBottomAction(MainController controller, String labelKey, String shortcut,
+                                 CurrentAction.ActionType actionType, IconButton.Variant variant) {
+        String label = ConstantController.getString(labelKey);
+        if (shortcut != null) label = label + "  (" + shortcut + ")";
+        IconButton button = new IconButton(label, null, variant);
+        button.addActionListener(event -> controller.dispatchToolBarAction(actionType));
 
-    private void addBottomButtons() {
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (i)", ConstantController.getString("toolBarButtons.importTable")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.IMPORT_FILE)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (c)", ConstantController.getString("toolBarButtons.createTable")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.CREATE_TABLE_CELL)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (e)", ConstantController.getString("toolBarButtons.edge")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.CREATE_EDGE)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s (del)", ConstantController.getString("toolBarButtons.remove")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.DELETE_CELL)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.removeAll")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.DELETE_ALL)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.screenshot")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.PRINT_SCREEN)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.console")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_CONSOLE)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.textEditor")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_TEXT_EDITOR)));
-        this.buttons.add(new ToolBarButton<>(JButton.class, String.format("%s", ConstantController.getString("toolBarButtons.comparator")), this, this.toolBar, new CurrentAction(CurrentAction.ActionType.OPEN_COMPARATOR)));
+        this.toolBar.add(javax.swing.Box.createHorizontalStrut(Theme.SPACING_MEDIUM));
+        this.toolBar.add(button);
+    }
+
+    private JButton buildSidebarToggle() {
+        IconButton button = new IconButton(null,
+                org.kordamp.ikonli.materialdesign2.MaterialDesignC.CHEVRON_RIGHT,
+                IconButton.Variant.QUIET);
+        button.setToolTipText(ConstantController.getString("toolBarButtons.toggleSidebar"));
+        button.addActionListener(event -> toggleOperatorSidebar());
+        applySidebarToggleAppearance(button);
+        Theme.addChangeListener(() -> applySidebarToggleAppearance(button));
+        return button;
+    }
+
+    private void applySidebarToggleAppearance(JButton button) {
+        java.awt.Color colour = this.sidebarVisible ? Theme.ACCENT : Theme.TEXT_MUTED;
+        org.kordamp.ikonli.Ikon icon = this.sidebarVisible
+                ? org.kordamp.ikonli.materialdesign2.MaterialDesignC.CHEVRON_RIGHT
+                : org.kordamp.ikonli.materialdesign2.MaterialDesignC.CHEVRON_LEFT;
+        button.setIcon(org.kordamp.ikonli.swing.FontIcon.of(icon, 18, colour));
+        button.repaint();
+    }
+
+    private void toggleOperatorSidebar() {
+        this.sidebarVisible = !this.sidebarVisible;
+        this.operatorPalette.setVisible(this.sidebarVisible);
+        applySidebarToggleAppearance(this.sidebarToggleButton);
+        this.getContentPane().revalidate();
+        this.getContentPane().repaint();
     }
 
     private void setTablesSavedGraphConfig() {

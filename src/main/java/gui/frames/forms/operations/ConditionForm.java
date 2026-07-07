@@ -7,6 +7,7 @@ import controllers.ConstantController;
 import entities.cells.Cell;
 import entities.utils.cells.CellUtils;
 import gui.frames.forms.IFormCondition;
+import gui.components.IconButton;
 import lib.booleanexpression.entities.elements.Element;
 import lib.booleanexpression.entities.elements.Null;
 import lib.booleanexpression.entities.expressions.AtomicExpression;
@@ -50,14 +51,14 @@ public class ConditionForm extends OperationForm implements ActionListener, IOpe
     private final JComboBox<String> comboBoxSource2 = new JComboBox<>();
     private final JComboBox<String> comboBoxColumn2 = new JComboBox<>();
 
-    private final JButton btnColumnSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnNumberSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnStringSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnNullSet1 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnColumnSet2 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnNumberSet2 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnStringSet2 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
-    private final JButton btnNullSet2 = new JButton(ConstantController.getString("operationForm.atomicExpression.insert"));
+    private final JButton btnColumnSet1 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnNumberSet1 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnStringSet1 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnNullSet1 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnColumnSet2 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnNumberSet2 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnStringSet2 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnNullSet2 = new IconButton(ConstantController.getString("operationForm.atomicExpression.insert"), null, IconButton.Variant.DEFAULT);
 
     private final DecimalFormat decimalFormat = new DecimalFormat("#.###");
     private final NumberFormatter numberFormatter = new NumberFormatter(decimalFormat);

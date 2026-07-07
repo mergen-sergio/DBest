@@ -4,28 +4,34 @@ import com.mxgraph.model.mxCell;
 import controllers.ConstantController;
 import entities.Column;
 import gui.frames.forms.operations.IOperationForm;
+import gui.theme.Themed;
+import gui.theme.Theme;
+import gui.components.IconButton;
 import gui.frames.forms.operations.OperationForm;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.AbstractButton;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class ProjectionForm extends OperationForm implements ActionListener, IOperationForm {
 
-    private final JButton btnAdd = new JButton(ConstantController.getString("operationForm.add"));
-    private final JButton btnRemove = new JButton(ConstantController.getString("operationForm.remove"));
-    private final JButton btnClear = new JButton(ConstantController.getString("operationForm.clear"));
-    private final JButton btnAddAll = new JButton(ConstantController.getString("operationForm.addAllColumns"));
+    private final JButton btnAdd = new IconButton(ConstantController.getString("operationForm.add"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnRemove = new IconButton(ConstantController.getString("operationForm.remove"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnClear = new IconButton(ConstantController.getString("operationForm.clear"), null, IconButton.Variant.DEFAULT);
+    private final JButton btnAddAll = new IconButton(ConstantController.getString("operationForm.addAllColumns"), null, IconButton.Variant.DEFAULT);
 
     private final JPanel checkBoxPanel = new JPanel();
-    private final ArrayList<JCheckBox> projectionCheckBoxes = new ArrayList<>();
+    private final List<JCheckBox> projectionCheckBoxes = new ArrayList<>();
 
     public ProjectionForm(mxCell jCell) {
         super(jCell);
@@ -34,6 +40,7 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
 
     public void initGUI() {
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 closeWindow();
             }
@@ -43,6 +50,7 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
         btnCancel.addActionListener(this);
 
         checkBoxPanel.setLayout(new BoxLayout(checkBoxPanel, BoxLayout.Y_AXIS));
+        Themed.background(checkBoxPanel, () -> Theme.BACKGROUND);
         checkBoxPanel.setPreferredSize(new Dimension(300, 300));
 
         btnAdd.addActionListener(this);
@@ -65,17 +73,15 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
 
     @Override
     protected void setPreviousArgs() {
-        if (!previousArguments.isEmpty()) {
-            for (String element : previousArguments) {
-                if (projectionCheckBoxes.stream().noneMatch(cb -> cb.getText().equals(element))) {
-                    projectionCheckBoxes.add(new JCheckBox(element));
-
-                    String columnName = Column.removeSource(element);
-                    comboBoxColumn.removeItem(columnName);
-                }
+        if (previousArguments.isEmpty()) return;
+        for (String element : previousArguments) {
+            if (projectionCheckBoxes.stream().noneMatch(cb -> cb.getText().equals(element))) {
+                projectionCheckBoxes.add(new JCheckBox(element));
+                String columnName = Column.removeSource(element);
+                comboBoxColumn.removeItem(columnName);
             }
-            refreshCheckBoxPanel();
         }
+        refreshCheckBoxPanel();
     }
 
     @Override
@@ -86,8 +92,8 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
             }
         } else if (e.getSource() == btnRemove) {
             List<JCheckBox> selectedBoxes = projectionCheckBoxes.stream()
-                .filter(AbstractButton::isSelected)
-                .collect(Collectors.toList());
+                    .filter(AbstractButton::isSelected)
+                    .toList();
 
             for (JCheckBox checkBox : selectedBoxes) {
                 String columnName = Column.removeSource(checkBox.getText());
@@ -112,21 +118,26 @@ public class ProjectionForm extends OperationForm implements ActionListener, IOp
         } else if (e.getSource() == btnAddAll) {
             while (comboBoxColumn.getItemCount() != 0) {
                 comboBoxColumn.setSelectedIndex(0);
-                addColumn();
+                if (!addColumn()) break;
             }
         }
     }
 
-    private void addColumn() {
-        String column = Objects.requireNonNull(comboBoxSource.getSelectedItem()) +
-            "." +
-            Objects.requireNonNull(comboBoxColumn.getSelectedItem());
 
-        projectionCheckBoxes.add(new JCheckBox(column));
+    private boolean addColumn() {
+        Object source = comboBoxSource.getSelectedItem();
+        Object column = comboBoxColumn.getSelectedItem();
+        if (source == null || column == null) return false;
+
+        String composed = source + "." + column;
+
+        projectionCheckBoxes.add(new JCheckBox(composed));
         refreshCheckBoxPanel();
 
-        restrictedColumns.add(column);
-        comboBoxColumn.removeItemAt(comboBoxColumn.getSelectedIndex());
+        restrictedColumns.add(composed);
+        int idx = comboBoxColumn.getSelectedIndex();
+        if (idx >= 0) comboBoxColumn.removeItemAt(idx);
+        return true;
     }
 
     private void refreshCheckBoxPanel() {

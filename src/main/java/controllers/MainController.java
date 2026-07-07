@@ -21,8 +21,6 @@ import entities.Action.CurrentAction.ActionType;
 import entities.Column;
 import entities.Edge;
 import entities.Tree;
-import entities.buttons.Button;
-import entities.buttons.OperationButton;
 import entities.cells.*;
 import entities.utils.TreeUtils;
 import entities.utils.cells.CellUtils;
@@ -39,7 +37,6 @@ import gui.frames.ComparatorFrame;
 import gui.frames.ErrorFrame;
 import gui.frames.dsl.ConsoleFrame;
 import gui.frames.dsl.TextEditor;
-import gui.frames.forms.create.FormFrameCreateTable;
 import gui.frames.forms.create.FormFrameCreateTableImproved;
 import gui.frames.forms.importexport.CSVRecognizerForm;
 import gui.frames.forms.importexport.ExportAsForm;
@@ -77,6 +74,10 @@ public class MainController extends MainFrame {
     private final AtomicReference<CurrentAction> currentActionReference = new AtomicReference<>(
             ConstantController.NONE_ACTION);
 
+    private boolean dKeyHeld = false;
+    private boolean panning = false;
+    private Point panAnchorScreen = null;
+    private com.mxgraph.util.mxPoint panAnchorTranslate = null;
     public static final AtomicReference<Edge> currentEdgeReference = new AtomicReference<>(new Edge());
 
     private static final Map<Integer, Tree> trees = new HashMap<>();
@@ -101,10 +102,6 @@ public class MainController extends MainFrame {
 
     public static Rectangle selectionRectangle = null; // Store the last selected rectangle
     private static Point startPoint = null; // Starting point of the rectangle
-    private boolean isPanning = false;
-    private Point panStartPoint = null;
-    private Point initialViewPosition = null;
-    private long lastPanUpdateTime = 0;
     private final Map<Object, Object> lastTargets = new HashMap<>();
     private final Map<Object, Object> lastSources = new HashMap<>();
 
@@ -140,7 +137,7 @@ public class MainController extends MainFrame {
     // Map para armazenar os estilos originais das células
     // private static Map<mxCell, String> originalStyles = new HashMap<>();
     public MainController() {
-        super(new HashSet<>());
+        super();
         // Register snapshot hook so every undoable command auto-saves before executing
         CommandController.setBeforeExecuteHook(undoRedoManager::saveSnapshot);
         undoRedoManager.setOnStateChanged(this::refreshUndoRedoButtons);
@@ -522,6 +519,48 @@ public class MainController extends MainFrame {
 
         FileUtils.verifyExistingFilesToInitialize();
 
+        this.operatorPalette.setOnOperatorSelected(this::onOperatorSelectedFromPalette);
+
+    }
+
+    private void onOperatorSelectedFromPalette(OperationType operationType) {
+        this.resetAnyAction();
+        this.resetEdge();
+
+        CreateOperationCellAction action = operationType.getAction();
+        action.setParent(null);
+        this.currentActionReference.set(action);
+
+        String style = operationType.displayName;
+
+        double ghostX = 0, ghostY = 0;
+        try {
+            java.awt.Point pointerScreen = java.awt.MouseInfo.getPointerInfo().getLocation();
+            java.awt.Point canvasOrigin = MainFrame.getGraphComponent()
+                    .getGraphControl().getLocationOnScreen();
+            java.awt.Point viewOffset = MainFrame.getGraphComponent()
+                    .getViewport().getViewPosition();
+            int canvasWidth = MainFrame.getGraphComponent().getViewport().getWidth();
+            int canvasHeight = MainFrame.getGraphComponent().getViewport().getHeight();
+            int relX = pointerScreen.x - canvasOrigin.x;
+            int relY = pointerScreen.y - canvasOrigin.y;
+            if (relX < 0 || relY < 0 || relX > canvasWidth || relY > canvasHeight) {
+                ghostX = viewOffset.x + 20;
+                ghostY = viewOffset.y + 20;
+            } else {
+                ghostX = viewOffset.x + relX - ConstantController.OPERATION_CELL_WIDTH / 2.0;
+                ghostY = viewOffset.y + relY - ConstantController.OPERATION_CELL_HEIGHT / 2.0;
+            }
+        } catch (Exception ignored) {
+        }
+        this.ghostCell = (mxCell) graph.insertVertex(
+            graph.getDefaultParent(),
+            "ghost",
+            style,
+            ghostX, ghostY,
+            ConstantController.OPERATION_CELL_WIDTH,
+            ConstantController.OPERATION_CELL_HEIGHT,
+            style);
     }
 
     private void resetAnyAction() {
@@ -564,54 +603,11 @@ public class MainController extends MainFrame {
 
         resetAnyAction();
 
-        Button<?> clickedButton = this.buttons
-                .stream()
-                .filter(button -> button.getButton() == event.getSource())
-                .findAny()
-                .orElse(null);
 
         String style = "";
 
-        if (clickedButton != null) {
-
-            resetEdge();
-
-            clickedButton.setCurrentAction(this.currentActionReference);
-
-            switch (this.currentActionReference.get().getType()) {
-                case DELETE_CELL ->
-                    this.executeRemoveCellCommand(this.jCell);
-                case DELETE_ALL ->
-                    CellUtils.deleteGraph();
-                case PRINT_SCREEN ->
-                    this.printScreen();
-                case SHOW_CELL ->
-                    CellUtils.showTable(this.jCell);
-                case IMPORT_FILE ->
-                    this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
-                case CREATE_TABLE_CELL ->
-                    this.createNewTable(CurrentAction.ActionType.CREATE_TABLE_CELL);
-                case OPEN_CONSOLE ->
-                    this.openConsole();
-                case OPEN_TEXT_EDITOR ->
-                    this.changeScreen();
-                case OPEN_COMPARATOR -> {
-                    try {
-                        this.openComparator();
-                    } catch (Exception ex) {
-                        Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-
-            if (clickedButton instanceof OperationButton clickedOperationButton) {
-                style = clickedOperationButton.getStyle();
-                ((CreateOperationCellAction) this.currentActionReference.get()).setParent(null);
-            }
-        }
-
         try {
-            this.onBottomMenuItemClicked(event, clickedButton, style);
+            this.onBottomMenuItemClicked(event, style);
             this.onTopMenuBarItemClicked(event);
         } catch (Exception ex) {
             Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
@@ -628,7 +624,6 @@ public class MainController extends MainFrame {
 
     private void onTopMenuBarItemClicked(ActionEvent event) throws Exception {
         Object source = event.getSource();
-        String theme = null;
 
         // if (source == this.importTableTopMenuBarItem) {
         // this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
@@ -644,12 +639,6 @@ public class MainController extends MainFrame {
 
         } else if (source == this.openQueryTopMenuBarItem) {
             new ImportFile(FileType.TXT, new AtomicReference<>(false));
-        } else if (source == this.gtkThemeTopMenuBarItem) {
-            theme = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
-        } else if (source == this.motifThemeTopMenuBarItem) {
-            theme = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
-        } else if (source == this.nimbusThemeTopMenuBarItem) {
-            theme = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
         } else if (source == this.undoButton) {
             undoRedoManager.undo(tables);
             cancelEdgeCreation();
@@ -658,18 +647,31 @@ public class MainController extends MainFrame {
             cancelEdgeCreation();
         }
 
-        if (theme == null) {
-            return;
-        }
+    }
 
-        try {
-            UIManager.setLookAndFeel(theme);
-            this.refreshAllComponents();
-            JFrame.setDefaultLookAndFeelDecorated(true);
-        } catch (ClassNotFoundException | InstantiationException
-                | IllegalAccessException | UnsupportedLookAndFeelException exception) {
-            new ErrorFrame(ConstantController.getString("error"));
+
+    public void dispatchToolBarAction(CurrentAction.ActionType actionType) {
+        resetEdge();
+        this.currentActionReference.set(new CurrentAction(actionType));
+        switch (actionType) {
+            case DELETE_CELL -> this.executeRemoveCellCommand(this.jCell);
+            case DELETE_ALL -> CellUtils.deleteGraph();
+            case PRINT_SCREEN -> this.printScreen();
+            case IMPORT_FILE -> this.createNewTable(CurrentAction.ActionType.IMPORT_FILE);
+            case CREATE_TABLE_CELL -> this.createNewTable(CurrentAction.ActionType.CREATE_TABLE_CELL);
+            case OPEN_CONSOLE -> this.openConsole();
+            case OPEN_TEXT_EDITOR -> this.changeScreen();
+            case OPEN_COMPARATOR -> {
+                try {
+                    this.openComparator();
+                } catch (Exception ex) {
+                    Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            default -> {
+            }
         }
+        resetEdge();
     }
 
     @Override
@@ -817,22 +819,31 @@ public class MainController extends MainFrame {
         ActionType actionType = this.currentActionReference.get().getType();
 
         if (actionType == ActionType.CREATE_OPERATOR_CELL) {
-            // Place a new operation node; ghost cell is removed inside execute()
+
+            OperationType placedType = null;
+            if (this.currentActionReference.get() instanceof CreateOperationCellAction createAction) {
+                placedType = createAction.getOperationType();
+            }
+
             UndoableRedoableCommand command = new InsertOperationCellCommand(
                 event, this.ghostCell, this.currentActionReference);
             commandController.execute(command);
             this.ghostCell = null;
 
+            if (placedType != null && this.operatorPalette != null) {
+                this.operatorPalette.notifyOperatorPlaced(placedType);
+            }
+
         } else if (actionType == ActionType.CREATE_EDGE) {
             if (this.invisibleCellReference.get() == null) {
                 // --- FIRST CLICK: set source + create invisible tracking cell ---
                 if (this.jCell == null) return;
-                if (CellUtils.getActiveCell(jCell).isEmpty()) return;
-                if (!CellUtils.getActiveCell(jCell).get().canBeParent()) return;
+                if (!Edge.canAcceptParent(this.jCell)) return;
 
                 currentEdgeReference.get().addParent(this.jCell);
                 if (currentEdgeReference.get().hasParent()) {
                     CellUtils.addMovableEdge(event, this.invisibleCellReference, this.jCell);
+                    this.setEdgeCursor();
                 }
             } else {
                 // --- SECOND CLICK: complete the connection ---
@@ -937,7 +948,7 @@ public class MainController extends MainFrame {
         }
     }
 
-    public void onBottomMenuItemClicked(ActionEvent event, Button<?> clickedButton, String style) throws Exception {
+    public void onBottomMenuItemClicked(ActionEvent event, String style) throws Exception {
         CreateOperationCellAction createOperationAction = null;
 
         Object menuItem = event.getSource();
@@ -1050,8 +1061,7 @@ public class MainController extends MainFrame {
             }
         }
 
-        if (createOperationAction != null || (clickedButton != null
-                && this.currentActionReference.get().getType() == ActionType.CREATE_OPERATOR_CELL)) {
+        if (createOperationAction != null) {
             this.ghostCell = (mxCell) graph.insertVertex(
                     graph.getDefaultParent(), "ghost", style,
                     MouseInfo.getPointerInfo().getLocation().getX() - MainFrame.getGraphComponent().getWidth(),
@@ -1302,6 +1312,12 @@ public class MainController extends MainFrame {
     public void keyPressed(KeyEvent event) {
         int keyCode = event.getKeyCode();
 
+        if (keyCode == KeyEvent.VK_D) {
+            dKeyHeld = true;
+            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            return;
+        }
+
         if (keyCode == KeyEvent.VK_S) {
             if (this.jCell != null) {
                 CellUtils.showTable(this.jCell);
@@ -1378,6 +1394,15 @@ public class MainController extends MainFrame {
         graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }
 
+    private void updateEdgeSourceCursor(MouseEvent event) {
+        Object cell = graphComponent.getCellAt(event.getX(), event.getY());
+        int cursorType = cell instanceof mxCell jCell && Edge.canAcceptParent(jCell)
+            ? Cursor.HAND_CURSOR
+            : Cursor.CROSSHAIR_CURSOR;
+
+        graphComponent.getGraphControl().setCursor(Cursor.getPredefinedCursor(cursorType));
+    }
+
     private void moveCell2(MouseEvent event, mxCell cellMoved) {
         entities.Coordinates canvasCoords = entities.utils.CoordinatesUtils.transformScreenToCanvasCoordinates(event);
 
@@ -1435,6 +1460,16 @@ public class MainController extends MainFrame {
     }
 
     @Override
+    public void keyReleased(KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.VK_D) {
+            dKeyHeld = false;
+            if (!panning) {
+                graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            }
+        }
+    }
+
+    @Override
     public void mouseMoved(MouseEvent event) {
         ActionType currentActionType = this.currentActionReference.get().getType();
 
@@ -1445,100 +1480,50 @@ public class MainController extends MainFrame {
         } else if (this.currentActionReference.get() instanceof CreateTableCellAction createTable) {
             this.moveCell(event, createTable.getTableCell().getJCell());
         } else if (currentActionType == ActionType.CREATE_EDGE) {
-            this.setEdgeCursor();
+            this.updateEdgeSourceCursor(event);
         }
     }
 
     @Override
     public void mousePressed(MouseEvent event) {
-        boolean isMiddleButton = SwingUtilities.isMiddleMouseButton(event) ||
-                event.getButton() == MouseEvent.BUTTON2 ||
-                (event.getModifiersEx() & InputEvent.BUTTON2_DOWN_MASK) != 0;
 
-        if (isMiddleButton) {
-            if (isPanning) {
-                isPanning = false;
-                panStartPoint = null;
-                initialViewPosition = null;
-            }
-
-            isPanning = true;
-            panStartPoint = new Point(event.getX(), event.getY());
-            initialViewPosition = new Point(graphComponent.getViewport().getViewPosition());
-
+        if (dKeyHeld && SwingUtilities.isLeftMouseButton(event)) {
+            panning = true;
+            panAnchorScreen = new Point(event.getXOnScreen(), event.getYOnScreen());
+            com.mxgraph.util.mxPoint t = graph.getView().getTranslate();
+            panAnchorTranslate = new com.mxgraph.util.mxPoint(t.getX(), t.getY());
             graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
             event.consume();
-            return;
         }
-
-        // startX = event.getX();
-        // startY = event.getY();
     }
 
     @Override
     public void mouseDragged(MouseEvent event) {
-
-        if (isPanning && panStartPoint != null) {
-            // calculate the difference in position
-            int dx = event.getX() - panStartPoint.x;
-            int dy = event.getY() - panStartPoint.y;
-
-            // apply a threshold to avoid small movements
-            double distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 3.0) {
-                event.consume();
-                return;
-            }
-
-            // apply throttle
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastPanUpdateTime < 16) { // ~60 FPS
-                event.consume();
-                return;
-            }
-            lastPanUpdateTime = currentTime;
-
-            // apply smoothing factor to reduce sensitivity
-            double smoothingFactor = 0.8; // reduce sensitivity in 2
-            dx = (int) (dx * smoothingFactor);
-            dy = (int) (dy * smoothingFactor);
-
-            // calculate the new view position
-            Point newViewPosition = new Point(
-                    initialViewPosition.x - dx,
-                    initialViewPosition.y - dy);
-
-            newViewPosition.x = Math.max(0, newViewPosition.x);
-            newViewPosition.y = Math.max(0, newViewPosition.y);
-
-            // set the new view position
-            graphComponent.getViewport().setViewPosition(newViewPosition);
-
-            event.consume();
+        if (!panning || panAnchorScreen == null || panAnchorTranslate == null) {
             return;
         }
 
-        // int dx = event.getX() - startX;
-        // int dy = event.getY() - startY;
-        //
-        // int viewX = graphComponent.getViewport().getView().getX();
-        // int viewY = graphComponent.getViewport().getView().getY();
-        //
-        // graphComponent.getViewport().setViewPosition(new java.awt.Point(viewX - dx,
-        // viewY - dy));
-        //
-        // startX = event.getX();
-        // startY = event.getY();
+        int dxScreen = event.getXOnScreen() - panAnchorScreen.x;
+        int dyScreen = event.getYOnScreen() - panAnchorScreen.y;
+        double scale = graph.getView().getScale();
+        if (scale <= 0) scale = 1.0;
+        double dxWorld = dxScreen / scale;
+        double dyWorld = dyScreen / scale;
+        graph.getView().setTranslate(new com.mxgraph.util.mxPoint(
+                panAnchorTranslate.getX() + dxWorld,
+                panAnchorTranslate.getY() + dyWorld));
+        graphComponent.refresh();
+        event.consume();
     }
 
     @Override
     public void mouseReleased(MouseEvent event) {
-        if (isPanning) {
-            isPanning = false;
-            panStartPoint = null;
-            initialViewPosition = null;
-
-            graphComponent.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        if (panning) {
+            panning = false;
+            panAnchorScreen = null;
+            panAnchorTranslate = null;
+            graphComponent.setCursor(Cursor.getPredefinedCursor(
+                    dKeyHeld ? Cursor.MOVE_CURSOR : Cursor.DEFAULT_CURSOR));
             event.consume();
         }
     }
@@ -1615,8 +1600,8 @@ public class MainController extends MainFrame {
             x = operationExpression.getCoordinates().get().x();
             y = operationExpression.getCoordinates().get().y();
         } else {
-            x = 500; 
-            y = 30;  
+            x = 500;
+            y = 30;
         }
 
         OperationType type = operationExpression.getType();
