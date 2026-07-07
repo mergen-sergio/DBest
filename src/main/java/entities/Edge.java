@@ -21,12 +21,14 @@ public class Edge implements Serializable {
         this.child = null;
     }
 
-    public void addParent(mxCell parent) {
+    public static boolean canAcceptParent(mxCell parent) {
         Optional<Cell> optionalCell = CellUtils.getActiveCell(parent);
 
-        if (optionalCell.isEmpty()) return;
+        if (optionalCell.isEmpty()) return false;
 
         Cell cell = optionalCell.get();
+
+        if (!cell.canBeParent()) return false;
 
         boolean cellHasError = cell.hasError();
         boolean cellIsParent = cell.hasChild();
@@ -38,7 +40,11 @@ public class Edge implements Serializable {
             cellHasTree = true;
         }
 
-        if (!cellIsParent && cellHasTree && !cellHasError) {
+        return !cellIsParent && cellHasTree && !cellHasError;
+    }
+
+    public void addParent(mxCell parent) {
+        if (canAcceptParent(parent)) {
             this.parent = parent;
         }
     }
