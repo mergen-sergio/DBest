@@ -700,6 +700,8 @@ public class MainController extends MainFrame {
             this.popupMenuJCell.add(this.removeMenuItem);
             this.popupMenuJCell.add(this.copyMenuItem);
             this.popupMenuJCell.add(this.redistributeNodesMenuItem);
+            this.popupMenuJCell.add(this.swapBinarySidesMenuItem);
+            this.popupMenuJCell.add(this.replaceJoinMenuItem);
             this.popupMenuJCell.add(cell.isMarked() ? this.unmarkCellMenuItem : this.markCellMenuItem);
             this.popupMenuJCell.remove(cell.isMarked() ? this.markCellMenuItem : this.unmarkCellMenuItem);
 
@@ -732,8 +734,14 @@ public class MainController extends MainFrame {
                 this.popupMenuJCell.remove(this.editMenuItem);
             }
 
-            if (cell.hasChild()) {
-                this.popupMenuJCell.remove(this.operationsMenuItem);
+            if (!canSwapBinaryOperationSides(cell)) {
+                this.popupMenuJCell.remove(this.swapBinarySidesMenuItem);
+            }
+
+            if (canReplaceJoinOperation(cell)) {
+                configureReplaceJoinMenu((OperationCell) cell);
+            } else {
+                this.popupMenuJCell.remove(this.replaceJoinMenuItem);
             }
 
             if (cell.hasError()) {
@@ -761,6 +769,39 @@ public class MainController extends MainFrame {
         if (optionalCell.isPresent() && event.getClickCount() == 2) {
             CellUtils.showTable(this.jCell);
         }
+    }
+
+    private boolean canSwapBinaryOperationSides(Cell cell) {
+        return cell instanceof OperationCell operationCell
+                && operationCell.getArity() == OperationArity.BINARY
+                && operationCell.getParents().size() == 2
+                && operationCell.getLeftParent() != null
+                && operationCell.getRightParent() != null;
+    }
+
+    private boolean canReplaceJoinOperation(Cell cell) {
+        return cell instanceof OperationCell operationCell && isJoinOperation(operationCell);
+    }
+
+    private void configureReplaceJoinMenu(OperationCell operationCell) {
+        this.replaceJoinMenuItem.removeAll();
+
+        Arrays.stream(OperationType.values())
+                .filter(this::isJoinOperationType)
+                .filter(operationType -> operationType != operationCell.getType())
+                .forEach(operationType -> {
+                    JMenuItem menuItem = new JMenuItem(operationType.displayName);
+                    menuItem.addActionListener(actionEvent -> commandController.execute(
+                            new ReplaceJoinOperationCommand(this.jCell, operationType)
+                    ));
+                    this.replaceJoinMenuItem.add(menuItem);
+                });
+    }
+
+    private boolean isJoinOperationType(OperationType operationType) {
+        return operationType != null
+                && operationType.arity == OperationArity.BINARY
+                && operationType.form == JoinForm.class;
     }
 
     public static void executeImportTableCommand(TableCell tableCell) {
@@ -951,6 +992,8 @@ public class MainController extends MainFrame {
             commandController.execute(new CopyCellsCommand());
         } else if (menuItem == this.redistributeNodesMenuItem) {
             this.redistributeNodes();
+        } else if (menuItem == this.swapBinarySidesMenuItem) {
+            commandController.execute(new SwapBinaryOperationSidesCommand(this.jCell));
         } else if (menuItem == this.pasteMenuItem) {
             Point mousePosition = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mousePosition, MainFrame.getGraphComponent().getGraphControl());
@@ -1006,6 +1049,16 @@ public class MainController extends MainFrame {
         if (createOperationAction != null) {
             createOperationAction.setParent(this.jCell);
             this.currentActionReference.set(createOperationAction);
+
+            if (shouldInsertOperationBetweenExistingConnection()) {
+                commandController.execute(new InsertOperationCellCommand(
+                    getMiddlePositionBetweenCellAndChild(this.jCell),
+                    null,
+                    this.currentActionReference
+                ));
+                this.ghostCell = null;
+                return;
+            }
         }
 
         if (createOperationAction != null) {
@@ -1015,6 +1068,33 @@ public class MainController extends MainFrame {
                     MouseInfo.getPointerInfo().getLocation().getY() - MainFrame.getGraphComponent().getHeight(),
                     80, 30, style);
         }
+    }
+
+    private boolean shouldInsertOperationBetweenExistingConnection() {
+        if (this.jCell == null) {
+            return false;
+        }
+
+        Optional<Cell> optionalCell = CellUtils.getActiveCell(this.jCell);
+        return optionalCell.isPresent() && optionalCell.get().hasChild();
+    }
+
+    private entities.Coordinates getMiddlePositionBetweenCellAndChild(mxCell parentJCell) {
+        Cell parentCell = CellUtils.getActiveCell(parentJCell).orElseThrow();
+        mxCell childJCell = parentCell.getChild().getJCell();
+
+        mxGeometry parentGeometry = parentJCell.getGeometry();
+        mxGeometry childGeometry = childJCell.getGeometry();
+
+        double parentCenterX = parentGeometry.getX() + parentGeometry.getWidth() / 2.0;
+        double parentCenterY = parentGeometry.getY() + parentGeometry.getHeight() / 2.0;
+        double childCenterX = childGeometry.getX() + childGeometry.getWidth() / 2.0;
+        double childCenterY = childGeometry.getY() + childGeometry.getHeight() / 2.0;
+
+        return new entities.Coordinates(
+            (int) Math.round((parentCenterX + childCenterX) / 2.0),
+            (int) Math.round((parentCenterY + childCenterY) / 2.0)
+        );
     }
 
     // not used

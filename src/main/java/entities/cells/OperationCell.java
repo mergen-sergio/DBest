@@ -33,15 +33,15 @@ import java.util.Optional;
 
 public final class OperationCell extends Cell {
 
-    private final OperationType type;
+    private OperationType type;
 
     private Cell leftParent;
 
     private Cell rightParent;
 
-    private final OperationArity arity;
+    private OperationArity arity;
 
-    private final Class<? extends IOperationForm> form;
+    private Class<? extends IOperationForm> form;
 
     private List<String> arguments;
 
@@ -49,7 +49,7 @@ public final class OperationCell extends Cell {
 
     private String errorMessage;
 
-    private final Class<? extends IOperator> operatorClass;
+    private Class<? extends IOperator> operatorClass;
 
     private Boolean hasBeenInitialized;
     
@@ -165,6 +165,24 @@ public final class OperationCell extends Cell {
     public OperationType getType() {
         return this.type;
     }
+
+    public void replaceType(OperationType type) {
+        if (type == null) {
+            return;
+        }
+
+        this.type = type;
+        this.arity = type.arity;
+        this.form = type.form;
+        this.operatorClass = type.operatorClass;
+        this.name = type.getFormattedDisplayName();
+
+        if (this.hasBeenInitialized) {
+            adjustWidthSize();
+        } else {
+            CellUtils.changeCellName(this.jCell, this.name, ConstantController.TABLE_CELL_WIDTH);
+        }
+    }
     
     @Override
     public boolean alwaysAllowConnections(){
@@ -241,6 +259,26 @@ public final class OperationCell extends Cell {
         if (cell.equals(this.rightParent)) {
             this.rightParent = null;
         }
+    }
+
+    public boolean replaceParent(Cell oldParent, Cell newParent) {
+        if (oldParent == null || newParent == null) {
+            return false;
+        }
+
+        if (oldParent.equals(this.leftParent)) {
+            this.leftParent = newParent;
+        } else if (oldParent.equals(this.rightParent)) {
+            this.rightParent = newParent;
+        } else {
+            return false;
+        }
+
+        if (oldParent.getChild() == this) {
+            oldParent.removeChild();
+        }
+        newParent.setChild(this);
+        return true;
     }
 
     public void removeParent(mxCell jCell) {

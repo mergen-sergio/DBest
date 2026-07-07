@@ -1,10 +1,14 @@
 package controllers.commands;
 
 import com.mxgraph.model.mxCell;
+import com.mxgraph.view.mxGraph;
 import controllers.ConstantController;
 import entities.Action.CurrentAction;
 import entities.Action.CreateOperationCellAction;
+import entities.Coordinates;
+import entities.cells.Cell;
 import entities.cells.OperationCell;
+import entities.utils.TreeUtils;
 import entities.utils.CoordinatesUtils;
 import entities.utils.cells.CellRepository;
 import entities.utils.cells.CellUtils;
@@ -30,10 +34,17 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
     private final AtomicReference<CurrentAction> currentActionReference;
     private final OperationType operationType;
     private final mxCell parentToAutoConnect;
+    private final Coordinates insertionCoordinates;
 
     private mxCell createdJCell;
     private OperationCell createdOperationCell;
     private ConnectNodesCommand autoConnectCommand;
+    private Cell parentCell;
+    private OperationCell childToRewire;
+    private mxCell originalChildEdge;
+    private mxCell insertedChildEdge;
+    private String originalChildEdgeLabel = "";
+    private boolean insertedBetween;
 
     public InsertOperationCellCommand(
         MouseEvent mouseEvent,
@@ -49,6 +60,23 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         this.currentActionReference = currentActionReference;
         this.operationType = action != null ? action.getOperationType() : null;
         this.parentToAutoConnect = (action != null && action.hasParent()) ? action.getParent() : null;
+        this.insertionCoordinates = null;
+    }
+
+    public InsertOperationCellCommand(
+        Coordinates insertionCoordinates,
+        mxCell ghostCell,
+        AtomicReference<CurrentAction> currentActionReference
+    ) {
+        CurrentAction current = currentActionReference.get();
+        CreateOperationCellAction action =
+                (current instanceof CreateOperationCellAction c) ? c : null;
+        this.mouseEvent = null;
+        this.ghostCell = ghostCell;
+        this.currentActionReference = currentActionReference;
+        this.operationType = action != null ? action.getOperationType() : null;
+        this.parentToAutoConnect = (action != null && action.hasParent()) ? action.getParent() : null;
+        this.insertionCoordinates = insertionCoordinates;
     }
 
     @Override
@@ -64,7 +92,9 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
             MainFrame.getGraph().removeCells(new Object[]{this.ghostCell}, true);
         }
 
-        var canvasCoords = CoordinatesUtils.transformScreenToCanvasCoordinates(this.mouseEvent);
+        Coordinates canvasCoords = this.insertionCoordinates != null
+            ? this.insertionCoordinates
+            : CoordinatesUtils.transformScreenToCanvasCoordinates(this.mouseEvent);
         int width = CellUtils.getCellWidth(this.operationType.getFormattedDisplayName());
         int height = ConstantController.OPERATION_CELL_HEIGHT;
 
@@ -94,10 +124,14 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         this.currentActionReference.set(ConstantController.NONE_ACTION);
 
         if (this.parentToAutoConnect != null) {
+            captureExistingChildConnection();
+
             this.autoConnectCommand = new ConnectNodesCommand(
                 this.parentToAutoConnect, this.createdJCell, null
             );
             this.autoConnectCommand.execute();
+
+            insertBetweenExistingConnection();
         }
     }
 
@@ -106,6 +140,8 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
         if (this.autoConnectCommand != null) {
             this.autoConnectCommand.undo();
         }
+
+        restoreExistingChildConnection();
 
         if (this.createdJCell == null) return;
         CellRepository.removeCell(this.createdJCell);
@@ -127,6 +163,121 @@ public class InsertOperationCellCommand extends BaseUndoableRedoableCommand {
 
         if (this.autoConnectCommand != null) {
             this.autoConnectCommand.redo();
+        }
+
+        insertBetweenExistingConnection();
+    }
+
+    private void captureExistingChildConnection() {
+        this.parentCell = CellRepository.getActiveCell(this.parentToAutoConnect).orElse(null);
+        if (this.parentCell == null || !this.parentCell.hasChild()) {
+            return;
+        }
+
+        this.childToRewire = this.parentCell.getChild();
+        this.originalChildEdge = findEdge(this.parentToAutoConnect, this.childToRewire.getJCell());
+        if (this.originalChildEdge != null && this.originalChildEdge.getValue() instanceof String label) {
+            this.originalChildEdgeLabel = label;
+        }
+    }
+
+    private void insertBetweenExistingConnection() {
+        if (this.parentCell == null || this.childToRewire == null || this.createdOperationCell == null) {
+            return;
+        }
+
+        removeOriginalChildEdge();
+
+        if (!this.childToRewire.replaceParent(this.parentCell, this.createdOperationCell)) {
+            return;
+        }
+
+        this.insertedChildEdge = (mxCell) MainFrame.getGraph().insertEdge(
+            MainFrame.getGraph().getDefaultParent(), null, this.originalChildEdgeLabel,
+            this.createdJCell, this.childToRewire.getJCell()
+        );
+
+        this.insertedBetween = true;
+        TreeUtils.updateTreesAboveAndBelow(this.createdOperationCell.getParents(), this.childToRewire);
+        TreeUtils.recalculateContent(this.createdOperationCell);
+        MainFrame.getGraph().refresh();
+    }
+
+    private void restoreExistingChildConnection() {
+        if (!this.insertedBetween || this.parentCell == null || this.childToRewire == null) {
+            return;
+        }
+
+        removeInsertedChildEdge();
+
+        if (this.childToRewire.replaceParent(this.createdOperationCell, this.parentCell)) {
+            restoreOriginalChildEdge();
+            TreeUtils.updateTreesAboveAndBelow(this.childToRewire.getParents(), this.childToRewire);
+            TreeUtils.recalculateContent(this.childToRewire);
+            MainFrame.getGraph().refresh();
+        }
+
+        this.insertedBetween = false;
+    }
+
+    private mxCell findEdge(mxCell source, mxCell target) {
+        Object[] edges = MainFrame.getGraph().getEdgesBetween(source, target);
+        for (Object edge : edges) {
+            if (edge instanceof mxCell edgeCell
+                    && edgeCell.getSource() == source
+                    && edgeCell.getTarget() == target) {
+                return edgeCell;
+            }
+        }
+        return null;
+    }
+
+    private void removeOriginalChildEdge() {
+        if (this.originalChildEdge == null || !MainFrame.getGraph().getModel().contains(this.originalChildEdge)) {
+            return;
+        }
+
+        removeEdge(this.originalChildEdge);
+    }
+
+    private void removeInsertedChildEdge() {
+        if (this.insertedChildEdge == null || !MainFrame.getGraph().getModel().contains(this.insertedChildEdge)) {
+            return;
+        }
+
+        removeEdge(this.insertedChildEdge);
+    }
+
+    private void removeEdge(mxCell edge) {
+        mxGraph graph = MainFrame.getGraph();
+        graph.getModel().beginUpdate();
+        try {
+            graph.getModel().remove(edge);
+        } finally {
+            graph.getModel().endUpdate();
+        }
+    }
+
+    private void restoreOriginalChildEdge() {
+        mxGraph graph = MainFrame.getGraph();
+        graph.getModel().beginUpdate();
+        try {
+            if (this.originalChildEdge != null) {
+                graph.getModel().add(
+                    graph.getDefaultParent(),
+                    this.originalChildEdge,
+                    graph.getModel().getChildCount(graph.getDefaultParent())
+                );
+                graph.getModel().setTerminal(this.originalChildEdge, this.parentToAutoConnect, true);
+                graph.getModel().setTerminal(this.originalChildEdge, this.childToRewire.getJCell(), false);
+            } else {
+                this.originalChildEdge = (mxCell) graph.insertEdge(
+                    graph.getDefaultParent(), null, this.originalChildEdgeLabel,
+                    this.parentToAutoConnect, this.childToRewire.getJCell()
+                );
+            }
+        } finally {
+            graph.getModel().endUpdate();
         }
     }
 }
