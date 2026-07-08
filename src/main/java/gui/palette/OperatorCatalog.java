@@ -1,20 +1,24 @@
 package gui.palette;
 
-import controllers.ConstantController;
 import enums.OperationType;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
 
 
 public final class OperatorCatalog {
 
-    private static final String DESCRIPTION_KEY_PREFIX = "palette.operator.";
-    private static final String DESCRIPTION_KEY_SUFFIX = ".description";
-    private static final String TAGS_KEY_SUFFIX = ".tags";
+    private static final Locale LOCALE = new Locale("en", "US");
+    private static final ResourceBundle POPUPS = ResourceBundle.getBundle("popups", LOCALE);
+    private static final ResourceBundle FUNCTION_TAGS = ResourceBundle.getBundle("tags.function", LOCALE);
+    private static final ResourceBundle IMPLEMENTATION_TAGS = ResourceBundle.getBundle("tags.implementation", LOCALE);
     private static final String TAGS_SEPARATOR = ",";
 
     public static final List<OperatorMetadata> ALL = buildCatalog();
@@ -82,18 +86,23 @@ public final class OperatorCatalog {
     }
 
     private static String descriptionFor(OperationType type) {
-        String key = DESCRIPTION_KEY_PREFIX + type.name + DESCRIPTION_KEY_SUFFIX;
         try {
-            return ConstantController.getString(key);
+            return POPUPS.getString(type.name);
         } catch (MissingResourceException missing) {
             return type.displayName;
         }
     }
 
     private static List<String> tagsFor(OperationType type) {
-        String key = DESCRIPTION_KEY_PREFIX + type.name + TAGS_KEY_SUFFIX;
+        Set<String> tags = new LinkedHashSet<>();
+        tags.addAll(tagsFromBundle(FUNCTION_TAGS, type));
+        tags.addAll(tagsFromBundle(IMPLEMENTATION_TAGS, type));
+        return List.copyOf(tags);
+    }
+
+    private static List<String> tagsFromBundle(ResourceBundle bundle, OperationType type) {
         try {
-            String raw = ConstantController.getString(key);
+            String raw = bundle.getString(type.name);
             if (raw == null || raw.isBlank()) {
                 return List.of();
             }

@@ -456,7 +456,7 @@ public abstract class MainFrame extends JFrame implements ActionListener, MouseL
 
         MainController controller = (MainController) this;
 
-        addBottomAction(controller, "toolBarButtons.importTable",    "i",    CurrentAction.ActionType.IMPORT_FILE,       IconButton.Variant.PRIMARY);
+        addBottomAction(controller, "toolBarButtons.importTable",    "i",    CurrentAction.ActionType.IMPORT_FILE,       IconButton.Variant.DEFAULT);
         addBottomAction(controller, "toolBarButtons.createTable",    "c",    CurrentAction.ActionType.CREATE_TABLE_CELL, IconButton.Variant.DEFAULT);
         addBottomAction(controller, "toolBarButtons.edge",           "e",    CurrentAction.ActionType.CREATE_EDGE,       IconButton.Variant.DEFAULT);
         addBottomAction(controller, "toolBarButtons.remove",         "del",  CurrentAction.ActionType.DELETE_CELL,       IconButton.Variant.DEFAULT);
