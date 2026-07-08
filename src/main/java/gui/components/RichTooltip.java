@@ -11,7 +11,6 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -26,6 +25,7 @@ public final class RichTooltip {
     private static final int CONTENT_GAP_PIXELS = Theme.SPACING_SMALL;
     private static final int MAX_WIDTH_PIXELS = 260;
     private static final int ANCHOR_GAP_PIXELS = Theme.SPACING_SMALL;
+    private static final float TAGS_FONT_SIZE = 10f;
 
     private static final WeakHashMap<Window, RichTooltip> instancesByOwner = new WeakHashMap<>();
     private static RichTooltip currentlyVisible = null;
@@ -132,15 +132,14 @@ public final class RichTooltip {
 
     private JLabel buildDescriptionLabel() {
         JLabel label = new JLabel();
-        label.setFont(Typography.CAPTION);
+        label.setFont(Typography.BODY);
         Themed.foreground(label, () -> Theme.TEXT_ON_DARK);
-        label.setPreferredSize(new Dimension(MAX_WIDTH_PIXELS, 0));
         return label;
     }
 
     private JLabel buildTagsLabel() {
         JLabel label = new JLabel();
-        label.setFont(Typography.CAPTION);
+        label.setFont(Typography.CAPTION.deriveFont(TAGS_FONT_SIZE));
         Themed.foreground(label, () -> Theme.TEXT_FAINT);
         return label;
     }
@@ -157,6 +156,6 @@ public final class RichTooltip {
         if (tags == null || tags.isEmpty()) {
             return "";
         }
-        return "tags: " + String.join(" · ", tags);
+        return String.join(" · ", tags);
     }
 }

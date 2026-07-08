@@ -27,6 +27,7 @@ import javax.swing.Scrollable;
 import javax.swing.SwingUtilities;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.Window;
 import javax.swing.JDialog;
@@ -208,6 +209,7 @@ public final class OperatorPalette extends JLayeredPane {
     }
 
     private void fillRecentWindowContents(JDialog dialog) {
+        RichTooltip.hide();
         JPanel content = new JPanel(new BorderLayout(0, 0));
         content.setOpaque(true);
         Themed.background(content, () -> Theme.SURFACE);
@@ -264,6 +266,7 @@ public final class OperatorPalette extends JLayeredPane {
     }
 
     private void applyState() {
+        RichTooltip.hide();
         contentArea.removeAll();
 
         boolean isSearchActive = !currentSearchQuery.isBlank();
@@ -504,6 +507,15 @@ public final class OperatorPalette extends JLayeredPane {
 
     private void attachRowInteractions(JComponent row, OperatorMetadata operator) {
         row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        Timer tooltipTimer = new Timer(TOOLTIP_HOVER_DELAY_MILLIS, event -> {
+            if (row.getMousePosition() == null) {
+                return;
+            }
+            RichTooltip.showFor(row, operator.displayName(), operator.description(), operator.searchTags());
+        });
+        tooltipTimer.setRepeats(false);
+
         row.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -511,16 +523,21 @@ public final class OperatorPalette extends JLayeredPane {
                 Themed.background(row, () -> Theme.SURFACE_MUTED);
                 row.setOpaque(true);
                 row.repaint();
+                tooltipTimer.start();
             }
 
             @Override
             public void mouseExited(MouseEvent event) {
                 row.setOpaque(false);
                 row.repaint();
+                tooltipTimer.stop();
+                RichTooltip.hide();
             }
 
             @Override
             public void mouseClicked(MouseEvent event) {
+                tooltipTimer.stop();
+                RichTooltip.hide();
                 onOperatorSelected.accept(operator.type());
             }
         });
