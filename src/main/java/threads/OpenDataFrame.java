@@ -59,18 +59,9 @@ public class OpenDataFrame implements Runnable{
             if (!(cell instanceof TableCell || ((OperationCell) cell).hasBeenInitialized())) return;
 
             if (!cell.hasError()) {
-                // Check if this is a cancellable set-based operation (hash, etc.)
                 if (cell instanceof OperationCell) {
                     OperationCell operationCell = (OperationCell) cell;
-                    if (operationCell.getType().isSetBasedProcessing) {
-                        showOperationLoadingDialog(cell, operationCell.getType().displayName);
-                    } else {
-                        try {
-                            new DataFrame(cell);
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(null, ex.getMessage(), ConstantController.getString("error"), JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
+                    showOperationLoadingDialog(cell, operationCell.getType().displayName);
                 } else {
                     try {
                         new DataFrame(cell);

@@ -173,6 +173,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
         
         // Don't show the dialog if cancellation was requested during processing
         if (externalCancellationRequested) {
+            this.cell.closeOperator();
             this.dispose();
         }
     }
@@ -354,6 +355,7 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 Tuple tuple = this.cell.getOperator().next();
                 this.rows.add(tuple);
                 largestElement++;
+                if (externalCancellationRequested) return;
             }
             
             if (!this.cell.getOperator().hasNext())

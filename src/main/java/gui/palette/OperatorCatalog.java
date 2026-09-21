@@ -16,14 +16,23 @@ import java.util.Set;
 public final class OperatorCatalog {
 
     private static final Locale LOCALE = new Locale("en", "US");
-    private static final ResourceBundle POPUPS = ResourceBundle.getBundle("popups", LOCALE);
-    private static final ResourceBundle FUNCTION_TAGS = ResourceBundle.getBundle("tags.function", LOCALE);
-    private static final ResourceBundle IMPLEMENTATION_TAGS = ResourceBundle.getBundle("tags.implementation", LOCALE);
+    private static final ResourceBundle POPUPS = optionalBundle("popups");
+    private static final ResourceBundle FUNCTION_TAGS = optionalBundle("tags.function");
+    private static final ResourceBundle IMPLEMENTATION_TAGS = optionalBundle("tags.implementation");
     private static final String TAGS_SEPARATOR = ",";
 
     public static final List<OperatorMetadata> ALL = buildCatalog();
 
     private OperatorCatalog() {
+    }
+
+    private static ResourceBundle optionalBundle(String baseName) {
+        try {
+            return ResourceBundle.getBundle(baseName, LOCALE);
+        } catch (MissingResourceException missing) {
+            System.err.println("Bundle não encontrado:" + baseName);
+            return null;
+        }
     }
 
     public static List<OperatorMetadata> byCategory(OperatorCategory category) {
@@ -87,7 +96,7 @@ public final class OperatorCatalog {
 
     private static String descriptionFor(OperationType type) {
         try {
-            return POPUPS.getString(type.name);
+            return POPUPS == null ? type.displayName : POPUPS.getString(type.name);
         } catch (MissingResourceException missing) {
             return type.displayName;
         }
@@ -101,6 +110,9 @@ public final class OperatorCatalog {
     }
 
     private static List<String> tagsFromBundle(ResourceBundle bundle, OperationType type) {
+        if (bundle == null) {
+            return List.of();
+        }
         try {
             String raw = bundle.getString(type.name);
             if (raw == null || raw.isBlank()) {
