@@ -96,7 +96,7 @@ public class LargerKeyIterator implements Iterator<DictionaryPair> {
                 if (dps[index] == null) {
                     break;
                 }
-                Parameters.RECORDS_READ++;
+                Parameters.RECORDS_READ.increment();
                 if (key.partialMatch(dps[index].key)) {
                     if (largerEqual) {
                         nextValue = dps[index];
@@ -132,7 +132,7 @@ public class LargerKeyIterator implements Iterator<DictionaryPair> {
                 if (dps[index] == null) {
                     break;
                 }
-                Parameters.RECORDS_READ++;
+                Parameters.RECORDS_READ.increment();
                 if (foundGreater) {
                     nextValue = dps[index];
                     index++;

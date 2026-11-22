@@ -70,7 +70,7 @@ public abstract class MemoryTableRowsIterator implements Iterator<LinkedDataRow>
     while (iterator.hasNext()) {
             // Iterate through the dictionary of each node
             LinkedDataRow dataRow = iterator.next();
-            Parameters.RECORDS_READ++;
+            Parameters.RECORDS_READ.increment();
            if (match(dataRow)) {
                 nextValue = dataRow;
                 return nextValue;

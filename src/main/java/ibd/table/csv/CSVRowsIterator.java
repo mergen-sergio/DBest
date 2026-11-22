@@ -78,7 +78,7 @@ public abstract class CSVRowsIterator implements Iterator<LinkedDataRow> {
 
             String[] columns = csvTable.recognizer.getColumnNames();
             LinkedDataRow dataRow = csvTable.convertRow(columns, data, pk);
-            Parameters.RECORDS_READ++;
+            Parameters.RECORDS_READ.increment();
            if (match(dataRow)) {
                 nextValue = dataRow;
                 return nextValue;

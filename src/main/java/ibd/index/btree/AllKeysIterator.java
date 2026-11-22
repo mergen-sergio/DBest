@@ -93,7 +93,7 @@ public class AllKeysIterator implements Iterator<DictionaryPair>{
                 if (dps[index] == null) {
                     break;
                 }
-                Parameters.RECORDS_READ++;
+                Parameters.RECORDS_READ.increment();
                 nextValue = dps[index];
                 index++;
                 return nextValue;

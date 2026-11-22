@@ -111,7 +111,7 @@ public class ComparisonTypes {
      */
     public static boolean match(Comparable value1, Comparable value2, int comparisonType) {
 
-        ibd.query.QueryStats.COMPARE_FILTER++;
+        ibd.query.QueryStats.COMPARE_FILTER.increment();
         if (value1==null && value2==null){
             if (comparisonType == ComparisonTypes.IS_NULL) return true;
             return false;

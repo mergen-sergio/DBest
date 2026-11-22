@@ -201,7 +201,7 @@ public class Memoize extends UnaryOperation {
                 tupleList.add(tuple);
 
             }
-            QueryStats.MEMORY_USED += tupleList.size() * tupleSize;
+            QueryStats.MEMORY_USED.add(tupleList.size() * tupleSize);
             tuples.put(key, tupleList);
             return tupleList.iterator();
 
@@ -210,7 +210,7 @@ public class Memoize extends UnaryOperation {
         @Override
         protected Tuple findNextTuple() {
             while (it.hasNext()) {
-                QueryStats.NEXT_CALLS++;
+                QueryStats.NEXT_CALLS.increment();
                 Tuple tp = it.next();
                 //a tuple must satisfy the lookup filter that comes from the parent operation
                 //only the unhashed filters need to be checked

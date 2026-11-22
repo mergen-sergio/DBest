@@ -92,8 +92,8 @@ public class ERBD {
         System.out.println("warm up time: " + (end - start) / times);
 
         Stats.passes = 0;
-        ibd.query.QueryStats.MEMORY_USED = 0;
-        engine.info.Parameters.BLOCKS_ACCESSED = 0;
+        ibd.query.QueryStats.MEMORY_USED.reset();
+        engine.info.Parameters.BLOCKS_ACCESSED.reset();
         
         start = System.currentTimeMillis();
         for (int i = 0; i < times; i++) {
@@ -101,8 +101,8 @@ public class ERBD {
         }
         end = System.currentTimeMillis();
         System.out.println("measured time: " + (end - start) / times);
-        System.out.println("MEMORY USED: " + ibd.query.QueryStats.MEMORY_USED/times);
-        System.out.println("BLOCKS ACCESSED: "+engine.info.Parameters.BLOCKS_ACCESSED/times);
+        System.out.println("MEMORY USED: " + ibd.query.QueryStats.MEMORY_USED.sum()/times);
+        System.out.println("BLOCKS ACCESSED: "+engine.info.Parameters.BLOCKS_ACCESSED.sum()/times);
         //System.out.println("passes " + Stats.passes);
         System.out.println("-----------------------");
     }

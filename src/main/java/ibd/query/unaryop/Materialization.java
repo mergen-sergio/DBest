@@ -94,7 +94,7 @@ public class Materialization extends UnaryOperation {
                     tuples.add(tuple);
                 }
 
-                QueryStats.MEMORY_USED += tuples.size() * tupleSize;
+                QueryStats.MEMORY_USED.add(tuples.size() * tupleSize);
             }
 
         }

@@ -25,12 +25,12 @@ public class GeneralStatsFrame extends JDialog {
         StringJoiner textPaneText = new StringJoiner("\n");
 
         String queryStats = String.format("\n%s:", ConstantController.getString("dataframe.query"));
-        String primaryKeySearchStat = String.format("%s = %s", ConstantController.getString("PK_SEARCH"), QueryStats.PK_SEARCH);
-        String sortedTuplesStat = String.format("%s = %s", ConstantController.getString("SORT_TUPLES"), QueryStats.SORT_TUPLES);
-        String filterComparisonStat = String.format("%s = %s", ConstantController.getString("COMPARE_FILTER"), QueryStats.COMPARE_FILTER);
-        String recordsReadStat = String.format("%s = %s", ConstantController.getString("RECORDS_READ"), Parameters.RECORDS_READ);
-        String nextCallsStat = String.format("%s = %s", ConstantController.getString("NEXT_CALLS"), QueryStats.NEXT_CALLS);
-        String distinctTuplesComparisonStat = String.format("%s = %s", ConstantController.getString("COMPARE_DISTINCT_TUPLE"), QueryStats.COMPARE_DISTINCT_TUPLE);
+        String primaryKeySearchStat = String.format("%s = %s", ConstantController.getString("PK_SEARCH"), QueryStats.PK_SEARCH.sum());
+        String sortedTuplesStat = String.format("%s = %s", ConstantController.getString("SORT_TUPLES"), QueryStats.SORT_TUPLES.sum());
+        String filterComparisonStat = String.format("%s = %s", ConstantController.getString("COMPARE_FILTER"), QueryStats.COMPARE_FILTER.sum());
+        String recordsReadStat = String.format("%s = %s", ConstantController.getString("RECORDS_READ"), Parameters.RECORDS_READ.sum());
+        String nextCallsStat = String.format("%s = %s", ConstantController.getString("NEXT_CALLS"), QueryStats.NEXT_CALLS.sum());
+        String distinctTuplesComparisonStat = String.format("%s = %s", ConstantController.getString("COMPARE_DISTINCT_TUPLE"), QueryStats.COMPARE_DISTINCT_TUPLE.sum());
 
         textPaneText.add(queryStats);
         textPaneText.add(primaryKeySearchStat);
@@ -42,15 +42,15 @@ public class GeneralStatsFrame extends JDialog {
         textPaneText.add("");
 
         String diskStats = String.format("\n%s:", ConstantController.getString("dataframe.disk"));
-        String ioSeekWriteTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SEEK_WRITE_TIME"), (Parameters.IO_SEEK_WRITE_TIME ) / 1000000f);
-        String ioWriteTimeStat = String.format("%s = %fms", ConstantController.getString("IO_WRITE_TIME"), (Parameters.IO_SEEK_WRITE_TIME ) / 1000000f);
-        String ioSeekReadTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SEEK_READ_TIME"), (Parameters.IO_SEEK_READ_TIME ) / 1000000f);
-        String ioReadTimeStat = String.format("%s = %fms", ConstantController.getString("IO_READ_TIME"), (Parameters.IO_READ_TIME ) / 1000000f);
-        String ioSyncTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SYNC_TIME"), (Parameters.IO_SYNC_TIME ) / 1000000f);
-        String ioTimeStat = String.format("%s = %fms", ConstantController.getString("IO_TOTAL_TIME"), (Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME ) / 1000000f);
-        String blocksLoadedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.loaded"), Parameters.BLOCKS_LOADED);
-        String blocksAccessedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.accessed"), Parameters.BLOCKS_ACCESSED);
-        String blocksSavedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.saved"), Parameters.BLOCKS_SAVED);
+        String ioSeekWriteTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SEEK_WRITE_TIME"), (Parameters.IO_SEEK_WRITE_TIME.sum() ) / 1000000f);
+        String ioWriteTimeStat = String.format("%s = %fms", ConstantController.getString("IO_WRITE_TIME"), (Parameters.IO_SEEK_WRITE_TIME.sum() ) / 1000000f);
+        String ioSeekReadTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SEEK_READ_TIME"), (Parameters.IO_SEEK_READ_TIME.sum() ) / 1000000f);
+        String ioReadTimeStat = String.format("%s = %fms", ConstantController.getString("IO_READ_TIME"), (Parameters.IO_READ_TIME.sum() ) / 1000000f);
+        String ioSyncTimeStat = String.format("%s = %fms", ConstantController.getString("IO_SYNC_TIME"), (Parameters.IO_SYNC_TIME.sum() ) / 1000000f);
+        String ioTimeStat = String.format("%s = %fms", ConstantController.getString("IO_TOTAL_TIME"), (Parameters.IO_SYNC_TIME.sum() + Parameters.IO_SEEK_WRITE_TIME.sum() + Parameters.IO_READ_TIME.sum() + Parameters.IO_SEEK_READ_TIME.sum() + Parameters.IO_WRITE_TIME.sum() ) / 1000000f);
+        String blocksLoadedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.loaded"), Parameters.BLOCKS_LOADED.sum());
+        String blocksAccessedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.accessed"), Parameters.BLOCKS_ACCESSED.sum());
+        String blocksSavedStat = String.format("%s = %d", ConstantController.getString("dataframe.disk.saved"), Parameters.BLOCKS_SAVED.sum());
 
         textPaneText.add(diskStats);
         textPaneText.add(ioSeekWriteTimeStat);

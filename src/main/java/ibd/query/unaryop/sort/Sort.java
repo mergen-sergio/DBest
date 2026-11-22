@@ -168,12 +168,12 @@ public class Sort extends UnaryOperation {
                         //sorter.addTuple(tuple);
 
                     }
-                    QueryStats.MEMORY_USED+=tuples.size()*tupleSize;
+                    QueryStats.MEMORY_USED.add(tuples.size()*tupleSize);
                     //sort collection
                     Comparator<Tuple> comparator = createComparator();
                     Collections.sort(tuples, comparator);
                     
-                    ibd.query.QueryStats.SORT_TUPLES+=tuples.size();
+                    ibd.query.QueryStats.SORT_TUPLES.add(tuples.size());
 
                     //sortedInputBucket = sorter.sort();
                 } catch (Exception ex) {

@@ -62,7 +62,7 @@ public class CSVRecognizer implements Iterable<String[]>{
                 if(buffer!=null)return buffer;
                 long current = System.currentTimeMillis();
                 String line = br.readLine();
-                Parameters.IO_READ_TIME += System.currentTimeMillis() - current;
+                Parameters.IO_READ_TIME.add(System.currentTimeMillis() - current);
                 while (line != null) {
                     if (!line.isBlank() || !line.isEmpty()) {
                         List<String> tuple = new ArrayList<>();
@@ -78,7 +78,7 @@ public class CSVRecognizer implements Iterable<String[]>{
                     }
                     current = System.currentTimeMillis();
                     line = br.readLine();
-                    Parameters.IO_READ_TIME += System.currentTimeMillis() - current;
+                    Parameters.IO_READ_TIME.add(System.currentTimeMillis() - current);
                 }
                 return null;
             }

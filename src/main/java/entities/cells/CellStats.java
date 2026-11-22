@@ -96,12 +96,12 @@ public record CellStats(
 
     public static CellStats getTotalCurrentStats(){
         return new CellStats(
-                QueryStats.PK_SEARCH,
-                QueryStats.SORT_TUPLES,
-                QueryStats.COMPARE_FILTER,
-                Parameters.RECORDS_READ,
-                QueryStats.NEXT_CALLS,
-                QueryStats.MEMORY_USED,
+                QueryStats.PK_SEARCH.sum(),
+                QueryStats.SORT_TUPLES.sum(),
+                QueryStats.COMPARE_FILTER.sum(),
+                Parameters.RECORDS_READ.sum(),
+                QueryStats.NEXT_CALLS.sum(),
+                QueryStats.MEMORY_USED.sum(),
 //                Query.COMPARE_DISTINCT_TUPLE,
 //                0,
 //                100,
@@ -111,9 +111,9 @@ public record CellStats(
 //                Parameters.IO_READ_TIME,
 //                Parameters.IO_SYNC_TIME,
 //                Parameters.IO_SYNC_TIME + Parameters.IO_SEEK_WRITE_TIME + Parameters.IO_READ_TIME + Parameters.IO_SEEK_READ_TIME + Parameters.IO_WRITE_TIME,
-                Parameters.BLOCKS_ACCESSED,
-                Parameters.BLOCKS_LOADED,
-                Parameters.BLOCKS_SAVED
+                Parameters.BLOCKS_ACCESSED.sum(),
+                Parameters.BLOCKS_LOADED.sum(),
+                Parameters.BLOCKS_SAVED.sum()
 //                Parameters.MEMORY_ALLOCATED_BY_BLOCKS,
 //                Parameters.MEMORY_ALLOCATED_BY_DIRECT_BLOCKS,
 //                Parameters.MEMORY_ALLOCATED_BY_INDIRECT_BLOCKS,
@@ -138,21 +138,21 @@ public record CellStats(
     }
     
     public static void reset(){
-                QueryStats.PK_SEARCH = 0;
-                QueryStats.SORT_TUPLES = 0;
-                QueryStats.COMPARE_FILTER = 0;
-                Parameters.RECORDS_READ = 0;
-                QueryStats.NEXT_CALLS = 0;
-                QueryStats.MEMORY_USED = 0;
+                QueryStats.PK_SEARCH.reset();
+                QueryStats.SORT_TUPLES.reset();
+                QueryStats.COMPARE_FILTER.reset();
+                Parameters.RECORDS_READ.reset();
+                QueryStats.NEXT_CALLS.reset();
+                QueryStats.MEMORY_USED.reset();
 //                Query.COMPARE_DISTINCT_TUPLE = 0;
 //                Parameters.IO_SEEK_WRITE_TIME = 0;
 //                Parameters.IO_WRITE_TIME = 0;
 //                Parameters.IO_SEEK_READ_TIME = 0;
 //                Parameters.IO_READ_TIME = 0;
 //                Parameters.IO_SYNC_TIME = 0;
-                Parameters.BLOCKS_ACCESSED = 0;
-                Parameters.BLOCKS_LOADED = 0;
-                Parameters.BLOCKS_SAVED = 0;
+                Parameters.BLOCKS_ACCESSED.reset();
+                Parameters.BLOCKS_LOADED.reset();
+                Parameters.BLOCKS_SAVED.reset();
 //                Parameters.MEMORY_ALLOCATED_BY_BLOCKS = 0;
 //                Parameters.MEMORY_ALLOCATED_BY_DIRECT_BLOCKS = 0;
 //                Parameters.MEMORY_ALLOCATED_BY_INDIRECT_BLOCKS = 0;

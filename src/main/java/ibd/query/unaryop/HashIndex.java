@@ -114,7 +114,7 @@ public class HashIndex extends UnaryOperation {
                 }
                 
                 // Update memory statistics
-                QueryStats.MEMORY_USED = Math.max(0, QueryStats.MEMORY_USED - memoryFreed);
+                QueryStats.MEMORY_USED.add(-Math.min(memoryFreed, QueryStats.MEMORY_USED.sum()));
                 
                 // Force garbage collection hint (not guaranteed, but helps)
                 System.gc();
@@ -447,7 +447,7 @@ public class HashIndex extends UnaryOperation {
                 
                 // Only update memory stats if hash building completed successfully
                 if (tuples != null && !Thread.currentThread().isInterrupted()) {
-                    QueryStats.MEMORY_USED += memoryUsed;
+                    QueryStats.MEMORY_USED.add(memoryUsed);
                 }
             }
         }

@@ -27,7 +27,7 @@ public abstract class OperationIterator implements Iterator<Tuple> {
     @Override
     public Tuple next() {
 
-        ibd.query.QueryStats.NEXT_CALLS++;
+        ibd.query.QueryStats.NEXT_CALLS.increment();
         if (nextTuple != null) {
             Tuple next_ = nextTuple;
             nextTuple = null;

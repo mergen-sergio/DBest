@@ -107,7 +107,7 @@ public class HashDifference extends Set {
                 Tuple rightTuple = rightTuples.next();
                 String key = getKey(rightTuple);
                 tuples.put(key, rightTuple);
-                QueryStats.MEMORY_USED += tupleSize;
+                QueryStats.MEMORY_USED.add(tupleSize);
             }
 
             while (leftTuples.hasNext()) {

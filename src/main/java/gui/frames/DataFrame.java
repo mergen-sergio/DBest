@@ -71,21 +71,21 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
 
     private FontIcon iconStats;
 
-    private final long INITIAL_PK_SEARCH = QueryStats.PK_SEARCH;
+    private final long INITIAL_PK_SEARCH = QueryStats.PK_SEARCH.sum();
 
-    private final long INITIAL_SORT_TUPLES = QueryStats.SORT_TUPLES;
+    private final long INITIAL_SORT_TUPLES = QueryStats.SORT_TUPLES.sum();
 
-    private final long INITIAL_COMPARE_FILTER = QueryStats.COMPARE_FILTER;
+    private final long INITIAL_COMPARE_FILTER = QueryStats.COMPARE_FILTER.sum();
 
-    private final long INITIAL_RECORDS_READ = Parameters.RECORDS_READ;
+    private final long INITIAL_RECORDS_READ = Parameters.RECORDS_READ.sum();
 
-    private final long INITIAL_NEXT_CALLS = QueryStats.NEXT_CALLS;
+    private final long INITIAL_NEXT_CALLS = QueryStats.NEXT_CALLS.sum();
 
-    private final long INITIAL_MEMORY_USAGE = QueryStats.MEMORY_USED;
+    private final long INITIAL_MEMORY_USAGE = QueryStats.MEMORY_USED.sum();
 
-    private final long INITIAL_BLOCKS_ACCESSED = Parameters.BLOCKS_ACCESSED;
+    private final long INITIAL_BLOCKS_ACCESSED = Parameters.BLOCKS_ACCESSED.sum();
 
-    private final long INITIAL_BLOCKS_LOADED = Parameters.BLOCKS_LOADED;
+    private final long INITIAL_BLOCKS_LOADED = Parameters.BLOCKS_LOADED.sum();
 
     private final List<Tuple> rows;
 
@@ -918,38 +918,38 @@ public class DataFrame extends JDialog implements ActionListener {    private fi
                 .append(":\n")
                 .append(ConstantController.getString("PK_SEARCH"))
                 .append(" = ")
-                .append(QueryStats.PK_SEARCH - this.INITIAL_PK_SEARCH)
+                .append(QueryStats.PK_SEARCH.sum() - this.INITIAL_PK_SEARCH)
                 .append("\n")
                 .append(ConstantController.getString("SORT_TUPLES"))
                 .append(" = ")
-                .append(QueryStats.SORT_TUPLES - this.INITIAL_SORT_TUPLES)
+                .append(QueryStats.SORT_TUPLES.sum() - this.INITIAL_SORT_TUPLES)
                 .append("\n")
                 .append(ConstantController.getString("COMPARE_FILTER"))
                 .append(" = ")
-                .append(QueryStats.COMPARE_FILTER - this.INITIAL_COMPARE_FILTER)
+                .append(QueryStats.COMPARE_FILTER.sum() - this.INITIAL_COMPARE_FILTER)
                 .append("\n")
                 .append(ConstantController.getString("NEXT_CALLS"))
                 .append(" = ")
-                .append(QueryStats.NEXT_CALLS - this.INITIAL_NEXT_CALLS)
+                .append(QueryStats.NEXT_CALLS.sum() - this.INITIAL_NEXT_CALLS)
                 .append("\n")
                 .append(ConstantController.getString("MEMORY_USED"))
                 .append(" = ")
-                .append(formatMemoryKb(QueryStats.MEMORY_USED - this.INITIAL_MEMORY_USAGE))
+                .append(formatMemoryKb(QueryStats.MEMORY_USED.sum() - this.INITIAL_MEMORY_USAGE))
                 .append("\n\n")
                 .append(ConstantController.getString("dataframe.disk"))
                 .append(":")
                 .append("\n")
                 .append(ConstantController.getString("RECORDS_READ"))
                 .append(" = ")
-                .append(Parameters.RECORDS_READ - this.INITIAL_RECORDS_READ)
+                .append(Parameters.RECORDS_READ.sum() - this.INITIAL_RECORDS_READ)
                 .append("\n")
                 .append(ConstantController.getString("BLOCKS_LOADED"))
                 .append(" = ")
-                .append(Parameters.BLOCKS_LOADED - this.INITIAL_BLOCKS_LOADED)
+                .append(Parameters.BLOCKS_LOADED.sum() - this.INITIAL_BLOCKS_LOADED)
                 .append("\n")
                 .append(ConstantController.getString("BLOCKS_ACCESSED"))
                 .append(" = ")
-                .append(Parameters.BLOCKS_ACCESSED - this.INITIAL_BLOCKS_ACCESSED)
+                .append(Parameters.BLOCKS_ACCESSED.sum() - this.INITIAL_BLOCKS_ACCESSED)
                 .append("\n")
                 .append("\n");
 

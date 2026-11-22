@@ -93,7 +93,7 @@ public abstract class Cache<P extends Page> extends PageFile<P> {
      */
     @Override
     public synchronized P readPage(int pageID) {
-        engine.info.Parameters.BLOCKS_ACCESSED++;
+        engine.info.Parameters.BLOCKS_ACCESSED.increment();
         P page = getFromCache(pageID);
         if (page == null) {
             page = file.readPage(pageID);

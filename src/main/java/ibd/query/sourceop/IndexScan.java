@@ -371,7 +371,7 @@ public boolean exists(List<Tuple> processedTuples, boolean withFilterDelegation)
                 //row.setValue(filter.getColumn(), (Integer) filter.getValue());
                 fastLookupRow.setValue(filter_.getColumnDescriptor().getColumnLocation().colIndex, filter_.getSecondElement().getValue(null));
             }
-            ibd.query.QueryStats.PK_SEARCH++;
+            ibd.query.QueryStats.PK_SEARCH.increment();
             return table.contains(fastLookupRow);
         } else {
             if (slowLookupFilter instanceof NoRowLookupFilter) {
@@ -426,7 +426,7 @@ public Map<String, List<String>> getContentInfo() {
 
             //if there exists fast filters
             if (canLookup) {
-                ibd.query.QueryStats.PK_SEARCH++;
+                ibd.query.QueryStats.PK_SEARCH.increment();
                 //the lookup row is filled with values from the fast filters
                 for (SingleColumnLookupFilter filter : fastFilters) {
                     fastLookupRow.setValue(filter.getColumnDescriptor().getColumnLocation().colIndex, filter.getSecondElement().getValue(null));

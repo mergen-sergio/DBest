@@ -79,7 +79,7 @@ public class DifferentKeyIterator implements Iterator<DictionaryPair> {
                 if (dps[index] == null) {
                     break;
                 }
-                Parameters.RECORDS_READ++;
+                Parameters.RECORDS_READ.increment();
                 if (!(key.partialMatch(dps[index].key))) {
                     nextValue = dps[index];
                     index++;

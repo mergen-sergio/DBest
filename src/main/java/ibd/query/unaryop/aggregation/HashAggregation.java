@@ -334,7 +334,7 @@ public class HashAggregation extends UnaryOperation implements SingleSource {
 
             if (allTuplesIterator == null) {
                 allTuplesIterator = allTuples.entrySet().iterator();
-                QueryStats.MEMORY_USED += allTuples.size() * tupleSize;
+                QueryStats.MEMORY_USED.add(allTuples.size() * tupleSize);
             }
 
             while (allTuplesIterator.hasNext()) {
