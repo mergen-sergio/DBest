@@ -22,11 +22,25 @@ public class AllKeysIterator implements Iterator<DictionaryPair>{
     BPlusTreeFile btree;
 
     int index;
+
+    int endLeafID = -1;
     
     public AllKeysIterator(BPlusTreeFile btree){
         this.btree = btree;
         curNode = (LeafNode) btree.getNode(btree.getFirstLeafID());
         dps = curNode.dictionary;
+        index = 0;
+    }
+
+    public AllKeysIterator(BPlusTreeFile btree, int firstLeafID, int endLeafID){
+        this.btree = btree;
+        this.endLeafID = endLeafID;
+        if (firstLeafID != endLeafID) {
+            curNode = (LeafNode) btree.getNode(firstLeafID);
+        }
+        if (curNode != null) {
+            dps = curNode.dictionary;
+        }
         index = 0;
     }
 
@@ -89,7 +103,11 @@ public class AllKeysIterator implements Iterator<DictionaryPair>{
 
             /* Update the current node to be the right sibling,
 			   leaf traversal is from left to right */
-            curNode = (LeafNode) btree.getNode(curNode.rightSiblingID);
+            if (curNode.rightSiblingID == endLeafID) {
+                curNode = null;
+            } else {
+                curNode = (LeafNode) btree.getNode(curNode.rightSiblingID);
+            }
             if (curNode!=null){
                 dps = curNode.dictionary;
                 index =0;
@@ -98,4 +116,4 @@ public class AllKeysIterator implements Iterator<DictionaryPair>{
         return null;
 
     }
-}
+}

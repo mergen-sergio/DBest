@@ -967,6 +967,26 @@ int i = (result != -1) ? result : left;
         return new AllKeysIterator(this);
     }
 
+    public AllKeysIterator searchPartIterator(int part, int parts) {
+        int endLeafID = part + 1 == parts ? -1 : firstLeafOfPart(part + 1, parts);
+        return new AllKeysIterator(this, firstLeafOfPart(part, parts), endLeafID);
+    }
+
+    private int firstLeafOfPart(int part, int parts) {
+        if (getFirstLeafID() == -1) {
+            return -1;
+        }
+        int id = getRootID() == -1 ? getFirstLeafID() : getRootID();
+        Node node = getNode(id);
+        while (node instanceof InternalNode internal) {
+            int child = part * internal.degree / parts;
+            part = part * internal.degree % parts;
+            id = internal.childPointersIDs[child];
+            node = getNode(id);
+        }
+        return id;
+    }
+
     public EqualKeyIterator equalKeyIterator(Key key) {
         return new EqualKeyIterator(this, key);
     }

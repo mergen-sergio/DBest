@@ -84,7 +84,9 @@ public abstract class UnaryOperation extends Operation {
     @Override
     public final void setProcessedOperations() {
         super.setProcessedOperations();
-        childOperation.setProcessedOperations();
+        for (Operation child : childOperations) {
+            child.setProcessedOperations();
+        }
     }
     
     @Override
